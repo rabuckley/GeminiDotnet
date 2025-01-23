@@ -56,7 +56,10 @@ public readonly record struct GeminiModel : ISpanFormattable, IParsable<GeminiMo
     /// </summary>
     public static GeminiModel Gemini2Flash { get; } = new(Gemini2FlashId);
 
-    private static readonly FrozenSet<GeminiModel> s_chatModels = [Gemini1p5Pro, Gemini1p5Flash];
+    private static readonly FrozenSet<GeminiModel> s_chatModels = 
+    [
+        Gemini1p5Pro, Gemini1p5Flash, Gemini1p5Flash8b, Gemini2Flash
+    ];
 
     /// <summary>
     /// The set of chat models.
