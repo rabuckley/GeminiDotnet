@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsAotCompatible>true</IsAotCompatible>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Net.ServerSentEvents" />
+    </ItemGroup>
+
+</Project>
