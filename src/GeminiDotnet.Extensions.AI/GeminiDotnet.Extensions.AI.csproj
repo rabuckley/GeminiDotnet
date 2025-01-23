@@ -1,18 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <LangVersion>preview</LangVersion>
+        <IsPackable>true</IsPackable>
+        <PackageId>GeminiDotnet.Extensions.AI</PackageId>
+        <Version>0.1.1-preview</Version>
+        <Authors>Ryan Buckley</Authors>
+        <PackageTags>AI, Gemini</PackageTags>
+        <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/rabuckley/GeminiDotnet</RepositoryUrl>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <PackageLicenceFile>../../LICENCE</PackageLicenceFile>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+        <None Include="readme.md" Pack="true" PackagePath="" />
+        <None Include="../../LICENCE" Pack="true" PackagePath="" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\GeminiDotnet\GeminiDotnet.csproj" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\GeminiDotnet\GeminiDotnet.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -2,8 +2,21 @@
 
     <PropertyGroup>
         <IsAotCompatible>true</IsAotCompatible>
-        <LangVersion>preview</LangVersion>
+        <IsPackable>true</IsPackable>
+        <PackageId>GeminiDotnet</PackageId>
+        <Version>0.1.1</Version>
+        <Authors>Ryan Buckley</Authors>
+        <PackageTags>AI, Gemini</PackageTags>
+        <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/rabuckley/GeminiDotnet</RepositoryUrl>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <PackageLicenceFile>../../LICENCE</PackageLicenceFile>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <None Include="readme.md" Pack="true" PackagePath="" />
+        <None Include="../../LICENCE" Pack="true" PackagePath="" />
+    </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="System.Net.ServerSentEvents" />
