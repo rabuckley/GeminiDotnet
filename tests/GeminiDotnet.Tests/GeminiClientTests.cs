@@ -34,7 +34,7 @@ public sealed class GeminiClientTests
 
     [Theory]
     [MemberData(nameof(AllModels))]
-    public async Task GenerateContentAsync_WithValidRequest_ShouldStreamResults(GeminiModel model)
+    public async Task GenerateContentAsync_WithValidRequest_ShouldGetResults(GeminiModel model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -57,7 +57,7 @@ public sealed class GeminiClientTests
 
     [Theory]
     [MemberData(nameof(AllModels))]
-    public async Task GetTextGenerationResultsAsync_WithValidRequest_ShouldStreamResults(GeminiModel model)
+    public async Task GenerateContentStreamingAsync_WithValidRequest_ShouldStreamResults(GeminiModel model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -74,7 +74,7 @@ public sealed class GeminiClientTests
         {
             var response = result.Candidates.Single().Content.Parts.Single();
             Assert.IsType<TextContentPart>(response);
-            sb.AppendLine(((TextContentPart)response).Text);
+            sb.Append(((TextContentPart)response).Text);
         }
 
         var resultText = sb.ToString();
