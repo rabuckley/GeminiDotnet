@@ -1,5 +1,14 @@
 # GeminiDotnet
 
+GeminiDotnet is a minimal library for interacting with Google's Gemini API in modern dotnet, with only System.\* dependencies.
+
+## Versions
+
+| Package | Latest |
+| --- | --- |
+| GeminiDotnet | [![NuGet Version](https://img.shields.io/nuget/v/GeminiDotnet)](https://www.nuget.org/packages/GeminiDotnet) |
+| GeminiDotnet.Extensions.AI | [![NuGet Version](https://img.shields.io/nuget/v/GeminiDotnet.Extensions.AI)](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI) | 
+
 See the separate readmes for
 
 - [`GeminiDotnet`](./src/GeminiDotnet) for direct interaction with Gemini API
