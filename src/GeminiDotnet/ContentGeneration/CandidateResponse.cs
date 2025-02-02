@@ -16,6 +16,9 @@ public sealed record CandidateResponse
     [JsonPropertyName("avgLogprobs")]
     public float? AvgLogProbs { get; init; }
 
+    [JsonPropertyName("index")]
+    public int? Index { get; init; }
+
     [JsonPropertyName("safetyRatings")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IEnumerable<SafetyRating>? SafetyRatings { get; init; }

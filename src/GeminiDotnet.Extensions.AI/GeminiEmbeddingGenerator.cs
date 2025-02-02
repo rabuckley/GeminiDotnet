@@ -38,9 +38,13 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
         EmbeddingGenerationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        var model = ModelMapper.GetModel(options);
+        if (options?.ModelId is null)
+        {
+            throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
+        }
+
         var request = ExtensionsAIToGeminiMapper.CreateMappedEmbeddingRequest(values);
-        var response = await _client.EmbedContentAsync(model, request, cancellationToken).ConfigureAwait(false);
+        var response = await _client.EmbedContentAsync(options.ModelId, request, cancellationToken).ConfigureAwait(false);
         return GeminiToExtensionsAIMapper.CreateMappedGeneratedEmbeddings(response);
     }
 

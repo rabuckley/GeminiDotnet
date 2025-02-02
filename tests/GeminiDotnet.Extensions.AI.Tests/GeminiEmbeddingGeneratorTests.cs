@@ -1,5 +1,3 @@
-using GeminiDotnet.ContentGeneration;
-
 using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
@@ -21,7 +19,7 @@ public sealed class GeminiEmbeddingGeneratorTests
         var options = new GeminiClientOptions { ApiKey = TestConfiguration.GetApiKey() };
         var client = new GeminiEmbeddingGenerator(options);
 
-        var embeddingOptions = new EmbeddingGenerationOptions { ModelId = GeminiModel.TextEmbedding004.ToString() };
+        var embeddingOptions = new EmbeddingGenerationOptions { ModelId = GeminiModels.TextEmbedding004 };
 
         // Act
         var embeddings = await client.GenerateAsync(["Hello, world!"], embeddingOptions, cancellationToken);

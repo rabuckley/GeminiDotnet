@@ -24,4 +24,12 @@ public sealed record UsageMetadata
     /// </summary>
     [JsonPropertyName("totalTokenCount")]
     public required int TotalTokenCount { get; init; }
+
+    [JsonPropertyName("promptTokensDetails")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IEnumerable<ModalityTokenCount>? PromptTokenDetails { get; init; }
+
+    [JsonPropertyName("candidatesTokensDetails")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IEnumerable<ModalityTokenCount>? CandidateTokenDetails { get; init; }
 }

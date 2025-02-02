@@ -36,4 +36,8 @@ public sealed class GenerationConfiguration
     [JsonPropertyName("responseSchema")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ResponseSchema { get; init; }
+
+    [JsonPropertyName("thinkingConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ThinkingConfiguration? ThinkingConfig { get; init; }
 }

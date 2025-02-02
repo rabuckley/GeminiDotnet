@@ -1,6 +1,5 @@
-﻿using System.Text;
-
-using GeminiDotnet.ContentGeneration;
+﻿using System.Runtime.Intrinsics;
+using System.Text;
 
 using Microsoft.Extensions.AI;
 
@@ -21,14 +20,12 @@ public sealed class GeminiChatClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AllModels))]
-    public async Task CompleteAsyncTest(GeminiModel model)
+    [MemberData(nameof(StableModels))]
+    public async Task CompleteAsyncTest(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
-        var options = new GeminiClientOptions { ApiKey = _apiKey, };
-        var client = new GeminiClient(httpClient, options);
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, });
         var chatClient = new GeminiChatClient(client);
 
         List<ChatMessage> messages =
@@ -36,7 +33,7 @@ public sealed class GeminiChatClientTests
             new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?", }
         ];
 
-        var chatOptions = new ChatOptions { ModelId = model.ToString() };
+        var chatOptions = new ChatOptions { ModelId = model };
 
         // Act
         var result = await chatClient.CompleteAsync(messages, chatOptions, cancellationToken);
@@ -48,15 +45,29 @@ public sealed class GeminiChatClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AllModels))]
-    public async Task CompleteStreamingAsync_WithValidRequest_ShouldStreamResults(GeminiModel model)
+    [MemberData(nameof(StableModels))]
+    public Task CompleteStreamingAsync_WithValidRequest_ShouldStreamResults(string model)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, });
+        return StreamingCompletionTestCore(model, client, cancellationToken);
+    }
+
+    [Theory]
+    [MemberData(nameof(BetaModels))]
+    public Task CompleteStreamingAsync_WithValidRequestAndExperimentalModel_ShouldStreamResults(string model)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+        return StreamingCompletionTestCore(model, client, cancellationToken);
+    }
+
+    private async Task StreamingCompletionTestCore(
+        string model,
+        GeminiClient client,
+        CancellationToken cancellationToken)
     {
         // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
-        var options = new GeminiClientOptions { ApiKey = _apiKey, };
-        var client = new GeminiClient(httpClient, options);
         var chatClient = new GeminiChatClient(client);
 
         List<ChatMessage> messages =
@@ -64,7 +75,7 @@ public sealed class GeminiChatClientTests
             new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?", }
         ];
 
-        var chatOptions = new ChatOptions { ModelId = model.ToString() };
+        var chatOptions = new ChatOptions { ModelId = model };
 
         var sb = new StringBuilder(256);
 
@@ -87,9 +98,7 @@ public sealed class GeminiChatClientTests
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
-        var options = new GeminiClientOptions { ApiKey = _apiKey, };
-        var client = new GeminiClient(httpClient, options);
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, });
         var chatClient = new GeminiChatClient(client);
 
         List<ChatMessage> messages =
@@ -97,7 +106,7 @@ public sealed class GeminiChatClientTests
             new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?", }
         ];
 
-        var chatOptions = new ChatOptions { ModelId = GeminiModel.Gemini2Flash.ToString() };
+        var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash };
 
         // Act
         var result = await chatClient.CompleteAsync(messages, chatOptions, cancellationToken);
@@ -108,8 +117,16 @@ public sealed class GeminiChatClientTests
         Assert.Contains("Armstrong", choice.Text, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static IEnumerable<TheoryDataRow<GeminiModel>> AllModels()
+    public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        return GeminiModel.ChatModels.Select(model => new TheoryDataRow<GeminiModel>(model));
+        yield return GeminiModels.Gemini1p5Pro;
+        yield return GeminiModels.Gemini1p5Flash;
+        yield return GeminiModels.Gemini1p5Flash8b;
+    }
+
+    public static IEnumerable<TheoryDataRow<string>> BetaModels()
+    {
+        yield return GeminiModels.Gemini2Flash;
+        yield return GeminiModels.Gemini2FlashThinking;
     }
 }

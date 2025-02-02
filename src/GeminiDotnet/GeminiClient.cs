@@ -51,19 +51,20 @@ public sealed class GeminiClient
     // -d '{ "contents":[{"parts":[{"text": "Write a cute story about cats."}]}]}'
     // ```
     public async Task<GenerateContentResponse> GenerateContentAsync(
-        GeminiModel model,
+        string model,
         GenerateContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ThrowIfDefaultModel(model);
+        ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
         var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
 
-        var uri = $"/v1beta/models/{model}:generateContent?key={Options.ApiKey}";
+        var uri = $"/{Options.ApiVersion}/models/{model}:generateContent?key={Options.ApiKey}";
 
         var response = await _httpClient
             .PostAsJsonAsync(uri, request, requestJsonInfo, cancellationToken: cancellationToken).ConfigureAwait(false);
+
         response.EnsureSuccessStatusCode();
 
         var responseJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
@@ -82,16 +83,16 @@ public sealed class GeminiClient
     // -d '{ "contents":[{"parts":[{"text": "Write a cute story about cats."}]}]}'
     // ```
     public async IAsyncEnumerable<StreamingTextGenerationResponse> GenerateContentStreamingAsync(
-        GeminiModel model,
+        string model,
         GenerateContentRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        ThrowIfDefaultModel(model);
+        ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
         var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
 
-        var uri = $"/v1beta/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}";
+        var uri = $"/{Options.ApiVersion}/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}";
 
         var response = await _httpClient.PostAsJsonAsync(
                 uri,
@@ -127,16 +128,16 @@ public sealed class GeminiClient
     // }'
     // ```
     public async Task<EmbeddingResponse> EmbedContentAsync(
-        GeminiModel model,
+        string model,
         EmbeddingRequest request,
         CancellationToken cancellationToken = default)
     {
-        ThrowIfDefaultModel(model);
+        ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
         var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbeddingRequest>();
 
-        var uri = $"/v1beta/models/{model}:embedContent?key={Options.ApiKey}";
+        var uri = $"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}";
 
         var response = await _httpClient.PostAsJsonAsync(
                 uri,
@@ -154,13 +155,5 @@ public sealed class GeminiClient
             .ConfigureAwait(false);
 
         return responseJson ?? throw new InvalidOperationException("Response body was null.");
-    }
-
-    private static void ThrowIfDefaultModel(GeminiModel model)
-    {
-        if (model == default)
-        {
-            throw new ArgumentException("Model cannot be default.", nameof(model));
-        }
     }
 }

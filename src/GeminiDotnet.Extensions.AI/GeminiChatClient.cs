@@ -57,9 +57,13 @@ public sealed class GeminiChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(chatMessages);
 
-        var model = ModelMapper.GetModel(options);
+        if (options?.ModelId is null)
+        {
+            throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
+        }
+
         var request = ExtensionsAIToGeminiMapper.CreateMappedTextGenerationRequest(chatMessages);
-        var response = await _client.GenerateContentAsync(model, request, cancellationToken);
+        var response = await _client.GenerateContentAsync(options.ModelId, request, cancellationToken);
         return GeminiToExtensionsAIMapper.CreateMappedChatCompletion(response, _timeProvider.GetUtcNow());
     }
 
@@ -71,10 +75,14 @@ public sealed class GeminiChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(chatMessages);
 
-        var model = ModelMapper.GetModel(options);
+        if (options?.ModelId is null)
+        {
+            throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
+        }
+
         var request = ExtensionsAIToGeminiMapper.CreateMappedTextGenerationRequest(chatMessages);
 
-        await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken))
+        await foreach (var response in _client.GenerateContentStreamingAsync(options.ModelId, request, cancellationToken))
         {
             yield return GeminiToExtensionsAIMapper.CreateMappedStreamingChatCompletionUpdate(
                 response,

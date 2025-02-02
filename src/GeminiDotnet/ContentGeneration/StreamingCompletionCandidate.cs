@@ -11,8 +11,12 @@ public sealed record StreamingCompletionCandidate
 
     [JsonPropertyName("finishReason")]
     public FinishReason? FinishReason { get; init; }
-    
+
     [JsonPropertyName("safetyRatings")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public IEnumerable<SafetyRating>? SafetyRatings { get; init; }
+
+    [JsonPropertyName("index")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int? Index { get; init; }
 }

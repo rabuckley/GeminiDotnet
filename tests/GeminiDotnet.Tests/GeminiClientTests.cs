@@ -33,8 +33,8 @@ public sealed class GeminiClientTests
     };
 
     [Theory]
-    [MemberData(nameof(AllModels))]
-    public async Task GenerateContentAsync_WithValidRequest_ShouldGetResults(GeminiModel model)
+    [MemberData(nameof(StableModels))]
+    public async Task GenerateContentAsync_WithValidRequest_ShouldGetResults(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -56,15 +56,13 @@ public sealed class GeminiClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AllModels))]
-    public async Task GenerateContentStreamingAsync_WithValidRequest_ShouldStreamResults(GeminiModel model)
+    [MemberData(nameof(StableModels))]
+    public async Task GenerateContentStreamingAsync_WithValidRequest_ShouldStreamResults(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
-        var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(httpClient, options);
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
         var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest;
 
         var sb = new StringBuilder();
@@ -103,7 +101,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.EmbedContentAsync(GeminiModel.TextEmbedding004, request, cancellationToken);
+        var result = await client.EmbedContentAsync(GeminiModels.TextEmbedding004, request, cancellationToken);
 
         // Assert
         Assert.NotNull(result.Embedding);
@@ -117,12 +115,12 @@ public sealed class GeminiClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
-        var options = new GeminiClientOptions { ApiKey = _apiKey };
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
         var client = new GeminiClient(httpClient, options);
 
         var request = new GenerateContentRequest
         {
-            Tools = [new Tool { CodeExecution = new() }],
+            Tools = [new Tool { CodeExecution = new CodeExecution() }],
             Contents =
             [
                 new ChatMessage
@@ -137,7 +135,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModel.Gemini1p5Flash, request, cancellationToken);
+        var result = await client.GenerateContentAsync(GeminiModels.Gemini1p5Flash, request, cancellationToken);
 
         // Assert
         var candidate = result.Candidates.Single();
@@ -156,8 +154,62 @@ public sealed class GeminiClientTests
         Assert.Contains("Hello, World!", resultPart.Output);
     }
 
-    public static IEnumerable<TheoryDataRow<GeminiModel>> AllModels()
+    [Fact]
+    public async Task Thinking_WithWhat_ShouldDoWhat()
     {
-        foreach (GeminiModel model in GeminiModel.ChatModels) yield return model;
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Alpha };
+        var client = new GeminiClient(httpClient, options);
+
+        var request = new GenerateContentRequest
+        {
+            GenerationConfig = new GenerationConfiguration
+            {
+                ThinkingConfig = new ThinkingConfiguration { IncludeThoughts = true },
+            },
+            Contents =
+            [
+                new ChatMessage
+                {
+                    Role = ChatRole.User,
+                    Parts =
+                    [
+                        new TextContentPart { Text = "Explain the prisoner's dilemma" }
+                    ]
+                }
+            ]
+        };
+
+        var sb = new StringBuilder();
+
+        // Act
+        await foreach (var result in client.GenerateContentStreamingAsync(GeminiModels.Gemini2FlashThinking, request,
+                           cancellationToken))
+        {
+            var response = result.Candidates.Single().Content.Parts.Single();
+            Assert.IsType<TextContentPart>(response);
+            sb.Append(((TextContentPart)response).Text);
+        }
+
+        var resultText = sb.ToString();
+        _output.WriteLine(resultText);
+
+        // Assert
+        Assert.Contains("prisoner", resultText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static IEnumerable<TheoryDataRow<string>> StableModels()
+    {
+        yield return GeminiModels.Gemini1p5Flash;
+        yield return GeminiModels.Gemini1p5Pro;
+    }
+
+    public static IEnumerable<TheoryDataRow<string>> ExperimentalModels()
+    {
+        yield return GeminiModels.Gemini2Flash;
+        yield return GeminiModels.Gemini2FlashThinking;
     }
 }
