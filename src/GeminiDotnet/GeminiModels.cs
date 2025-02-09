@@ -10,7 +10,10 @@ public static class GeminiModels
 
     public const string Gemini1p5Flash8b = "gemini-1.5-flash-8b";
 
-    public const string Gemini2Flash = "gemini-2.0-flash-exp";
+    public const string Gemini2Flash = "gemini-2.0-flash";
 
-    public const string Gemini2FlashThinking = "gemini-2.0-flash-thinking-exp";
+    public static class Experimental
+    {
+        public const string Gemini2FlashThinking = "gemini-2.0-flash-thinking-exp";
+    }
 }

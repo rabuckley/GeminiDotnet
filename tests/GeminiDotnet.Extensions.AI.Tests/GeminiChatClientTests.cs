@@ -122,11 +122,11 @@ public sealed class GeminiChatClientTests
         yield return GeminiModels.Gemini1p5Pro;
         yield return GeminiModels.Gemini1p5Flash;
         yield return GeminiModels.Gemini1p5Flash8b;
+        yield return GeminiModels.Gemini2Flash;
     }
 
     public static IEnumerable<TheoryDataRow<string>> BetaModels()
     {
-        yield return GeminiModels.Gemini2Flash;
-        yield return GeminiModels.Gemini2FlashThinking;
+        yield return GeminiModels.Experimental.Gemini2FlashThinking;
     }
 }

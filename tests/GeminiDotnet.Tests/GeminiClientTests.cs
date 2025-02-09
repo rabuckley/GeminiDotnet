@@ -186,7 +186,9 @@ public sealed class GeminiClientTests
         var sb = new StringBuilder();
 
         // Act
-        await foreach (var result in client.GenerateContentStreamingAsync(GeminiModels.Gemini2FlashThinking, request,
+        await foreach (var result in client.GenerateContentStreamingAsync(
+                           GeminiModels.Experimental.Gemini2FlashThinking,
+                           request,
                            cancellationToken))
         {
             var response = result.Candidates.Single().Content.Parts.Single();
@@ -205,11 +207,6 @@ public sealed class GeminiClientTests
     {
         yield return GeminiModels.Gemini1p5Flash;
         yield return GeminiModels.Gemini1p5Pro;
-    }
-
-    public static IEnumerable<TheoryDataRow<string>> ExperimentalModels()
-    {
         yield return GeminiModels.Gemini2Flash;
-        yield return GeminiModels.Gemini2FlashThinking;
     }
 }
