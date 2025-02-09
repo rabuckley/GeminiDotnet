@@ -4,7 +4,7 @@
         <IsAotCompatible>true</IsAotCompatible>
         <IsPackable>true</IsPackable>
         <PackageId>GeminiDotnet</PackageId>
-        <Version>0.1.2</Version>
+        <Version>0.2.0</Version>
         <Authors>Ryan Buckley</Authors>
         <PackageTags>AI, Gemini</PackageTags>
         <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
@@ -12,7 +12,7 @@
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageLicenceFile>../../LICENCE</PackageLicenceFile>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <None Include="readme.md" Pack="true" PackagePath="" />
         <None Include="../../LICENCE" Pack="true" PackagePath="" />
