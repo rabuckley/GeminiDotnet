@@ -29,27 +29,13 @@ internal static class GeminiToExtensionsAIMapper
 
     private static ChatFinishReason? CreateMappedChatFinishReason(FinishReason? finishReason)
     {
-        if (finishReason is null)
+        return finishReason switch
         {
-            return null;
-        }
-
-        if (finishReason == FinishReason.Stop)
-        {
-            return ChatFinishReason.Stop;
-        }
-
-        if (finishReason == FinishReason.MaxTokens)
-        {
-            return ChatFinishReason.Length;
-        }
-
-        if (finishReason == FinishReason.Safety)
-        {
-            return ChatFinishReason.ContentFilter;
-        }
-
-        return null;
+            FinishReason.Stop => ChatFinishReason.Stop,
+            FinishReason.MaxTokens => ChatFinishReason.Length,
+            FinishReason.Safety => ChatFinishReason.ContentFilter,
+            _ => null
+        };
     }
 
     private static AIContent CreateMappedAIContent(Part messagePart)

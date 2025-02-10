@@ -91,12 +91,7 @@ public sealed class GeminiChatClient : IChatClient
     /// <inheritdoc />
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
-        if (serviceType == typeof(GeminiClient))
-        {
-            return _client;
-        }
-
-        return null;
+        return serviceType == typeof(GeminiClient) ? _client : null;
     }
 
     /// <inheritdoc />

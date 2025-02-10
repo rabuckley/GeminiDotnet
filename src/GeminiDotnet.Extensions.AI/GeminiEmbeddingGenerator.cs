@@ -49,12 +49,7 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
 
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
-        if (serviceType == typeof(GeminiClient))
-        {
-            return _client;
-        }
-
-        return null;
+        return serviceType == typeof(GeminiClient) ? _client : null;
     }
 
     public void Dispose()
