@@ -11,7 +11,7 @@ public sealed record GenerateContentResponse
     /// Candidate responses from the model.
     /// </summary>
     [JsonPropertyName("candidates")]
-    public required IReadOnlyCollection<CandidateResponse> Candidates { get; init; }
+    public required IReadOnlyCollection<Candidate> Candidates { get; init; }
 
     /// <summary>
     /// Returns the prompt's feedback related to the content filters.

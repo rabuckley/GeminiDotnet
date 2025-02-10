@@ -1,11 +1,8 @@
-using System.Text.Json.Serialization;
-
 namespace GeminiDotnet.ContentGeneration;
 
-[JsonConverter(typeof(JsonStringEnumConverter<ChatRole>))]
-public enum ChatRole
+public static class ChatRoles
 {
-    User,
-    Model,
-    System
+    public const string User = "user";
+    
+    public const string Model = "model";
 }

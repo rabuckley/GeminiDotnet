@@ -28,7 +28,7 @@ public sealed class GenerateContentRequestTests
         {
             Contents =
             [
-                new ChatMessage { Role = ChatRole.User, Parts = new List<Part> { new() { Text = "Hello, world!" } } }
+                new Content { Role = ChatRoles.User, Parts = new List<Part> { new() { Text = "Hello, world!" } } }
             ]
         };
 

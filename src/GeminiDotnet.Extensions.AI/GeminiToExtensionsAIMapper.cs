@@ -1,7 +1,6 @@
 using GeminiDotnet.ContentGeneration;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
-using ChatRole = GeminiDotnet.ContentGeneration.ChatRole;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -119,7 +118,7 @@ internal static class GeminiToExtensionsAIMapper
         };
     }
 
-    private static Microsoft.Extensions.AI.ChatMessage CreateMappedChatMessage(CandidateResponse candidateResponse)
+    private static Microsoft.Extensions.AI.ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
     {
         return new Microsoft.Extensions.AI.ChatMessage
         {

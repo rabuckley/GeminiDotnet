@@ -20,9 +20,9 @@ public sealed class GeminiClientTests
     {
         Contents =
         [
-            new ChatMessage
+            new Content 
             {
-                Role = ChatRole.User,
+                Role = ChatRoles.User,
                 Parts =
                 [
                     new Part { Text = "Who was the first person to walk on the moon?" }
@@ -130,9 +130,9 @@ public sealed class GeminiClientTests
             Tools = [new Tool { CodeExecution = new CodeExecution() }],
             Contents =
             [
-                new ChatMessage
+                new Content 
                 {
-                    Role = ChatRole.User,
+                    Role = ChatRoles.User,
                     Parts =
                     [
                         new Part { Text = "Can you print Hello, World! using Python?" }
@@ -179,9 +179,9 @@ public sealed class GeminiClientTests
             },
             Contents =
             [
-                new ChatMessage
+                new Content 
                 {
-                    Role = ChatRole.User,
+                    Role = ChatRoles.User,
                     Parts =
                     [
                         new Part { Text = "Explain the prisoner's dilemma" }

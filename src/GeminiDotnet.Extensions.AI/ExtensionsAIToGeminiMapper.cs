@@ -1,10 +1,6 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.Embeddings;
-
 using Microsoft.Extensions.AI;
-
-using ChatMessage = GeminiDotnet.ContentGeneration.ChatMessage;
-using ChatRole = GeminiDotnet.ContentGeneration.ChatRole;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -13,31 +9,28 @@ internal static class ExtensionsAIToGeminiMapper
     public static GenerateContentRequest CreateMappedTextGenerationRequest(
         IList<Microsoft.Extensions.AI.ChatMessage> chatMessages)
     {
-        return new GenerateContentRequest { Contents = chatMessages.Select(CreateGeminiChatMessage).ToList(), };
+        return new GenerateContentRequest { Contents = chatMessages.Select(CreateGeminiChatMessage).ToList() };
 
-        static ChatMessage CreateGeminiChatMessage(Microsoft.Extensions.AI.ChatMessage chatMessage)
+        static Content CreateGeminiChatMessage(Microsoft.Extensions.AI.ChatMessage chatMessage)
         {
-            return new ChatMessage
+            return new Content
             {
                 Role = CreateGeminiChatRole(chatMessage.Role),
                 Parts = chatMessage.Contents.Select(CreateGeminiChatMessagePart).ToList(),
             };
         }
 
-        static ChatRole CreateGeminiChatRole(Microsoft.Extensions.AI.ChatRole role)
+        static string CreateGeminiChatRole(Microsoft.Extensions.AI.ChatRole role)
         {
             if (role == Microsoft.Extensions.AI.ChatRole.User)
             {
-                return ChatRole.User;
+                return ChatRoles.User;
             }
 
             if (role == Microsoft.Extensions.AI.ChatRole.Assistant)
             {
-                return ChatRole.Model;
+                return ChatRoles.Model;
             }
-
-            // role == Microsoft.Extensions.AI.ChatRole.System
-            // role == Microsoft.Extensions.AI.ChatRole.Tool
 
             throw new NotSupportedException($"Unsupported {nameof(Microsoft.Extensions.AI.ChatRole)}: {role}");
         }
