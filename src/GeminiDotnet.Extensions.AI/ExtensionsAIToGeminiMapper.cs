@@ -1,4 +1,5 @@
 using GeminiDotnet.ContentGeneration;
+using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
 using Microsoft.Extensions.AI;
 
@@ -42,6 +43,8 @@ internal static class ExtensionsAIToGeminiMapper
         {
             TextContent textContent => CreateGeminiTextChatMessagePart(textContent),
             DataContent dataContent => CreateGeminiInlineDataChatMessagePart(dataContent),
+            FunctionCallContent functionCall => CreateGeminiFunctionCallPart(functionCall),
+            FunctionResultContent functionResult => CreateGeminiFunctionResponsePart(functionResult),
             _ => throw new NotSupportedException($"Unsupported {nameof(AIContent)} type: {content.GetType()}")
         };
     }
@@ -66,6 +69,28 @@ internal static class ExtensionsAIToGeminiMapper
         }
 
         return new Part { InlineData = new Blob { Data = dataContent.Data.Value, MimeType = dataContent.MediaType } };
+    }
+
+    private static Part CreateGeminiFunctionCallPart(FunctionCallContent functionCall)
+    {
+        return new Part
+        {
+            FunctionCall = new FunctionCall
+            {
+                Id = functionCall.CallId, Name = functionCall.Name, Arguments = functionCall.Arguments,
+            }
+        };
+    }
+
+    private static Part CreateGeminiFunctionResponsePart(FunctionResultContent functionResult)
+    {
+        return new Part
+        {
+            FunctionResponse = new FunctionResponse
+            {
+                Name = functionResult.Name, Response = functionResult.Result!.ToString()!
+            }
+        };
     }
 
     public static EmbeddingRequest CreateMappedEmbeddingRequest(IEnumerable<string> values)

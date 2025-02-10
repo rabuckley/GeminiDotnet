@@ -29,5 +29,5 @@ public sealed record FunctionCall
     /// The function parameters and values in JSON object format.
     /// </summary>
     [JsonPropertyName("args")]
-    public IDictionary<string, object>? Arguments { get; init; }
+    public IDictionary<string, object?>? Arguments { get; init; }
 }
