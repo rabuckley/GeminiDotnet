@@ -1,12 +1,11 @@
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration;
 
-public sealed record CandidateContent
+public sealed record Content
 {
     [JsonPropertyName("parts")]
-    public required IEnumerable<ContentPart> Parts { get; init; }
+    public required IReadOnlyCollection<Part> Parts { get; init; }
 
     [JsonPropertyName("role")]
     public required string Role { get; init; }

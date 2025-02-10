@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration.FunctionCalling;
 
-public sealed record FunctionResponse : ContentPart
+public sealed record FunctionResponse
 {
     [JsonPropertyName("name")]
     public required string Name { get; init; }

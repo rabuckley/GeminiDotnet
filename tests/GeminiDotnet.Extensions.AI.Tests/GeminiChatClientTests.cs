@@ -1,8 +1,5 @@
-﻿using System.Runtime.Intrinsics;
+﻿using Microsoft.Extensions.AI;
 using System.Text;
-
-using Microsoft.Extensions.AI;
-
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 

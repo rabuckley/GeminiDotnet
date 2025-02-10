@@ -1,24 +1,24 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.Text.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 namespace GeminiDotnet;
 
 public sealed class GenerateContentRequestTests
 {
-    [Fact]
-    public void Deserialize_Example()
+    [Theory]
+    [MemberData(nameof(Examples))]
+    public void Deserialize_Examples(string example)
     {
         // Act
         var request = JsonSerializer.Deserialize(
-            ChatExample1Json,
+            example,
             JsonContext.Default.GetTypeInfo<GenerateContentRequest>());
 
         // Assert
         Assert.NotNull(request);
-        Assert.Equal(3, request.Contents.Count());
+        Assert.Equal(3, request.Contents.Count);
     }
 
     [Fact]
@@ -28,11 +28,7 @@ public sealed class GenerateContentRequestTests
         {
             Contents =
             [
-                new ChatMessage
-                {
-                    Role = ChatRole.User,
-                    Parts = new List<ContentPart> { new TextContentPart { Text = "Hello, world!" } }
-                }
+                new ChatMessage { Role = ChatRole.User, Parts = new List<Part> { new() { Text = "Hello, world!" } } }
             ]
         };
 
@@ -40,6 +36,11 @@ public sealed class GenerateContentRequestTests
         var deserialized = JsonSerializer.Deserialize<GenerateContentRequest>(json);
 
         Assert.Equivalent(request, deserialized);
+    }
+
+    public static IEnumerable<TheoryDataRow<string>> Examples()
+    {
+        yield return ChatExample1Json;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]

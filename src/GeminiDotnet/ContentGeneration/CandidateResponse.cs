@@ -1,14 +1,12 @@
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
-
 using GeminiDotnet.ContentGeneration.Safety;
+using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration;
 
 public sealed record CandidateResponse
 {
     [JsonPropertyName("content")]
-    public required CandidateContent Content { get; init; }
+    public required Content Content { get; init; }
 
     [JsonPropertyName("finishReason")]
     public FinishReason? FinishReason { get; init; }

@@ -23,8 +23,7 @@ var options = new GeminiClientOptions
     ApiKey = "<your-api-key>"
 };
 
-var client = new GeminiClient(options);
-IChatClient chatClient = new GeminiChatClient(client);
+IChatClient chatClient = new GeminiChatClient(options);
 
 var response = await chatClient.CompleteAsync("What is AI?"); 
 

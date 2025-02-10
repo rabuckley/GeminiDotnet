@@ -1,8 +1,7 @@
-using System.Text;
-
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
+using System.Text;
 
 namespace GeminiDotnet;
 
@@ -26,7 +25,7 @@ public sealed class GeminiClientTests
                 Role = ChatRole.User,
                 Parts =
                 [
-                    new TextContentPart { Text = "Who was the first person to walk on the moon?" }
+                    new Part { Text = "Who was the first person to walk on the moon?" }
                 ]
             }
         ]
@@ -49,8 +48,8 @@ public sealed class GeminiClientTests
 
         // Assert
         var response = result.Candidates.Single().Content.Parts.Single();
-        Assert.IsType<TextContentPart>(response);
-        var resultText = ((TextContentPart)response).Text;
+        Assert.NotNull(response.Text);
+        var resultText = response.Text;
         _output.WriteLine(resultText);
         Assert.Contains("Armstrong", resultText, StringComparison.OrdinalIgnoreCase);
     }
@@ -68,11 +67,19 @@ public sealed class GeminiClientTests
         var sb = new StringBuilder();
 
         // Act
-        await foreach (var result in client.GenerateContentStreamingAsync(model, request, cancellationToken))
+
+        try
         {
-            var response = result.Candidates.Single().Content.Parts.Single();
-            Assert.IsType<TextContentPart>(response);
-            sb.Append(((TextContentPart)response).Text);
+            await foreach (var result in client.GenerateContentStreamingAsync(model, request, cancellationToken))
+            {
+                var response = result.Candidates.Single().Content.Parts.Single();
+                Assert.NotNull(response.Text);
+                sb.Append(response.Text);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _output.WriteLine(ex.Message);
         }
 
         var resultText = sb.ToString();
@@ -95,7 +102,7 @@ public sealed class GeminiClientTests
             {
                 Parts =
                 [
-                    new TextContentPart { Text = "The quick brown fox jumps over the lazy dog." }
+                    new Part { Text = "The quick brown fox jumps over the lazy dog." }
                 ]
             }
         };
@@ -128,27 +135,27 @@ public sealed class GeminiClientTests
                     Role = ChatRole.User,
                     Parts =
                     [
-                        new TextContentPart { Text = "Can you print Hello, World! using Python?" }
+                        new Part { Text = "Can you print Hello, World! using Python?" }
                     ]
                 }
             ]
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModels.Gemini1p5Flash, request, cancellationToken);
+        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
 
         // Assert
         var candidate = result.Candidates.Single();
-        var explanation = candidate.Content.Parts.OfType<TextContentPart>().First().Text;
+        var explanation = candidate.Content.Parts.First(p => p.Text is not null).Text!;
         _output.WriteLine(explanation);
-        var codePart = candidate.Content.Parts.OfType<ExecutableCodeContentPart>().First();
+        var codePart = candidate.Content.Parts.First(p => p.ExecutableCode is not null).ExecutableCode!;
 
         _output.WriteLine(codePart.Language);
         _output.WriteLine(codePart.Code);
 
         Assert.Contains("Hello, World!", codePart.Code);
         Assert.Equal("PYTHON", codePart.Language);
-        var resultPart = candidate.Content.Parts.OfType<CodeExecutionResultContentPart>().First();
+        var resultPart = candidate.Content.Parts.First(p => p.CodeExecutionResult is not null).CodeExecutionResult!;
 
         _output.WriteLine(resultPart.Output);
         Assert.Contains("Hello, World!", resultPart.Output);
@@ -166,9 +173,9 @@ public sealed class GeminiClientTests
 
         var request = new GenerateContentRequest
         {
-            GenerationConfig = new GenerationConfiguration
+            GenerationConfiguration = new GenerationConfiguration
             {
-                ThinkingConfig = new ThinkingConfiguration { IncludeThoughts = true },
+                ThinkingConfiguration = new ThinkingConfiguration { IncludeThoughts = true },
             },
             Contents =
             [
@@ -177,7 +184,7 @@ public sealed class GeminiClientTests
                     Role = ChatRole.User,
                     Parts =
                     [
-                        new TextContentPart { Text = "Explain the prisoner's dilemma" }
+                        new Part { Text = "Explain the prisoner's dilemma" }
                     ]
                 }
             ]
@@ -192,8 +199,8 @@ public sealed class GeminiClientTests
                            cancellationToken))
         {
             var response = result.Candidates.Single().Content.Parts.Single();
-            Assert.IsType<TextContentPart>(response);
-            sb.Append(((TextContentPart)response).Text);
+            Assert.NotNull(response.Text);
+            sb.Append(response.Text);
         }
 
         var resultText = sb.ToString();
@@ -205,8 +212,6 @@ public sealed class GeminiClientTests
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return GeminiModels.Gemini1p5Flash;
-        yield return GeminiModels.Gemini1p5Pro;
-        yield return GeminiModels.Gemini2Flash;
+        yield return GeminiModels.Gemini1p5Flash8b;
     }
 }

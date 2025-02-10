@@ -1,7 +1,6 @@
+using GeminiDotnet.ContentGeneration;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-
-using GeminiDotnet.ContentGeneration;
 
 namespace GeminiDotnet;
 
@@ -25,6 +24,7 @@ public sealed class GenerateContentResponseTests
     public static IEnumerable<TheoryDataRow<string>> ExampleResponses()
     {
         yield return PythonCodeExecutionExampleResponse;
+        yield return CodeExExample2;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
@@ -68,4 +68,55 @@ public sealed class GenerateContentResponseTests
           "modelVersion": "gemini-1.5-flash"
         }
         """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    public const string CodeExExample2 =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "executableCode": {
+                      "language": "PYTHON",
+                      "code": "print(\"Hello, World!\")"
+                    }
+                  },
+                  {
+                    "codeExecutionResult": {
+                      "outcome": "OUTCOME_OK",
+                      "output": "Hello, World!"
+                    }
+                  },
+                  {
+                    "text": "Hello, World!"
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 10,
+            "candidatesTokenCount": 17,
+            "totalTokenCount": 27,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 10
+              }
+            ],
+            "candidatesTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 17
+              }
+            ]
+          },
+          "modelVersion": "gemini-2.0-flash"
+        }
+        """;
+
 }

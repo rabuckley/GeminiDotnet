@@ -1,17 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
+using GeminiDotnet.ContentGeneration;
+using GeminiDotnet.Embeddings;
+using GeminiDotnet.Text.Json;
 using System.Net.Http.Json;
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
-using System.Threading;
-using System.Threading.Tasks;
-
-using GeminiDotnet.ContentGeneration;
-using GeminiDotnet.Embeddings;
-using GeminiDotnet.Text.Json;
 
 namespace GeminiDotnet;
 
@@ -82,7 +75,7 @@ public sealed class GeminiClient
     // --no-buffer \
     // -d '{ "contents":[{"parts":[{"text": "Write a cute story about cats."}]}]}'
     // ```
-    public async IAsyncEnumerable<StreamingTextGenerationResponse> GenerateContentStreamingAsync(
+    public async IAsyncEnumerable<GenerateContentResponse> GenerateContentStreamingAsync(
         string model,
         GenerateContentRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -112,9 +105,9 @@ public sealed class GeminiClient
         }
     }
 
-    private static StreamingTextGenerationResponse ParseSseItem(string eventType, ReadOnlySpan<byte> data)
+    private static GenerateContentResponse ParseSseItem(string eventType, ReadOnlySpan<byte> data)
     {
-        var typeInfo = JsonContext.Default.GetTypeInfo<StreamingTextGenerationResponse>();
+        var typeInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
         var response = JsonSerializer.Deserialize(data, typeInfo);
         return response ?? throw new InvalidOperationException("SSE response body was null.");
     }

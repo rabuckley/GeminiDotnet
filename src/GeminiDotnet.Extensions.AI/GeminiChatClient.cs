@@ -1,7 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-
-using Microsoft.Extensions.AI;
-
+﻿using Microsoft.Extensions.AI;
+using System.Runtime.CompilerServices;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace GeminiDotnet.Extensions.AI;

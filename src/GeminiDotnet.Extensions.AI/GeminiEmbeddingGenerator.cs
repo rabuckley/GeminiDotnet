@@ -1,6 +1,4 @@
-﻿using GeminiDotnet.Embeddings;
-
-using Microsoft.Extensions.AI;
+﻿using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
 

@@ -43,7 +43,7 @@ internal static class ExtensionsAIToGeminiMapper
         }
     }
 
-    private static ContentPart CreateGeminiChatMessagePart(AIContent content)
+    private static Part CreateGeminiChatMessagePart(AIContent content)
     {
         return content switch
         {
@@ -53,33 +53,33 @@ internal static class ExtensionsAIToGeminiMapper
         };
     }
 
-    private static TextContentPart CreateGeminiTextChatMessagePart(TextContent textContent)
+    private static Part CreateGeminiTextChatMessagePart(TextContent textContent)
     {
-        return new TextContentPart { Text = textContent.Text };
+        return new Part { Text = textContent.Text };
     }
 
-    private static InlineDataContentPart CreateGeminiInlineDataChatMessagePart(DataContent dataContent)
+    private static Part CreateGeminiInlineDataChatMessagePart(DataContent dataContent)
     {
         if (dataContent.Data is null)
         {
             throw new InvalidOperationException(
-                $"{nameof(DataContent.Data)} cannot be null when creating an {nameof(InlineDataContentPart)}");
+                $"{nameof(DataContent.Data)} cannot be null when creating an {nameof(Blob)}");
         }
 
         if (dataContent.MediaType is null)
         {
             throw new InvalidOperationException(
-                $"{nameof(DataContent.MediaType)} cannot be null when creating an {nameof(InlineDataContentPart)}");
+                $"{nameof(DataContent.MediaType)} cannot be null when creating an {nameof(Blob)}");
         }
 
-        return new InlineDataContentPart { Data = dataContent.Data.Value, MimeType = dataContent.MediaType };
+        return new Part { InlineData = new Blob { Data = dataContent.Data.Value, MimeType = dataContent.MediaType } };
     }
 
     public static EmbeddingRequest CreateMappedEmbeddingRequest(IEnumerable<string> values)
     {
         return new EmbeddingRequest
         {
-            Content = new EmbeddingContent { Parts = [.. values.Select(v => new TextContentPart { Text = v })] }
+            Content = new EmbeddingContent { Parts = [.. values.Select(v => new Part { Text = v })] }
         };
     }
 }

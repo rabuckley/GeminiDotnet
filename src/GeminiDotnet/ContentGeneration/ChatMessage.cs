@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration;
@@ -9,5 +8,5 @@ public sealed record ChatMessage
     public required ChatRole Role { get; init; }
 
     [JsonPropertyName("parts")]
-    public required IEnumerable<ContentPart> Parts { get; init; }
+    public required IEnumerable<Part> Parts { get; init; }
 }

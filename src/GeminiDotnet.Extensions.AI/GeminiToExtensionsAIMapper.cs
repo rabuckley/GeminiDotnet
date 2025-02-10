@@ -1,7 +1,6 @@
 using GeminiDotnet.ContentGeneration;
-
 using Microsoft.Extensions.AI;
-
+using System.Diagnostics;
 using ChatRole = GeminiDotnet.ContentGeneration.ChatRole;
 
 namespace GeminiDotnet.Extensions.AI;
@@ -9,7 +8,7 @@ namespace GeminiDotnet.Extensions.AI;
 internal static class GeminiToExtensionsAIMapper
 {
     public static StreamingChatCompletionUpdate CreateMappedStreamingChatCompletionUpdate(
-        StreamingTextGenerationResponse response,
+        GenerateContentResponse response,
         DateTimeOffset createdAt)
     {
         var candidate = response.Candidates.Single();
@@ -54,28 +53,38 @@ internal static class GeminiToExtensionsAIMapper
         return null;
     }
 
-    private static AIContent CreateMappedAIContent(ContentPart messagePart)
+    private static AIContent CreateMappedAIContent(Part messagePart)
     {
-        return messagePart switch
+        if (messagePart.Text is not null)
         {
-            TextContentPart textPart => CreateMappedTextContent(textPart),
-            InlineDataContentPart inlineDataPart => CreateMappedDataContent(inlineDataPart),
-            _ => throw new NotSupportedException($"Unsupported {nameof(ContentPart)} type: {messagePart.GetType()}")
-        };
+            return CreateMappedTextContent(messagePart);
+        }
+
+        if (messagePart.InlineData is not null)
+        {
+            return CreateMappedDataContent(messagePart);
+        }
+
+        throw new NotSupportedException($"Unsupported {nameof(Part)} type: {messagePart.GetType()}");
     }
 
-    private static DataContent CreateMappedDataContent(InlineDataContentPart inlineDataPart)
+    private static DataContent CreateMappedDataContent(Part part)
     {
-        return new DataContent(inlineDataPart.Data, inlineDataPart.MimeType)
+        Debug.Assert(part.InlineData is not null);
+
+        var inlineData = part.InlineData;
+
+        return new DataContent(inlineData.Data, inlineData.MimeType)
         {
-            RawRepresentation = inlineDataPart,
+            RawRepresentation = part.InlineData,
             AdditionalProperties = null
         };
     }
 
-    private static TextContent CreateMappedTextContent(TextContentPart textPart)
+    private static TextContent CreateMappedTextContent(Part part)
     {
-        return new TextContent(textPart.Text) { RawRepresentation = textPart, AdditionalProperties = null };
+        Debug.Assert(part.Text is not null);
+        return new TextContent(part.Text) { RawRepresentation = part.Text, AdditionalProperties = null };
     }
 
     public static ChatCompletion CreateMappedChatCompletion(GenerateContentResponse response, DateTimeOffset createdAt)
