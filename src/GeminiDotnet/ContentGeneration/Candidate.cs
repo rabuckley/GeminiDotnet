@@ -24,44 +24,44 @@ public sealed record Candidate
     /// List of ratings for the safety of a response candidate. There is at most one rating per category.
     /// </summary>
     [JsonPropertyName("safetyRatings")]
-    public required IReadOnlyCollection<SafetyRating> SafetyRatings { get; init; }
+    public IReadOnlyCollection<SafetyRating>? SafetyRatings { get; init; }
 
     /// <summary>
     /// Citation information for model-generated candidate.
     /// This field may be populated with recitation information for any text included in the content. These are passages that are "recited" from copyrighted material in the foundational LLM's training data.
     /// </summary>
     [JsonPropertyName("citationMetadata")]
-    public required CitationMetadata CitationMetadata { get; init; }
+    public CitationMetadata? CitationMetadata { get; init; }
 
     /// <summary>
     /// Token count for this candidate.
     /// </summary>
     [JsonPropertyName("tokenCount")]
-    public required int TokenCount { get; init; }
+    public int? TokenCount { get; init; }
 
     /// <summary>
     /// Attribution information for sources that contributed to a grounded answer. This field is populated for GenerateAnswer calls.
     /// </summary>
     [JsonPropertyName("groundingAttributions")]
-    public required IReadOnlyCollection<GroundingAttribution> GroundingAttributions { get; init; }
+    public IReadOnlyCollection<GroundingAttribution>? GroundingAttributions { get; init; }
 
     /// <summary>
     /// Grounding metadata for the candidate. This field is populated for GenerateContent calls.
     /// </summary>
     [JsonPropertyName("groundingMetadata")]
-    public required GroundingMetadata GroundingMetadata { get; init; }
+    public GroundingMetadata? GroundingMetadata { get; init; }
 
     /// <summary>
     /// Average log probability score of the candidate.
     /// </summary>
     [JsonPropertyName("avgLogprobs")]
-    public required int AvgLogProbs { get; init; }
+    public required double AvgLogProbs { get; init; }
 
     /// <summary>
     /// Log-likelihood scores for the response tokens and top tokens
     /// </summary>
     [JsonPropertyName("logprobsResult")]
-    public required LogprobsResult LogprobsResult { get; init; }
+    public LogprobsResult? LogprobsResult { get; init; }
 
     /// <summary>
     /// Index of the candidate in the list of response candidates.
