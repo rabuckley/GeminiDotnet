@@ -10,7 +10,17 @@ internal static class ExtensionsAIToGeminiMapper
     public static GenerateContentRequest CreateMappedTextGenerationRequest(
         IList<Microsoft.Extensions.AI.ChatMessage> chatMessages)
     {
-        return new GenerateContentRequest { Contents = chatMessages.Select(CreateGeminiChatMessage).ToList() };
+
+        var systemMessage = chatMessages.FirstOrDefault(m => m.Role == Microsoft.Extensions.AI.ChatRole.System);
+        var contentMessages = chatMessages.Where(m => m.Role == Microsoft.Extensions.AI.ChatRole.User || m.Role == Microsoft.Extensions.AI.ChatRole.Assistant);
+        //var toolMessages = chatMessages.Where(m => m.Role == Microsoft.Extensions.AI.ChatRole.Tool);
+
+        return new GenerateContentRequest 
+        { 
+            SystemInstruction = systemMessage?.Text != null ? new TextOnlyContent { Parts = new TextOnlyPart { Text = systemMessage.Text } } : null,
+            Contents = contentMessages.Select(CreateGeminiChatMessage).ToList(),
+            //Tools = toolMessages.Select(CreateGeminiTool).ToList(),
+        };
 
         static Content CreateGeminiChatMessage(Microsoft.Extensions.AI.ChatMessage chatMessage)
         {
