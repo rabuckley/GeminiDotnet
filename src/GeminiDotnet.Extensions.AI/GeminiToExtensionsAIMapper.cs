@@ -116,8 +116,13 @@ internal static class GeminiToExtensionsAIMapper
         };
     }
 
-    private static Microsoft.Extensions.AI.ChatRole CreateMappedChatRole(string role)
+    private static Microsoft.Extensions.AI.ChatRole CreateMappedChatRole(string? role)
     {
+        if (role is null)
+        {
+            return Microsoft.Extensions.AI.ChatRole.System;
+        }
+
         if (string.Equals(role, "user", StringComparison.OrdinalIgnoreCase))
         {
             return Microsoft.Extensions.AI.ChatRole.User;
@@ -128,7 +133,6 @@ internal static class GeminiToExtensionsAIMapper
             return Microsoft.Extensions.AI.ChatRole.Assistant;
         }
 
-        // role == TextGeneration.ChatRole.System
         // role == TextGeneration.ChatRole.Tool
 
         throw new NotSupportedException($"Unsupported {nameof(ChatRole)}: {role}");

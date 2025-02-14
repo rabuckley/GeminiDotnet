@@ -43,7 +43,7 @@ public sealed record GenerateContentRequest
     /// </summary>
     [JsonPropertyName("systemInstruction")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public TextOnlyContent? SystemInstruction { get; init; }
+    public Content? SystemInstruction { get; init; }
 
     /// <summary>
     /// Configuration options for model generation and outputs.

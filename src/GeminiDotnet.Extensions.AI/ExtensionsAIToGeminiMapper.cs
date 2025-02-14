@@ -10,16 +10,29 @@ internal static class ExtensionsAIToGeminiMapper
     public static GenerateContentRequest CreateMappedTextGenerationRequest(
         IList<Microsoft.Extensions.AI.ChatMessage> chatMessages)
     {
+        List<Content> contents = new(chatMessages.Count);
+        Content? systemInstruction = null;
 
-        var systemMessage = chatMessages.FirstOrDefault(m => m.Role == Microsoft.Extensions.AI.ChatRole.System);
-        var contentMessages = chatMessages.Where(m => m.Role == Microsoft.Extensions.AI.ChatRole.User || m.Role == Microsoft.Extensions.AI.ChatRole.Assistant);
-        //var toolMessages = chatMessages.Where(m => m.Role == Microsoft.Extensions.AI.ChatRole.Tool);
+        foreach (var m in chatMessages)
+        {
+            if (m.Role == Microsoft.Extensions.AI.ChatRole.System)
+            {
+                if (systemInstruction is not null)
+                {
+                    throw new InvalidOperationException("Cannot use multiple system prompts.");
+                }
+
+                systemInstruction = CreateGeminiChatMessage(m);
+                continue;
+            }
+
+            contents.Add(CreateGeminiChatMessage(m));
+        }
 
         return new GenerateContentRequest 
         { 
-            SystemInstruction = systemMessage?.Text != null ? new TextOnlyContent { Parts = new TextOnlyPart { Text = systemMessage.Text } } : null,
-            Contents = contentMessages.Select(CreateGeminiChatMessage).ToList(),
-            //Tools = toolMessages.Select(CreateGeminiTool).ToList(),
+            SystemInstruction = systemInstruction,
+            Contents = contents,
         };
 
         static Content CreateGeminiChatMessage(Microsoft.Extensions.AI.ChatMessage chatMessage)
@@ -31,8 +44,13 @@ internal static class ExtensionsAIToGeminiMapper
             };
         }
 
-        static string CreateGeminiChatRole(Microsoft.Extensions.AI.ChatRole role)
+        static string? CreateGeminiChatRole(Microsoft.Extensions.AI.ChatRole role)
         {
+            if (role == Microsoft.Extensions.AI.ChatRole.System)
+            {
+                return null;
+            }
+
             if (role == Microsoft.Extensions.AI.ChatRole.User)
             {
                 return ChatRoles.User;
