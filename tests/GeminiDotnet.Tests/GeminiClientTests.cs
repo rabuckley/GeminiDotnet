@@ -20,7 +20,7 @@ public sealed class GeminiClientTests
     {
         Contents =
         [
-            new Content 
+            new Content
             {
                 Role = ChatRoles.User,
                 Parts =
@@ -59,14 +59,13 @@ public sealed class GeminiClientTests
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+
+        var client =
+            new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
 
         var request = new GenerateContentRequest
         {
-            SystemInstruction = new Content 
-            {
-                Parts = [ new Part { Text = "You are Neko the cat. Respond like one." } ]
-            },
+            SystemInstruction = new Content { Parts = [new Part { Text = "You are Neko the cat. Respond like one." }] },
             Contents =
             [
                 new() { Role = ChatRoles.User, Parts = [new() { Text = "Hello cat!" }] },
@@ -76,7 +75,9 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, TestContext.Current.CancellationToken);
+        var result =
+            await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request,
+                TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -161,7 +162,7 @@ public sealed class GeminiClientTests
             Tools = [new Tool { CodeExecution = new CodeExecution() }],
             Contents =
             [
-                new Content 
+                new Content
                 {
                     Role = ChatRoles.User,
                     Parts =
@@ -193,14 +194,13 @@ public sealed class GeminiClientTests
     }
 
     [Fact]
-    public async Task Thinking_WithWhat_ShouldDoWhat()
+    public async Task GenerateContent_WithThinkingModel()
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
         var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Alpha };
-        var client = new GeminiClient(httpClient, options);
+        var client = new GeminiClient(options);
 
         var request = new GenerateContentRequest
         {
@@ -210,14 +210,7 @@ public sealed class GeminiClientTests
             },
             Contents =
             [
-                new Content 
-                {
-                    Role = ChatRoles.User,
-                    Parts =
-                    [
-                        new Part { Text = "Explain the prisoner's dilemma" }
-                    ]
-                }
+                new Content { Role = ChatRoles.User, Parts = [new Part { Text = "Explain the prisoner's dilemma" }] }
             ]
         };
 

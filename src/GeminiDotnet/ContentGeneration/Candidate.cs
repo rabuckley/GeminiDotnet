@@ -55,7 +55,7 @@ public sealed record Candidate
     /// Average log probability score of the candidate.
     /// </summary>
     [JsonPropertyName("avgLogprobs")]
-    public required double AvgLogProbs { get; init; }
+    public double? AverageLogProbability { get; init; }
 
     /// <summary>
     /// Log-likelihood scores for the response tokens and top tokens
