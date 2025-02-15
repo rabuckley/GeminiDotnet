@@ -4,7 +4,7 @@
         <IsAotCompatible>true</IsAotCompatible>
         <IsPackable>true</IsPackable>
         <PackageId>GeminiDotnet</PackageId>
-        <Version>0.3.0</Version>
+        <Version>0.4.0</Version>
         <Authors>Ryan Buckley</Authors>
         <PackageTags>AI, Gemini</PackageTags>
         <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
