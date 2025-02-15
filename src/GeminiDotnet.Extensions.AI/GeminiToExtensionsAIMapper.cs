@@ -51,25 +51,25 @@ internal static class GeminiToExtensionsAIMapper
         }
 
         throw new NotSupportedException($"Unsupported {nameof(Part)} type: {messagePart.GetType()}");
-    }
 
-    private static DataContent CreateMappedDataContent(Part part)
-    {
-        Debug.Assert(part.InlineData is not null);
 
-        var inlineData = part.InlineData;
-
-        return new DataContent(inlineData.Data, inlineData.MimeType)
+        static DataContent CreateMappedDataContent(Part part)
         {
-            RawRepresentation = part.InlineData,
-            AdditionalProperties = null
-        };
-    }
+            Debug.Assert(part.InlineData is not null);
 
-    private static TextContent CreateMappedTextContent(Part part)
-    {
-        Debug.Assert(part.Text is not null);
-        return new TextContent(part.Text) { RawRepresentation = part.Text, AdditionalProperties = null };
+            var inlineData = part.InlineData;
+
+            return new DataContent(inlineData.Data, inlineData.MimeType)
+            {
+                RawRepresentation = part.InlineData, AdditionalProperties = null
+            };
+        }
+
+        static TextContent CreateMappedTextContent(Part part)
+        {
+            Debug.Assert(part.Text is not null);
+            return new TextContent(part.Text) { RawRepresentation = part.Text, AdditionalProperties = null };
+        }
     }
 
     public static ChatCompletion CreateMappedChatCompletion(GenerateContentResponse response, DateTimeOffset createdAt)
@@ -104,9 +104,9 @@ internal static class GeminiToExtensionsAIMapper
         };
     }
 
-    private static Microsoft.Extensions.AI.ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
+    private static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
     {
-        return new Microsoft.Extensions.AI.ChatMessage
+        return new ChatMessage
         {
             AuthorName = null,
             Role = CreateMappedChatRole(candidateResponse.Content.Role),
@@ -116,21 +116,21 @@ internal static class GeminiToExtensionsAIMapper
         };
     }
 
-    private static Microsoft.Extensions.AI.ChatRole CreateMappedChatRole(string? role)
+    private static ChatRole CreateMappedChatRole(string? role)
     {
         if (role is null)
         {
-            return Microsoft.Extensions.AI.ChatRole.System;
+            return ChatRole.System;
         }
 
         if (string.Equals(role, "user", StringComparison.OrdinalIgnoreCase))
         {
-            return Microsoft.Extensions.AI.ChatRole.User;
+            return ChatRole.User;
         }
 
         if (string.Equals(role, "model", StringComparison.OrdinalIgnoreCase))
         {
-            return Microsoft.Extensions.AI.ChatRole.Assistant;
+            return ChatRole.Assistant;
         }
 
         // role == TextGeneration.ChatRole.Tool
