@@ -54,6 +54,37 @@ public sealed class GeminiClientTests
         Assert.Contains("Armstrong", resultText, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task GenerateContent_WithSystemInstruction_ShouldGetResults()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+
+        var request = new GenerateContentRequest
+        {
+            SystemInstruction = new Content 
+            {
+                Parts = [ new Part { Text = "You are Neko the cat. Respond like one." } ]
+            },
+            Contents =
+            [
+                new() { Role = ChatRoles.User, Parts = [new() { Text = "Hello cat!" }] },
+                new() { Role = ChatRoles.Model, Parts = [new() { Text = "Meow!" }] },
+                new() { Role = ChatRoles.User, Parts = [new() { Text = "What is your name? What do like to drink?" }] },
+            ]
+        };
+
+        // Act
+        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.NotNull(result);
+        var candidate = Assert.Single(result.Candidates);
+        var choice = Assert.Single(candidate.Content.Parts);
+        Assert.Contains("Neko", choice.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [MemberData(nameof(StableModels))]
     public async Task GenerateContentStreamingAsync_WithValidRequest_ShouldStreamResults(string model)

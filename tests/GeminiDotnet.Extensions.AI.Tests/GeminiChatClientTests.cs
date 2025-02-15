@@ -16,6 +16,33 @@ public sealed class GeminiChatClientTests
         _apiKey = TestConfiguration.GetApiKey();
     }
 
+    [Fact]
+    public async Task CompleteAsync_WithSystemRole()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+        var chatClient = new GeminiChatClient(client);
+
+        List<ChatMessage> messages =
+        [
+            new() { Role = ChatRole.System, Text = "You are Neko the cat. Respond like one." },
+            new() { Role = ChatRole.User, Text = "Hello cat!" },
+            new() { Role = ChatRole.Assistant, Text = "Meow!" },
+            new() { Role = ChatRole.User, Text = "What is your name? What do like to drink?" }
+        ];
+
+        var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash };
+
+        // Act
+        var result = await chatClient.CompleteAsync(messages, chatOptions, cancellationToken);
+
+        // Assert
+        Assert.NotNull(result);
+        var choice = Assert.Single(result.Choices);
+        Assert.Contains("Neko", choice.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [MemberData(nameof(StableModels))]
     public async Task CompleteAsyncTest(string model)
