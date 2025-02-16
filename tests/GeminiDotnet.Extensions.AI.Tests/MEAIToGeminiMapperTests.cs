@@ -4,6 +4,7 @@ using Newtonsoft.Json.Schema;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -99,15 +100,15 @@ public sealed class MEAIToGeminiMapperTests
             new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
         };
 
-        var schema = JsonDocument.Parse(
-            """
+        var schema = AIJsonUtilities.CreateJsonSchema(typeof(TestObject),
+            inferenceOptions: new AIJsonSchemaCreateOptions
             {
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" }
-                }
-            }   
-            """).RootElement;
+                TransformSchemaNode = null,
+                IncludeTypeInEnumSchemas = false,
+                DisallowAdditionalProperties = true,
+                IncludeSchemaKeyword = false,
+                RequireAllProperties = false,
+            });
 
         var options = new ChatOptions { ResponseFormat = ChatResponseFormat.ForJsonSchema(schema) };
 
@@ -116,7 +117,10 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.Equal(MediaTypeNames.Application.Json, request.GenerationConfiguration?.ResponseMimeType);
+
         var actual = Assert.IsType<ObjectSchema>(request.GenerationConfiguration?.ResponseSchema);
+        Assert.NotNull(actual.RequiredProperties);
+        Assert.Contains("name", actual.RequiredProperties);
 
         if (actual.Properties?.TryGetValue("name", out var name) is not true)
         {
@@ -124,6 +128,13 @@ public sealed class MEAIToGeminiMapperTests
             return;
         }
 
-        _ = Assert.IsType<StringSchema>(name);
+        var nameSchema = Assert.IsType<StringSchema>(name);
+        Assert.Null(nameSchema.Nullable);
+    }
+
+    private sealed record TestObject
+    {
+        [JsonPropertyName("name")]
+        public required string Name { get; init; }
     }
 }
