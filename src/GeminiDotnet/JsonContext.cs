@@ -12,4 +12,5 @@ namespace GeminiDotnet;
 [JsonSerializable(typeof(GenerateContentResponse))]
 [JsonSerializable(typeof(EmbeddingRequest))]
 [JsonSerializable(typeof(EmbeddingResponse))]
+[JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class JsonContext : JsonSerializerContext;

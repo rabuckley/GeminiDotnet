@@ -1,6 +1,7 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
+using System.Diagnostics.CodeAnalysis;
 using MEAI = Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
@@ -18,7 +19,13 @@ internal static class ExtensionsAIToGeminiMapper
             {
                 if (systemInstruction is not null)
                 {
-                    throw new InvalidOperationException("Cannot use multiple system prompts.");
+                    GeminiMappingException.Throw(
+                        fromPropertyName: $"{typeof(MEAI.ChatRole)}.{nameof(MEAI.ChatRole.System)}",
+                        toPropertyName:
+                        $"{typeof(GenerateContentRequest)}.{nameof(GenerateContentRequest.SystemInstruction)}",
+                        reason: "Cannot use multiple system instructions");
+
+                    return null!; // unreachable
                 }
 
                 systemInstruction = CreateMappedContent(m);
@@ -56,7 +63,12 @@ internal static class ExtensionsAIToGeminiMapper
                 return ChatRoles.Model;
             }
 
-            throw new NotSupportedException($"Unsupported {nameof(MEAI.ChatRole)}: {role}");
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{typeof(MEAI.ChatMessage)}.{nameof(MEAI.ChatMessage.Role)}",
+                toPropertyName: $"{typeof(Content)}.{nameof(Content.Role)}",
+                reason: $"Unsupported {typeof(MEAI.ChatRole)}: '{role}'");
+
+            return null!; // unreachable
         }
 
         static Part CreateMappedPart(MEAI.AIContent content)
@@ -67,55 +79,75 @@ internal static class ExtensionsAIToGeminiMapper
                 MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
                 MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
                 MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
-                _ => throw new NotSupportedException($"Unsupported {nameof(MEAI.AIContent)} type: {content.GetType()}")
+                _ => ThrowUnsupportedContentException(content),
             };
-        }
 
-        static Part CreateTextPart(MEAI.TextContent textContent)
-        {
-            return new Part { Text = textContent.Text };
-        }
-
-        static Part CreateInlineDataPart(MEAI.DataContent dataContent)
-        {
-            if (dataContent.Data is null)
+            [DoesNotReturn]
+            static Part ThrowUnsupportedContentException(MEAI.AIContent content)
             {
-                throw new InvalidOperationException(
-                    $"{nameof(MEAI.DataContent.Data)} cannot be null when creating an {nameof(Blob)}");
+                GeminiMappingException.Throw(
+                    fromPropertyName: content.GetType().ToString(),
+                    toPropertyName: $"{typeof(Part)}",
+                    reason: $"Unsupported {typeof(MEAI.AIContent)} type: {content.GetType()}");
+
+                return null!; // unreachable
             }
 
-            if (dataContent.MediaType is null)
+            static Part CreateTextPart(MEAI.TextContent textContent)
             {
-                throw new InvalidOperationException(
-                    $"{nameof(MEAI.DataContent.MediaType)} cannot be null when creating an {nameof(Blob)}");
+                return new Part { Text = textContent.Text };
             }
 
-            return new Part
+            static Part CreateInlineDataPart(MEAI.DataContent dataContent)
             {
-                InlineData = new Blob { Data = dataContent.Data.Value, MimeType = dataContent.MediaType }
-            };
-        }
-
-        static Part CreateFunctionCallPart(MEAI.FunctionCallContent functionCall)
-        {
-            return new Part
-            {
-                FunctionCall = new FunctionCall
+                if (dataContent.Data is null)
                 {
-                    Id = functionCall.CallId, Name = functionCall.Name, Arguments = functionCall.Arguments,
+                    GeminiMappingException.Throw(
+                        fromPropertyName: $"{typeof(MEAI.DataContent)}.{nameof(MEAI.DataContent.Data)}",
+                        toPropertyName: $"{typeof(Part)}.{nameof(Part.InlineData)}",
+                        reason:
+                        $"{nameof(MEAI.DataContent.Data)} cannot be null when creating an {nameof(Part.InlineData)} part.");
                 }
-            };
-        }
 
-        static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
-        {
-            return new Part
-            {
-                FunctionResponse = new FunctionResponse
+                if (dataContent.MediaType is null)
                 {
-                    Name = functionResult.Name, Response = functionResult.Result!.ToString()!
+                    GeminiMappingException.Throw(
+                        fromPropertyName: $"{typeof(MEAI.DataContent)}.{nameof(MEAI.DataContent.MediaType)}",
+                        toPropertyName: $"{typeof(Part)}.{nameof(Part.InlineData)}",
+                        reason:
+                        $"{nameof(MEAI.DataContent.MediaType)} cannot be null when creating an {nameof(Part.InlineData)} part.");
                 }
-            };
+
+                return new Part
+                {
+                    InlineData = new Blob { Data = dataContent.Data.Value, MimeType = dataContent.MediaType }
+                };
+            }
+
+            static Part CreateFunctionCallPart(MEAI.FunctionCallContent functionCall)
+            {
+                return new Part
+                {
+                    FunctionCall = new FunctionCall
+                    {
+                        Id = functionCall.CallId,
+                        Name = functionCall.Name,
+                        Arguments = functionCall.Arguments,
+                    }
+                };
+            }
+
+            static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
+            {
+                return new Part
+                {
+                    FunctionResponse = new FunctionResponse
+                    {
+                        Name = functionResult.Name,
+                        Response = functionResult.Result!.ToString()!
+                    }
+                };
+            }
         }
     }
 

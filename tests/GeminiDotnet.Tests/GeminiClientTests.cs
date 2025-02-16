@@ -1,6 +1,7 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
+using System.Net;
 using System.Text;
 
 namespace GeminiDotnet;
@@ -232,6 +233,29 @@ public sealed class GeminiClientTests
 
         // Assert
         Assert.Contains("prisoner", resultText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GenerateContentAsync_WithBadRequest_ShouldThrowGeminiClientException()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1 };
+        var client = new GeminiClient(options);
+
+        var request = new GenerateContentRequest
+        {
+            Contents = [new Content { Role = "Fred", Parts = [new Part { Text = "What is the meaning of life?" }] }]
+        };
+
+        // Act
+        async Task Act() => await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+
+        // Assert
+        var ex = await Assert.ThrowsAsync<GeminiClientException>(Act);
+        Assert.Equal(HttpStatusCode.BadRequest, ex.Response.StatusCode);
+        Assert.Equal("INVALID_ARGUMENT", ex.Response.Status);
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()

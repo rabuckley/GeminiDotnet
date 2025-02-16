@@ -58,6 +58,18 @@ public sealed class GeminiClient
         var response = await _httpClient
             .PostAsJsonAsync(uri, request, requestJsonInfo, cancellationToken: cancellationToken).ConfigureAwait(false);
 
+        if ((int)response.StatusCode is >= 400 and < 500)
+        {
+            var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
+
+            var errorResponse = await response.Content.ReadFromJsonAsync(
+                errorResponseTypeInfo,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            GeminiClientException.Throw(errorResponse!.Error);
+            return null!; // unreachable
+        }
+
         response.EnsureSuccessStatusCode();
 
         var responseJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
@@ -66,7 +78,7 @@ public sealed class GeminiClient
             .ReadFromJsonAsync(responseJsonInfo, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        return responseJson ?? throw new InvalidOperationException("Response body was null.");
+        return responseJson!;
     }
 
     // ```
@@ -109,7 +121,7 @@ public sealed class GeminiClient
     {
         var typeInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
         var response = JsonSerializer.Deserialize(data, typeInfo);
-        return response ?? throw new InvalidOperationException("SSE response body was null.");
+        return response!;
     }
 
     // ```
@@ -147,6 +159,6 @@ public sealed class GeminiClient
             .ReadFromJsonAsync(responseJsonInfo, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        return responseJson ?? throw new InvalidOperationException("Response body was null.");
+        return responseJson!;
     }
 }
