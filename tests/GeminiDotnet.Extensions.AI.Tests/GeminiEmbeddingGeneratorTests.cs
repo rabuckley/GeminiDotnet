@@ -1,7 +1,9 @@
+using GeminiDotnet.Testing;
 using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
 
+[IntegrationTest]
 public sealed class GeminiEmbeddingGeneratorTests
 {
     private readonly ITestOutputHelper _output;
