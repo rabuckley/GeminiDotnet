@@ -25,6 +25,7 @@ public sealed class GenerateContentResponseTests
     {
         yield return PythonCodeExecutionExampleResponse;
         yield return CodeExExample2;
+        yield return JsonSchemaOutputExample;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
@@ -119,4 +120,54 @@ public sealed class GenerateContentResponseTests
         }
         """;
 
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string JsonSchemaOutputExample =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "{ \"name\": \"Ryan\", \"age\": 42 }"
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "MAX_TOKENS",
+              "citationMetadata": {
+                "citationSources": [
+                  {
+                    "startIndex": 257,
+                    "endIndex": 23567
+                  },
+                  {
+                    "startIndex": 23578,
+                    "endIndex": 24592
+                  }
+                ]
+              },
+              "avgLogprobs": -0.022648460378868095
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 12,
+            "candidatesTokenCount": 8190,
+            "totalTokenCount": 8202,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 12
+              }
+            ],
+            "candidatesTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 8190
+              }
+            ]
+          },
+          "modelVersion": "gemini-2.0-flash"
+        }
+        """;
 }

@@ -1,8 +1,10 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration;
 
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = TypePropertyName)]
 [JsonDerivedType(typeof(StringSchema), "STRING")]
 [JsonDerivedType(typeof(NumberSchema), "NUMBER")]
 [JsonDerivedType(typeof(IntegerSchema), "INTEGER")]
@@ -11,10 +13,18 @@ namespace GeminiDotnet.ContentGeneration;
 [JsonDerivedType(typeof(ObjectSchema), "OBJECT")]
 public abstract record Schema
 {
+    private const string TypePropertyName = "type";
+
+    private const string FormatPropertyName = "format";
+
+    private const string DescriptionPropertyName = "description";
+
+    private const string NullablePropertyName = "nullable";
+
     /// <summary>
     /// The format of the data. This is used only for primitive datatypes.
     /// </summary>
-    [JsonPropertyName("format")]
+    [JsonPropertyName(FormatPropertyName)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Format { get; init; }
 
@@ -22,71 +32,137 @@ public abstract record Schema
     /// A brief description of the parameter. This could contain examples of use. Parameter description may be
     /// formatted as Markdown.
     /// </summary>
-    [JsonPropertyName("description")]
+    [JsonPropertyName(DescriptionPropertyName)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Description { get; init; }
 
     /// <summary>
     /// Indicates if the value may be null.
     /// </summary>
-    [JsonPropertyName("nullable")]
+    [JsonPropertyName(NullablePropertyName)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Nullable { get; init; }
-}
-
-public sealed record StringSchema : Schema
-{
-    /// <summary>
-    /// Possible values of the element of type <c>STRING</c> with enum format.
-    /// </summary>
-    [JsonPropertyName("enumValues")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IEnumerable<string>? EnumValues { get; init; }
-}
-
-public sealed record NumberSchema : Schema;
-
-public sealed record IntegerSchema : Schema;
-
-public sealed record BooleanSchema : Schema;
-
-public sealed record ArraySchema : Schema
-{
-    /// <summary>
-    /// Maximum number of the elements
-    /// </summary>
-    [JsonPropertyName("maxItems")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? MaxItems { get; init; }
 
     /// <summary>
-    /// Minimum number of the elements
+    /// Creates a <see cref="Schema"/> from the specified <paramref name="node" />
     /// </summary>
-    [JsonPropertyName("minItems")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? MinItems { get; init; }
+    /// <param name="node">The JSON node to create the schema from.</param>
+    /// <returns>A <see cref="Schema"/> instance representing the supplied <param name="node" />.</returns>
+    /// <exception cref="JsonException">Thrown if the <paramref name="node" /> cannot be converted to a <see cref="Schema" />.</exception>
+    public static Schema FromJsonNode(JsonNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        return FromJsonElement(node.Deserialize(JsonContext.Default.JsonElement));
+    }
 
     /// <summary>
-    /// Schema of the elements.
+    /// Creates a <see cref="Schema"/> from the specified <paramref name="element" />
     /// </summary>
-    [JsonPropertyName("items")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public Schema? Items { get; init; }
-}
+    /// <param name="element">The JSON element to create the schema from.</param>
+    /// <returns>A <see cref="Schema"/> instance representing the supplied <param name="element" />.</returns>
+    /// <exception cref="JsonException">Thrown if the <paramref name="element" /> cannot be converted to a <see cref="Schema" />.</exception>
+    public static Schema FromJsonElement(JsonElement element)
+    {
+        var typeProperty = element.GetProperty(TypePropertyName);
+        bool? isNullable = null;
+        string? type = null;
 
-public sealed record ObjectSchema : Schema
-{
-    /// <summary>
-    /// Properties of the object.
-    /// </summary>
-    [JsonPropertyName("properties")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IDictionary<string, Schema>? Properties { get; init; }
+        if (typeProperty.ValueKind == JsonValueKind.String)
+        {
+            type = typeProperty.GetString();
+        }
+        else if (typeProperty.ValueKind == JsonValueKind.Array)
+        {
+            // System.Text.Json outputs a list of types as an array of strings, including `null` when the type is
+            // nullable (not necessarily because it is _actually_ marked as such in C#).
+            //
+            // Gemini API expects a single type (as per OpenAPI spec) but accepts a `nullable` property, so we can do
+            // some mapping here.
+            foreach (var item in typeProperty.EnumerateArray())
+            {
+                if (item.GetString() == "null")
+                {
+                    isNullable = true;
+                    continue;
+                }
 
-    /// <summary>
-    /// Required properties of the object.
-    /// </summary>
-    [JsonPropertyName("required")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IEnumerable<string>? RequiredProperties { get; init; }
+                if (type is not null)
+                {
+                    throw new JsonException(
+                        $"Cannot choose \"best\" '{TypePropertyName}' from options '{type}' and '{item.GetString()}'. Provide a single '{TypePropertyName}'.");
+                }
+
+                type = item.GetString() ?? throw new JsonException("Type property must be a string");
+            }
+        }
+        else
+        {
+            throw new JsonException($"The '{TypePropertyName}' property must be a string or an array of strings");
+        }
+
+        if (type is null)
+        {
+            throw new JsonException($"The '{TypePropertyName}' property must be specified");
+        }
+
+        var schemaInfo = SchemaInfo.FromJsonElement(element, isNullable);
+
+        if (string.Equals(type, "STRING", StringComparison.OrdinalIgnoreCase))
+        {
+            return StringSchema.Create(element, schemaInfo);
+        }
+
+        if (string.Equals(type, "NUMBER", StringComparison.OrdinalIgnoreCase))
+        {
+            return NumberSchema.Create(schemaInfo);
+        }
+
+        if (string.Equals(type, "INTEGER", StringComparison.OrdinalIgnoreCase))
+        {
+            return IntegerSchema.Create(schemaInfo);
+        }
+
+        if (string.Equals(type, "BOOLEAN", StringComparison.OrdinalIgnoreCase))
+        {
+            return BooleanSchema.Create(schemaInfo);
+        }
+
+        if (string.Equals(type, "ARRAY", StringComparison.OrdinalIgnoreCase))
+        {
+            return ArraySchema.Create(element, schemaInfo);
+        }
+
+        if (string.Equals(type, "OBJECT", StringComparison.OrdinalIgnoreCase))
+        {
+            return ObjectSchema.Create(element, schemaInfo);
+        }
+
+        throw new JsonException($"Invalid schema {TypePropertyName}: '{type}'");
+    }
+
+    internal readonly record struct SchemaInfo
+    {
+        public string? Format { get; private init; }
+
+        public string? Description { get; private init; }
+
+        public bool? Nullable { get; private init; }
+
+        public static SchemaInfo FromJsonElement(JsonElement element, bool? isNullable = null)
+        {
+            return new SchemaInfo
+            {
+                Format = element.TryGetProperty(FormatPropertyName, out var format)
+                    ? format.GetString()
+                    : null,
+                Description = element.TryGetProperty(DescriptionPropertyName, out var description)
+                    ? description.GetString()
+                    : null,
+                Nullable = isNullable
+                    ?? (element.TryGetProperty(NullablePropertyName, out var nullable)
+                        ? nullable.GetBoolean()
+                        : null)
+            };
+        }
+    }
 }

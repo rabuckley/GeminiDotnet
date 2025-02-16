@@ -79,7 +79,7 @@ public sealed record GenerationConfiguration
     /// Seed used in decoding. If not set, the request uses a randomly generated seed.
     /// </summary>
     [JsonPropertyName("seed")]
-    public int? Seed { get; init; }
+    public long? Seed { get; init; }
 
     /// <summary>
     /// Presence penalty applied to the next token's logprobs if the token has already been seen in the response.

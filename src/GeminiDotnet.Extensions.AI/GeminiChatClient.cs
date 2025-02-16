@@ -60,7 +60,7 @@ public sealed class GeminiChatClient : IChatClient
             throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
         }
 
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
         var response = await _client.GenerateContentAsync(options.ModelId, request, cancellationToken);
         return GeminiToMEAIMapper.CreateMappedChatCompletion(response, _timeProvider.GetUtcNow());
     }
@@ -78,7 +78,7 @@ public sealed class GeminiChatClient : IChatClient
             throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
         }
 
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
 
         await foreach (var response in _client.GenerateContentStreamingAsync(options.ModelId, request, cancellationToken))
         {

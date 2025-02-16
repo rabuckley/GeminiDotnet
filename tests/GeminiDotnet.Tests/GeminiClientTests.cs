@@ -3,7 +3,9 @@ using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
 using GeminiDotnet.Testing;
 using System.Net;
+using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
 
 namespace GeminiDotnet;
 
@@ -78,9 +80,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result =
-            await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request,
-                TestContext.Current.CancellationToken);
+        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -258,6 +258,47 @@ public sealed class GeminiClientTests
         var ex = await Assert.ThrowsAsync<GeminiClientException>(Act);
         Assert.Equal(HttpStatusCode.BadRequest, ex.Response.StatusCode);
         Assert.Equal("INVALID_ARGUMENT", ex.Response.Status);
+    }
+
+    [Fact]
+    public async Task GenerateContentAsync_WithSimpleIntegerSchema_ShouldUseSchema()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var client = new GeminiClient(options);
+
+        var integerSchema = JsonDocument.Parse(
+            """
+            {"type":"integer"}
+            """
+        ).RootElement;
+
+        var request = new GenerateContentRequest
+        {
+            GenerationConfiguration = new GenerationConfiguration
+            {
+                ResponseMimeType = MediaTypeNames.Application.Json,
+                ResponseSchema = Schema.FromJsonElement(integerSchema)
+            },
+            Contents =
+            [
+                new Content
+                {
+                    Role = ChatRoles.User, Parts = [new Part { Text = "Give a random number between 0 and 100" }]
+                }
+            ]
+        };
+
+        // Act
+        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+
+        // Assert
+        Assert.NotNull(result);
+        var candidate = Assert.Single(result.Candidates);
+        var choice = Assert.Single(candidate.Content.Parts);
+        Assert.True(int.TryParse(choice.Text, out var integer));
+        Assert.InRange(integer, 0, 100);
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()

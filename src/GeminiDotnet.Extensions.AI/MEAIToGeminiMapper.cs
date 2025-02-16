@@ -2,13 +2,17 @@ using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Mime;
+using System.Text.Json;
 using MEAI = Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
 
 internal static class MEAIToGeminiMapper
 {
-    public static GenerateContentRequest CreateMappedGenerateContentRequest(IList<MEAI.ChatMessage> chatMessages)
+    public static GenerateContentRequest CreateMappedGenerateContentRequest(
+        IList<MEAI.ChatMessage> chatMessages,
+        MEAI.ChatOptions options)
     {
         List<Content> contents = new(chatMessages.Count);
         Content? systemInstruction = null;
@@ -35,7 +39,73 @@ internal static class MEAIToGeminiMapper
             contents.Add(CreateMappedContent(m));
         }
 
-        return new GenerateContentRequest { SystemInstruction = systemInstruction, Contents = contents, };
+        return new GenerateContentRequest
+        {
+            SystemInstruction = systemInstruction,
+            GenerationConfiguration = CreateMappedGenerationConfiguration(options),
+            CachedContent = null,
+            Contents = contents,
+            Tools = CreateMappedTools(options.Tools),
+            ToolConfiguration = null,
+            SafetySettings = null,
+        };
+
+        static IEnumerable<Tool>? CreateMappedTools(IList<MEAI.AITool>? tools)
+        {
+            // TODO-TOOLS
+            return null;
+        }
+
+        static GenerationConfiguration? CreateMappedGenerationConfiguration(MEAI.ChatOptions options)
+        {
+            var configuration = new GenerationConfiguration
+            {
+                StopSequences = options.StopSequences,
+                ResponseMimeType = CreateMappedResponseMimeType(options.ResponseFormat),
+                ResponseSchema = CreateMappedResponseSchema(options.ResponseFormat),
+                ResponseModalities = null,
+                CandidateCount = null,
+                MaxOutputTokens = options.MaxOutputTokens,
+                Temperature = options.Temperature,
+                TopP = options.TopP,
+                TopK = options.TopK,
+                Seed = options.Seed,
+                PresencePenalty = options.PresencePenalty,
+                FrequencyPenalty = options.FrequencyPenalty,
+                ResponseLogprobs = null,
+                Logprobs = null,
+                EnableEnhancedCivicAnswers = null,
+                SpeechConfiguration = null,
+                ThinkingConfiguration = null,
+            };
+
+            return configuration;
+        }
+
+        static Schema? CreateMappedResponseSchema(MEAI.ChatResponseFormat? responseFormat)
+        {
+            if (responseFormat is null)
+            {
+                return null;
+            }
+
+            if (responseFormat is MEAI.ChatResponseFormatJson { Schema: JsonElement schema })
+            {
+                return Schema.FromJsonElement(schema);
+            }
+
+            if (responseFormat is MEAI.ChatResponseFormatText)
+            {
+                return null;
+            }
+
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{typeof(MEAI.ChatOptions)}.{nameof(MEAI.ChatOptions.ResponseFormat)}",
+                toPropertyName: $"{typeof(GenerationConfiguration)}.{nameof(GenerationConfiguration.ResponseSchema)}",
+                reason: $"Unsupported {typeof(MEAI.ChatResponseFormat)}: '{responseFormat}'");
+
+            return null!; // unreachable
+        }
 
         static Content CreateMappedContent(MEAI.ChatMessage chatMessage)
         {
@@ -130,9 +200,7 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionCall = new FunctionCall
                     {
-                        Id = functionCall.CallId,
-                        Name = functionCall.Name,
-                        Arguments = functionCall.Arguments,
+                        Id = functionCall.CallId, Name = functionCall.Name, Arguments = functionCall.Arguments,
                     }
                 };
             }
@@ -143,11 +211,15 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionResponse = new FunctionResponse
                     {
-                        Name = functionResult.Name,
-                        Response = functionResult.Result!.ToString()!
+                        Name = functionResult.Name, Response = functionResult.Result!.ToString()!
                     }
                 };
             }
+        }
+
+        static string? CreateMappedResponseMimeType(MEAI.ChatResponseFormat? responseFormat)
+        {
+            return responseFormat is MEAI.ChatResponseFormatJson ? MediaTypeNames.Application.Json : null;
         }
     }
 

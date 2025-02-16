@@ -1,5 +1,9 @@
 ﻿using GeminiDotnet.ContentGeneration;
 using Microsoft.Extensions.AI;
+using Newtonsoft.Json.Schema;
+using System.Net.Mime;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -18,7 +22,7 @@ public sealed class MEAIToGeminiMapperTests
         ];
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, new ChatOptions());
 
         // Assert
         Assert.NotNull(request);
@@ -44,5 +48,82 @@ public sealed class MEAIToGeminiMapperTests
                 Assert.Equal(ChatRoles.Model, content.Role);
             }
         }
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithChatOptions_ShouldMapOptions()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+        };
+
+        var options = new ChatOptions
+        {
+            Temperature = 0.42f,
+            MaxOutputTokens = 1234,
+            TopP = 42,
+            TopK = 24,
+            FrequencyPenalty = 12,
+            PresencePenalty = 254,
+            Seed = 3,
+            ResponseFormat = null,
+            ModelId = null,
+            StopSequences = ["please_stop!"],
+            ToolMode = ChatToolMode.Auto,
+            Tools = null,
+            AdditionalProperties = null,
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.Equal(options.Temperature, request.GenerationConfiguration?.Temperature);
+        Assert.Equal(options.MaxOutputTokens, request.GenerationConfiguration?.MaxOutputTokens);
+        Assert.Equal(options.TopP, request.GenerationConfiguration?.TopP);
+        Assert.Equal(options.TopK, request.GenerationConfiguration?.TopK);
+        Assert.Equal(options.FrequencyPenalty, request.GenerationConfiguration?.FrequencyPenalty);
+        Assert.Equal(options.PresencePenalty, request.GenerationConfiguration?.PresencePenalty);
+        Assert.Equal(options.Seed, request.GenerationConfiguration?.Seed);
+        Assert.Equal(options.StopSequences, request.GenerationConfiguration?.StopSequences);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithJsonSchema_ShouldMapSchema()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+        };
+
+        var schema = JsonDocument.Parse(
+            """
+            {
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" }
+                }
+            }   
+            """).RootElement;
+
+        var options = new ChatOptions { ResponseFormat = ChatResponseFormat.ForJsonSchema(schema) };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.Equal(MediaTypeNames.Application.Json, request.GenerationConfiguration?.ResponseMimeType);
+        var actual = Assert.IsType<ObjectSchema>(request.GenerationConfiguration?.ResponseSchema);
+
+        if (actual.Properties?.TryGetValue("name", out var name) is not true)
+        {
+            Assert.Fail("Expected 'name' property in schema.");
+            return;
+        }
+
+        _ = Assert.IsType<StringSchema>(name);
     }
 }
