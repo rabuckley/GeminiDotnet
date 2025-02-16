@@ -6,7 +6,9 @@ public sealed record NumberSchema : Schema
     {
         return new NumberSchema
         {
-            Format = schemaInfo.Format, Description = schemaInfo.Description, Nullable = schemaInfo.Nullable,
+            Format = schemaInfo.Format,
+            Description = schemaInfo.Description,
+            Nullable = schemaInfo.Nullable,
         };
     }
 }

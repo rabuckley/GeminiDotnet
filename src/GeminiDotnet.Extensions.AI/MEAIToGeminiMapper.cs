@@ -200,7 +200,9 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionCall = new FunctionCall
                     {
-                        Id = functionCall.CallId, Name = functionCall.Name, Arguments = functionCall.Arguments,
+                        Id = functionCall.CallId,
+                        Name = functionCall.Name,
+                        Arguments = functionCall.Arguments,
                     }
                 };
             }
@@ -211,7 +213,8 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionResponse = new FunctionResponse
                     {
-                        Name = functionResult.Name, Response = functionResult.Result!.ToString()!
+                        Name = functionResult.Name,
+                        Response = functionResult.Result!.ToString()!
                     }
                 };
             }

@@ -6,7 +6,9 @@ public sealed record BooleanSchema : Schema
     {
         return new BooleanSchema
         {
-            Format = schemaInfo.Format, Description = schemaInfo.Description, Nullable = schemaInfo.Nullable,
+            Format = schemaInfo.Format,
+            Description = schemaInfo.Description,
+            Nullable = schemaInfo.Nullable,
         };
     }
 }

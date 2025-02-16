@@ -91,7 +91,8 @@ internal static class GeminiToMEAIMapper
 
             return new DataContent(inlineData.Data, inlineData.MimeType)
             {
-                RawRepresentation = part.InlineData, AdditionalProperties = null
+                RawRepresentation = part.InlineData,
+                AdditionalProperties = null
             };
         }
 

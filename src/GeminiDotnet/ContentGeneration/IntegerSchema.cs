@@ -6,7 +6,9 @@ public sealed record IntegerSchema : Schema
     {
         return new IntegerSchema
         {
-            Format = schemaInfo.Format, Description = schemaInfo.Description, Nullable = schemaInfo.Nullable,
+            Format = schemaInfo.Format,
+            Description = schemaInfo.Description,
+            Nullable = schemaInfo.Nullable,
         };
     }
 }
