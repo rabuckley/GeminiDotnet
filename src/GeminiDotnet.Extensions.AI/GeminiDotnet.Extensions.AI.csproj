@@ -4,7 +4,7 @@
         <IsAotCompatible>true</IsAotCompatible>
         <IsPackable>true</IsPackable>
         <PackageId>GeminiDotnet.Extensions.AI</PackageId>
-        <Version>0.4.0-preview</Version>
+        <Version>0.4.1-preview</Version>
         <Authors>Ryan Buckley</Authors>
         <PackageTags>AI, Gemini</PackageTags>
         <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
