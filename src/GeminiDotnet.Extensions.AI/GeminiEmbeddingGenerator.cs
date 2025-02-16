@@ -41,9 +41,9 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
             throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
         }
 
-        var request = ExtensionsAIToGeminiMapper.CreateMappedEmbeddingRequest(values);
+        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(values);
         var response = await _client.EmbedContentAsync(options.ModelId, request, cancellationToken).ConfigureAwait(false);
-        return GeminiToExtensionsAIMapper.CreateMappedGeneratedEmbeddings(response);
+        return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(response);
     }
 
 

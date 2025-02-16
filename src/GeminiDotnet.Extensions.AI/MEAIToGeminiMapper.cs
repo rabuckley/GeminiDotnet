@@ -6,9 +6,9 @@ using MEAI = Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
 
-internal static class ExtensionsAIToGeminiMapper
+internal static class MEAIToGeminiMapper
 {
-    public static GenerateContentRequest CreateMappedTextGenerationRequest(IList<MEAI.ChatMessage> chatMessages)
+    public static GenerateContentRequest CreateMappedGenerateContentRequest(IList<MEAI.ChatMessage> chatMessages)
     {
         List<Content> contents = new(chatMessages.Count);
         Content? systemInstruction = null;

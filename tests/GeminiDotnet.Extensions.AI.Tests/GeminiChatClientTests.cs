@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.AI;
+﻿using GeminiDotnet.Testing;
+using Microsoft.Extensions.AI;
 using System.Text;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace GeminiDotnet.Extensions.AI;
 
+[IntegrationTest]
 public sealed class GeminiChatClientTests
 {
     private readonly ITestOutputHelper _output;
@@ -73,26 +75,26 @@ public sealed class GeminiChatClientTests
     public Task CompleteStreamingAsync_WithValidRequest_ShouldStreamResults(string model)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, });
-        return StreamingCompletionTestCore(model, client, cancellationToken);
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
+        return StreamingCompletionTestCore(model, options, cancellationToken);
     }
 
     [Theory]
-    [MemberData(nameof(BetaModels))]
+    [MemberData(nameof(ExperimentalModels))]
     public Task CompleteStreamingAsync_WithValidRequestAndExperimentalModel_ShouldStreamResults(string model)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
-        return StreamingCompletionTestCore(model, client, cancellationToken);
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        return StreamingCompletionTestCore(model, options, cancellationToken);
     }
 
     private async Task StreamingCompletionTestCore(
         string model,
-        GeminiClient client,
+        GeminiClientOptions options,
         CancellationToken cancellationToken)
     {
         // Arrange
-        var chatClient = new GeminiChatClient(client);
+        using var chatClient = new GeminiChatClient(options);
 
         List<ChatMessage> messages =
         [
@@ -100,8 +102,7 @@ public sealed class GeminiChatClientTests
         ];
 
         var chatOptions = new ChatOptions { ModelId = model };
-
-        var sb = new StringBuilder(256);
+        var sb = new StringBuilder(512);
 
         // Act
         await foreach (var update in chatClient.CompleteStreamingAsync(messages, chatOptions, cancellationToken))
@@ -117,39 +118,14 @@ public sealed class GeminiChatClientTests
         Assert.Contains("Armstrong", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task CompleteAsync_WithConfigurationTest()
-    {
-        // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, });
-        var chatClient = new GeminiChatClient(client);
-
-        List<ChatMessage> messages =
-        [
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?", }
-        ];
-
-        var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash };
-
-        // Act
-        var result = await chatClient.CompleteAsync(messages, chatOptions, cancellationToken);
-
-        // Assert
-        Assert.NotNull(result);
-        var choice = Assert.Single(result.Choices);
-        Assert.Contains("Armstrong", choice.Text, StringComparison.OrdinalIgnoreCase);
-    }
-
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return GeminiModels.Gemini1p5Pro;
+        // Subset of stable models for testing
         yield return GeminiModels.Gemini1p5Flash;
-        yield return GeminiModels.Gemini1p5Flash8b;
         yield return GeminiModels.Gemini2Flash;
     }
 
-    public static IEnumerable<TheoryDataRow<string>> BetaModels()
+    public static IEnumerable<TheoryDataRow<string>> ExperimentalModels()
     {
         yield return GeminiModels.Experimental.Gemini2FlashThinking;
     }

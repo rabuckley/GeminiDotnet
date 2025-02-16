@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace GeminiDotnet.Extensions.AI;
 
-internal static class GeminiToExtensionsAIMapper
+internal static class GeminiToMEAIMapper
 {
     public static StreamingChatCompletionUpdate CreateMappedStreamingChatCompletionUpdate(
         GenerateContentResponse response,
@@ -50,13 +50,43 @@ internal static class GeminiToExtensionsAIMapper
             return CreateMappedDataContent(messagePart);
         }
 
-        throw new NotSupportedException($"Unsupported {nameof(Part)} type: {messagePart.GetType()}");
+        string type;
 
+        if (messagePart.FunctionCall is not null)
+        {
+            type = nameof(Part.FunctionCall);
+        }
+        else if (messagePart.FunctionResponse is not null)
+        {
+            type = nameof(Part.FunctionResponse);
+        }
+        else if (messagePart.FileData is not null)
+        {
+            type = nameof(Part.FileData);
+        }
+        else if (messagePart.ExecutableCode is not null)
+        {
+            type = nameof(Part.ExecutableCode);
+        }
+        else if (messagePart.CodeExecutionResult is not null)
+        {
+            type = nameof(Part.CodeExecutionResult);
+        }
+        else
+        {
+            throw new UnreachableException($"All properties of {nameof(Part)} are null.");
+        }
+
+        GeminiMappingException.Throw(
+            fromPropertyName: $"{typeof(Part)}",
+            toPropertyName: $"{typeof(AIContent)}",
+            reason: $"Unsupported {nameof(Part)} type: {type}");
+
+        return null!; // Unreachable
 
         static DataContent CreateMappedDataContent(Part part)
         {
             Debug.Assert(part.InlineData is not null);
-
             var inlineData = part.InlineData;
 
             return new DataContent(inlineData.Data, inlineData.MimeType)
@@ -86,34 +116,29 @@ internal static class GeminiToExtensionsAIMapper
             RawRepresentation = response,
             AdditionalProperties = null
         };
-    }
 
-    private static UsageDetails CreateMappedUsageDetails(UsageMetadata usage)
-    {
-        return new UsageDetails
+        static UsageDetails CreateMappedUsageDetails(UsageMetadata usage)
         {
-            InputTokenCount = usage.PromptTokenCount,
-            OutputTokenCount = usage.CandidatesTokenCount ?? 0,
-            TotalTokenCount = usage.TotalTokenCount,
-            AdditionalCounts = new AdditionalPropertiesDictionary<long>
+            return new UsageDetails
             {
-                ["promptTokenCount"] = usage.PromptTokenCount,
-                ["candidatesTokenCount"] = usage.CandidatesTokenCount ?? 0,
-                ["totalTokenCount"] = usage.TotalTokenCount
-            }
-        };
-    }
+                InputTokenCount = usage.PromptTokenCount,
+                OutputTokenCount = usage.CandidatesTokenCount ?? 0,
+                TotalTokenCount = usage.TotalTokenCount,
+                AdditionalCounts = null,
+            };
+        }
 
-    private static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
-    {
-        return new ChatMessage
+        static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
         {
-            AuthorName = null,
-            Role = CreateMappedChatRole(candidateResponse.Content.Role),
-            Contents = candidateResponse.Content.Parts.Select(CreateMappedAIContent).ToList(),
-            RawRepresentation = null,
-            AdditionalProperties = null
-        };
+            return new ChatMessage
+            {
+                AuthorName = null,
+                Role = CreateMappedChatRole(candidateResponse.Content.Role),
+                Contents = candidateResponse.Content.Parts.Select(CreateMappedAIContent).ToList(),
+                RawRepresentation = candidateResponse,
+                AdditionalProperties = null
+            };
+        }
     }
 
     private static ChatRole CreateMappedChatRole(string? role)
@@ -123,19 +148,22 @@ internal static class GeminiToExtensionsAIMapper
             return ChatRole.System;
         }
 
-        if (string.Equals(role, "user", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(role, ChatRoles.User, StringComparison.OrdinalIgnoreCase))
         {
             return ChatRole.User;
         }
 
-        if (string.Equals(role, "model", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(role, ChatRoles.Model, StringComparison.OrdinalIgnoreCase))
         {
             return ChatRole.Assistant;
         }
 
-        // role == TextGeneration.ChatRole.Tool
+        GeminiMappingException.Throw(
+            fromPropertyName: $"{typeof(Candidate)}.{nameof(Content.Role)}",
+            toPropertyName: $"{typeof(ChatRole)}",
+            reason: $"Unsupported role: {role}");
 
-        throw new NotSupportedException($"Unsupported {nameof(ChatRole)}: {role}");
+        return default; // Unreachable
     }
 
 
@@ -144,11 +172,13 @@ internal static class GeminiToExtensionsAIMapper
     {
         var rawEmbedding = response.Embedding.Values;
 
+        // Currently all models return 768-dimensional embeddings.
+        // https://ai.google.dev/gemini-api/docs/models/gemini?#text-embedding
         const int embeddingSize = 768;
 
         if (rawEmbedding.Length % embeddingSize != 0)
         {
-            throw new InvalidOperationException("The response embedding size is not a multiple of the expected size.");
+            throw new InvalidDataException("The response embedding size is not a multiple of the expected size.");
         }
 
         var generatedEmbeddings = new GeneratedEmbeddings<Embedding<float>>(rawEmbedding.Length / embeddingSize);

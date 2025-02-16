@@ -17,8 +17,7 @@ public sealed record GenerateContentRequest
     /// <summary>
     /// A list of Tools the Model may use to generate the next response.
     /// A Tool is a piece of code that enables the system to interact with external systems to perform an action, or
-    /// set of actions, outside of knowledge and scope of the Model. Supported Tools are Function and codeExecution.
-    /// Refer to the Function calling and the Code execution guides to learn more.
+    /// set of actions, outside of knowledge and scope of the Model.
     /// </summary>
     [JsonPropertyName("tools")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

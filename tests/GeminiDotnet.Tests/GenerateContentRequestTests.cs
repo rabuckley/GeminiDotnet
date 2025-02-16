@@ -22,7 +22,7 @@ public sealed class GenerateContentRequestTests
     }
 
     [Fact]
-    public void JsonRoundtrip_Text()
+    public void JsonRoundtrip_WithTextPart()
     {
         var request = new GenerateContentRequest
         {

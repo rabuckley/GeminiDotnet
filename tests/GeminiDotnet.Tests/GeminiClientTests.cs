@@ -1,11 +1,13 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
+using GeminiDotnet.Testing;
 using System.Net;
 using System.Text;
 
 namespace GeminiDotnet;
 
+[IntegrationTest]
 public sealed class GeminiClientTests
 {
     private readonly ITestOutputHelper _output;

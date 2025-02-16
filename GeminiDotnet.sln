@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiDotnet.Extensions.AI"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiDotnet.Extensions.AI.Tests", "tests\GeminiDotnet.Extensions.AI.Tests\GeminiDotnet.Extensions.AI.Tests.csproj", "{2A22DA4C-8885-4FAB-99A1-BF61843E85D8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiDotnet.Testing", "src\GeminiDotnet.Testing\GeminiDotnet.Testing.csproj", "{5C54F60F-F49D-4F9F-834D-BDC585BCED97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,7 @@ Global
 		{67F522F2-D451-45FD-934B-A86525C40EEE} = {61BC6CB6-20FD-4B62-87D0-3FB7A2C695B9}
 		{56743169-7F01-435C-AB4F-7D884FC624EA} = {A4B17025-F891-4C04-BFC2-903D3EFC1EBD}
 		{2A22DA4C-8885-4FAB-99A1-BF61843E85D8} = {61BC6CB6-20FD-4B62-87D0-3FB7A2C695B9}
+		{5C54F60F-F49D-4F9F-834D-BDC585BCED97} = {A4B17025-F891-4C04-BFC2-903D3EFC1EBD}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{431324FB-13B8-4B5D-B079-422390CF0019}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -40,5 +43,9 @@ Global
 		{2A22DA4C-8885-4FAB-99A1-BF61843E85D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2A22DA4C-8885-4FAB-99A1-BF61843E85D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2A22DA4C-8885-4FAB-99A1-BF61843E85D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C54F60F-F49D-4F9F-834D-BDC585BCED97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C54F60F-F49D-4F9F-834D-BDC585BCED97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C54F60F-F49D-4F9F-834D-BDC585BCED97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C54F60F-F49D-4F9F-834D-BDC585BCED97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
