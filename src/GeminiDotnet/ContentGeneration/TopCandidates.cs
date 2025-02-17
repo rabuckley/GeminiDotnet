@@ -11,5 +11,5 @@ public sealed record TopCandidates
     /// Sorted by log probability in descending order.
     /// </summary>
     [JsonPropertyName("candidates")]
-    public required IReadOnlyCollection<LogprobsCandidate> Candidates { get; init; }
+    public required IReadOnlyList<LogprobsCandidate> Candidates { get; init; }
 }

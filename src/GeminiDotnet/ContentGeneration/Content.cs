@@ -12,7 +12,7 @@ public sealed record Content
     /// Ordered <see cref="Part"/>s that constitute a single message. Parts may have different MIME types.
     /// </summary>
     [JsonPropertyName("parts")]
-    public required IReadOnlyCollection<Part> Parts { get; init; }
+    public required IReadOnlyList<Part> Parts { get; init; }
 
     /// <summary>
     ///  The producer of the content. Must be either 'user' or 'model'.

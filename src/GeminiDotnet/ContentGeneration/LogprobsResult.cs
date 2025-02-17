@@ -11,11 +11,11 @@ public sealed record LogprobsResult
     /// Length = total number of decoding steps.
     /// </summary>
     [JsonPropertyName("topCandidates")]
-    public required IReadOnlyCollection<TopCandidates> TopCandidates { get; init; }
+    public required IReadOnlyList<TopCandidates> TopCandidates { get; init; }
 
     /// <summary>
     /// Length = total number of decoding steps. The chosen candidates may or may not be in topCandidates.
     /// </summary>
     [JsonPropertyName("chosenCandidates")]
-    public required IReadOnlyCollection<LogprobsCandidate> ChosenCandidates { get; init; }
+    public required IReadOnlyList<LogprobsCandidate> ChosenCandidates { get; init; }
 }

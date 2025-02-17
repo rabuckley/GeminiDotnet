@@ -1,4 +1,5 @@
 using GeminiDotnet.ContentGeneration;
+using GeminiDotnet.ContentGeneration.FunctionCalling;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
 
@@ -43,64 +44,109 @@ internal static class GeminiToMEAIMapper
     {
         if (messagePart.Text is not null)
         {
-            return CreateMappedTextContent(messagePart);
+            return CreateMappedTextContent(messagePart.Text);
         }
 
         if (messagePart.InlineData is not null)
         {
-            return CreateMappedDataContent(messagePart);
+            return CreateMappedDataContent(messagePart.InlineData);
         }
-
-        string type;
 
         if (messagePart.FunctionCall is not null)
         {
-            type = nameof(Part.FunctionCall);
-        }
-        else if (messagePart.FunctionResponse is not null)
-        {
-            type = nameof(Part.FunctionResponse);
-        }
-        else if (messagePart.FileData is not null)
-        {
-            type = nameof(Part.FileData);
-        }
-        else if (messagePart.ExecutableCode is not null)
-        {
-            type = nameof(Part.ExecutableCode);
-        }
-        else if (messagePart.CodeExecutionResult is not null)
-        {
-            type = nameof(Part.CodeExecutionResult);
-        }
-        else
-        {
-            throw new UnreachableException($"All properties of {nameof(Part)} are null.");
+            return CreateMappedFunctionCallContent(messagePart.FunctionCall);
         }
 
-        GeminiMappingException.Throw(
-            fromPropertyName: $"{typeof(Part)}",
-            toPropertyName: $"{typeof(AIContent)}",
-            reason: $"Unsupported {nameof(Part)} type: {type}");
-
-        return null!; // Unreachable
-
-        static DataContent CreateMappedDataContent(Part part)
+        if (messagePart.FunctionResponse is not null)
         {
-            Debug.Assert(part.InlineData is not null);
-            var inlineData = part.InlineData;
+            return CreateMappedFunctionResultContent(messagePart.FunctionResponse);
+        }
 
+        if (messagePart.FileData is not null)
+        {
+            return CreateMappedFileDataContent(messagePart.FileData);
+        }
+
+        // For now, M.E.AI does not have a representation for executable code, so map it to text.
+        if (messagePart.ExecutableCode is not null)
+        {
+            return CreateMappedTextContent(
+                $"""
+                 ```{messagePart.ExecutableCode.Language}
+                 {messagePart.ExecutableCode.Code}
+                 ```
+                 """);
+        }
+
+        if (messagePart.CodeExecutionResult is not null)
+        {
+            return CreateMappedTextContent(
+                $"""
+                 ```
+                 {messagePart.CodeExecutionResult.Output}
+                 ```
+
+                 {nameof(CodeExecutionResult.Outcome)}: {messagePart.CodeExecutionResult.Outcome}
+                 """);
+        }
+
+        throw new UnreachableException($"All properties of {nameof(Part)} are null.");
+
+        static DataContent CreateMappedDataContent(Blob inlineData)
+        {
             return new DataContent(inlineData.Data, inlineData.MimeType)
             {
-                RawRepresentation = part.InlineData,
-                AdditionalProperties = null
+                RawRepresentation = inlineData, AdditionalProperties = null
             };
         }
 
-        static TextContent CreateMappedTextContent(Part part)
+        static DataContent CreateMappedFileDataContent(FileData fileData)
         {
-            Debug.Assert(part.Text is not null);
-            return new TextContent(part.Text) { RawRepresentation = part.Text, AdditionalProperties = null };
+            return new DataContent(fileData.Uri, fileData.MimeType)
+            {
+                RawRepresentation = fileData, AdditionalProperties = null
+            };
+        }
+
+        static TextContent CreateMappedTextContent(string text)
+        {
+            return new TextContent(text) { RawRepresentation = text, AdditionalProperties = null };
+        }
+
+        static FunctionCallContent CreateMappedFunctionCallContent(FunctionCall functionCall)
+        {
+            if (functionCall.Id is null)
+            {
+                GeminiMappingException.Throw(
+                    fromPropertyName: $"{typeof(FunctionCall)}.{nameof(FunctionCall.Id)}",
+                    toPropertyName: $"{typeof(FunctionCallContent)}",
+                    reason: $"'{typeof(FunctionCall)}.{nameof(FunctionCall.Id)}' must not be null.");
+
+                return null!; // Unreachable
+            }
+
+            return new FunctionCallContent(functionCall.Id, functionCall.Name, functionCall.Arguments)
+            {
+                RawRepresentation = functionCall, AdditionalProperties = null
+            };
+        }
+
+        static FunctionResultContent CreateMappedFunctionResultContent(FunctionResponse functionResponse)
+        {
+            if (functionResponse.Id is null)
+            {
+                GeminiMappingException.Throw(
+                    fromPropertyName: $"{typeof(FunctionResponse)}.{nameof(FunctionResponse.Id)}",
+                    toPropertyName: $"{typeof(FunctionResultContent)}",
+                    reason: $"'{typeof(FunctionResponse)}.{nameof(FunctionResponse.Id)}' must not be null.");
+
+                return null!; // Unreachable
+            }
+
+            return new FunctionResultContent(functionResponse.Id, functionResponse.Response)
+            {
+                RawRepresentation = functionResponse, AdditionalProperties = null
+            };
         }
     }
 
@@ -114,7 +160,7 @@ internal static class GeminiToMEAIMapper
             ChatThreadId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,
-            FinishReason = CreateMappedChatFinishReason(response.Candidates.First().FinishReason),
+            FinishReason = CreateMappedChatFinishReason(response.Candidates[0].FinishReason),
             Usage = CreateMappedUsageDetails(response.UsageMetadata),
             RawRepresentation = response,
             AdditionalProperties = null

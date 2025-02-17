@@ -11,5 +11,5 @@ public sealed record CitationMetadata
     /// Citations to sources for a specific response.
     /// </summary>
     [JsonPropertyName("citationSources")]
-    public required IReadOnlyCollection<CitationSource> Sources { get; init; }
+    public required IReadOnlyList<CitationSource> Sources { get; init; }
 }

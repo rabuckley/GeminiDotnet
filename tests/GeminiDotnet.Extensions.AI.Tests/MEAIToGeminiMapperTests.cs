@@ -1,9 +1,7 @@
 ﻿using GeminiDotnet.ContentGeneration;
 using Microsoft.Extensions.AI;
-using Newtonsoft.Json.Schema;
 using System.Net.Mime;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.Extensions.AI;
@@ -130,6 +128,65 @@ public sealed class MEAIToGeminiMapperTests
 
         var nameSchema = Assert.IsType<StringSchema>(name);
         Assert.Null(nameSchema.Nullable);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithCodeInterpreterTool_ShouldIncludeCodeExecutionTool()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+        };
+
+        var options = new ChatOptions { Tools = [new CodeInterpreterTool()] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.NotNull(request.Tools);
+        Assert.Single(request.Tools, t => t.CodeExecution is not null);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAIFunction_ShouldIncludeFunctionDeclaration()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+        };
+
+        var expectedFunction = new TestFunction();
+        var options = new ChatOptions { Tools = [expectedFunction] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.NotNull(request.Tools);
+        var tool = Assert.Single(request.Tools, t => t.FunctionDeclarations is not null);
+        var functionDeclaration = Assert.Single(tool.FunctionDeclarations!);
+
+        Assert.Equal(expectedFunction.Name, functionDeclaration.Name);
+        Assert.Equal(expectedFunction.Description, functionDeclaration.Description);
+
+        // Tricky to compare the schema directly, so just check the type for now.
+        Assert.Equal(Schema.FromJsonElement(expectedFunction.JsonSchema).GetType(),
+            functionDeclaration.Schema?.GetType());
+    }
+
+    private sealed class TestFunction : AIFunction
+    {
+        public override JsonElement JsonSchema { get; } = AIJsonUtilities.CreateJsonSchema(typeof(TestObject));
+
+        protected override Task<object?> InvokeCoreAsync(
+            IEnumerable<KeyValuePair<string, object?>> arguments,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult<object?>(null);
+        }
     }
 
     private sealed record TestObject

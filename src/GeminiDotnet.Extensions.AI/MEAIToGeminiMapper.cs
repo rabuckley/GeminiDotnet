@@ -52,8 +52,48 @@ internal static class MEAIToGeminiMapper
 
         static IEnumerable<Tool>? CreateMappedTools(IList<MEAI.AITool>? tools)
         {
-            // TODO-TOOLS
-            return null;
+            if (tools is null)
+            {
+                return null;
+            }
+
+            List<Tool> mappedTools = new(tools.Count);
+            List<FunctionDeclaration>? functionDeclarations = null;
+
+            foreach (var tool in tools)
+            {
+                if (tool is MEAI.CodeInterpreterTool)
+                {
+                    mappedTools.Add(new Tool { CodeExecution = new CodeExecution() });
+                    continue;
+                }
+
+                if (tool is MEAI.AIFunction function)
+                {
+                    functionDeclarations ??= [];
+
+                    functionDeclarations.Add(new FunctionDeclaration
+                    {
+                        Name = function.Name,
+                        Description = function.Description,
+                        Schema = Schema.FromJsonElement(function.JsonSchema),
+                    });
+
+                    continue;
+                }
+
+                GeminiMappingException.Throw(
+                    fromPropertyName: $"{typeof(MEAI.AITool)}",
+                    toPropertyName: $"{typeof(Tool)}",
+                    reason: $"Unsupported tool type: {tool.GetType()}");
+            }
+
+            if (functionDeclarations is not null)
+            {
+                mappedTools.Add(new Tool { FunctionDeclarations = functionDeclarations });
+            }
+
+            return mappedTools;
         }
 
         static GenerationConfiguration? CreateMappedGenerationConfiguration(MEAI.ChatOptions? options)
@@ -62,7 +102,7 @@ internal static class MEAIToGeminiMapper
             {
                 return null;
             }
-            
+
             var configuration = new GenerationConfiguration
             {
                 StopSequences = options.StopSequences,
@@ -216,7 +256,7 @@ internal static class MEAIToGeminiMapper
                     fromPropertyName: $"{typeof(MEAI.FunctionResultContent)}",
                     toPropertyName: $"{typeof(Part)}",
                     reason: "Functions are not yet supported");
-                
+
                 return null!; // unreachable
             }
         }

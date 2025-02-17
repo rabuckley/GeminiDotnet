@@ -10,12 +10,12 @@ namespace GeminiDotnet.ContentGeneration.FunctionCalling;
 public sealed record Tool
 {
     /// <summary>
-    ///  list of FunctionDeclarations available to the model that can be used for function calling. The model or system
-    /// does not execute the function. Instead, the defined function may be returned as a <see cref="FunctionCall"/>
-    /// with arguments to the client side for execution. The model may decide to call a subset of these functions by
-    /// populating <see cref="FunctionCall"/> in the response. The next conversation turn may contain a
-    /// <see cref="FunctionResponse"/> with the <see cref="Content.Role"/> "function" generation context for the next
-    /// model turn.
+    /// A list of <see cref="FunctionDeclaration"/>s available to the model that can be used for function calling. The
+    /// model or system does not execute the function. Instead, the defined function may be returned as a
+    /// <see cref="FunctionCall"/> with arguments to the client side for execution. The model may decide to call a
+    /// subset of these functions by populating <see cref="FunctionCall"/> in the response. The next conversation
+    /// turn may contain a <see cref="FunctionResponse"/> with the <see cref="Content.Role"/> "function" generation
+    /// context for the next model turn.
     /// </summary>
     [JsonPropertyName("functionDeclaration")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

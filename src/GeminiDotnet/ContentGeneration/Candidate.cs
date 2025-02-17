@@ -24,7 +24,7 @@ public sealed record Candidate
     /// List of ratings for the safety of a response candidate. There is at most one rating per category.
     /// </summary>
     [JsonPropertyName("safetyRatings")]
-    public IReadOnlyCollection<SafetyRating>? SafetyRatings { get; init; }
+    public IReadOnlyList<SafetyRating>? SafetyRatings { get; init; }
 
     /// <summary>
     /// Citation information for model-generated candidate.
@@ -43,7 +43,7 @@ public sealed record Candidate
     /// Attribution information for sources that contributed to a grounded answer. This field is populated for GenerateAnswer calls.
     /// </summary>
     [JsonPropertyName("groundingAttributions")]
-    public IReadOnlyCollection<GroundingAttribution>? GroundingAttributions { get; init; }
+    public IReadOnlyList<GroundingAttribution>? GroundingAttributions { get; init; }
 
     /// <summary>
     /// Grounding metadata for the candidate. This field is populated for GenerateContent calls.

@@ -12,7 +12,7 @@ public sealed record GenerateContentRequest
     /// that contains the conversation history and the latest request.
     /// </summary>
     [JsonPropertyName("contents")]
-    public required IReadOnlyCollection<Content> Contents { get; init; }
+    public required IReadOnlyList<Content> Contents { get; init; }
 
     /// <summary>
     /// A list of Tools the Model may use to generate the next response.

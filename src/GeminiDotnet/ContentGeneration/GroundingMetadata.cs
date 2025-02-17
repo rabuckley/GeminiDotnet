@@ -11,19 +11,19 @@ public sealed record GroundingMetadata
     /// List of supporting references retrieved from specified grounding source.
     /// </summary>
     [JsonPropertyName("groundingChunks")]
-    public required IReadOnlyCollection<GroundingChunk> GroundingChunks { get; init; }
+    public required IReadOnlyList<GroundingChunk> GroundingChunks { get; init; }
 
     /// <summary>
     /// List of grounding support.
     /// </summary>
     [JsonPropertyName("groundingSupports")]
-    public required IReadOnlyCollection<GroundingSupport> GroundingSupports { get; init; }
+    public required IReadOnlyList<GroundingSupport> GroundingSupports { get; init; }
 
     /// <summary>
     /// Web search queries for the following-up web search.
     /// </summary>
     [JsonPropertyName("webSearchQueries")]
-    public required IReadOnlyCollection<string> WebSearchQueries { get; init; }
+    public required IReadOnlyList<string> WebSearchQueries { get; init; }
 
     /// <summary>
     /// Google search entry for the following-up web searches.
