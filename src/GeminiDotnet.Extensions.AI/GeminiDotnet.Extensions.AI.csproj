@@ -6,6 +6,7 @@
         <PackageId>GeminiDotnet.Extensions.AI</PackageId>
         <Version>0.5.0-preview</Version>
         <Authors>Ryan Buckley</Authors>
+        <Description>A lightweight, modern implementation of the Microsoft.Extensions.AI.Abstractions APIs for interacting with Google Gemini models.</Description>
         <PackageTags>AI, Gemini, Microsoft.Extensions.AI</PackageTags>
         <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
         <RepositoryUrl>https://github.com/rabuckley/GeminiDotnet</RepositoryUrl>

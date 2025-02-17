@@ -2,9 +2,9 @@
 
 This package provides the tools to interact with the [Google Gemini models](https://deepmind.google/technologies/gemini/) in .NET.
 
-This package is lightweight, has no external dependencies, is Native AOT compatible using System.Text.Json, and provides a direct mapping to the Google Gemini API's structure.
+This package is lightweight, has no external dependencies, is Native AOT compatible, uses System.Text.Json for performant serialization, and provides a model directly mapping to the Google Gemini API's structure.
 
-For an API you can use with other models, and for a more user-friendly API, you should consider interacting with this library through the [`GeminiDotnet.Extensions.AI`](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI) package, which exposes an [`Microsoft.Extensions.AI.IChatClient`](https://learn.microsoft.com/dotnet/api/microsoft.extensions.ai.ichatclient) implementation. For more information about why this may be preferred, you can read the `Microsoft.Extensions.AI` announcement [blog post](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/).
+For an API you can use with other models and a more user-friendly API, you should consider interacting with this library through the [`GeminiDotnet.Extensions.AI` package](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI), which exposes [`Microsoft.Extensions.AI.Abstractions`](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/) API implementations, including a full [`IChatClient`](https://learn.microsoft.com/dotnet/api/microsoft.extensions.ai.ichatclient) implementation. For more information about why this may be preferred, you can read the `Microsoft.Extensions.AI` announcement [blog post](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/).
 
 ## Getting Started
 
