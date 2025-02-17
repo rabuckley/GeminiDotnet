@@ -100,27 +100,22 @@ public sealed class GeminiClientTests
         var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest;
 
         var sb = new StringBuilder();
+        var count = 0;
 
         // Act
-
-        try
+        await foreach (var result in client.GenerateContentStreamingAsync(model, request, cancellationToken))
         {
-            await foreach (var result in client.GenerateContentStreamingAsync(model, request, cancellationToken))
-            {
-                var response = result.Candidates.Single().Content.Parts.Single();
-                Assert.NotNull(response.Text);
-                sb.Append(response.Text);
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            _output.WriteLine(ex.Message);
+            var response = result.Candidates.Single().Content.Parts.Single();
+            Assert.NotNull(response.Text);
+            sb.Append(response.Text);
+            count++;
         }
 
         var resultText = sb.ToString();
         _output.WriteLine(resultText);
 
         // Assert
+        Assert.True(count > 1);
         Assert.Contains("Armstrong", resultText, StringComparison.OrdinalIgnoreCase);
     }
 
