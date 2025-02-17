@@ -1,10 +1,12 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.Embeddings;
 using GeminiDotnet.Text.Json;
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace GeminiDotnet;
 
@@ -51,26 +53,9 @@ public sealed class GeminiClient
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
-
         var uri = $"/{Options.ApiVersion}/models/{model}:generateContent?key={Options.ApiKey}";
 
-        var response = await _httpClient
-            .PostAsJsonAsync(uri, request, requestJsonInfo, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        if ((int)response.StatusCode is >= 400 and < 500)
-        {
-            var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
-
-            var errorResponse = await response.Content.ReadFromJsonAsync(
-                errorResponseTypeInfo,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            GeminiClientException.Throw(errorResponse!.Error);
-            return null!; // unreachable
-        }
-
-        response.EnsureSuccessStatusCode();
+        var response = GenerateContentCore(uri, request, cancellationToken);
 
         var responseJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
 
@@ -95,18 +80,9 @@ public sealed class GeminiClient
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
-
         var uri = $"/{Options.ApiVersion}/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}";
 
-        var response = await _httpClient.PostAsJsonAsync(
-                uri,
-                request,
-                requestJsonInfo,
-                cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
+        var response = GenerateContentCore(uri, request, cancellationToken);
 
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         var sseParser = SseParser.Create(stream, ParseSseItem);
@@ -115,13 +91,13 @@ public sealed class GeminiClient
         {
             yield return item.Data;
         }
-    }
 
-    private static GenerateContentResponse ParseSseItem(string eventType, ReadOnlySpan<byte> data)
-    {
-        var typeInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
-        var response = JsonSerializer.Deserialize(data, typeInfo);
-        return response!;
+        static GenerateContentResponse ParseSseItem(string eventType, ReadOnlySpan<byte> data)
+        {
+            var typeInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
+            var response = JsonSerializer.Deserialize(data, typeInfo);
+            return response!;
+        }
     }
 
     // ```
@@ -140,18 +116,10 @@ public sealed class GeminiClient
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbeddingRequest>();
-
         var uri = $"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}";
 
-        var response = await _httpClient.PostAsJsonAsync(
-                uri,
-                request,
-                requestJsonInfo,
-                cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
+        var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbeddingRequest>();
+        var response = ExecuteAction(uri, request, requestJsonInfo, cancellationToken);
 
         var responseJsonInfo = JsonContext.Default.GetTypeInfo<EmbeddingResponse>();
 
@@ -160,5 +128,44 @@ public sealed class GeminiClient
             .ConfigureAwait(false);
 
         return responseJson!;
+    }
+
+    private HttpResponseMessage GenerateContentCore(
+        string uri,
+        GenerateContentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
+        return ExecuteAction(uri, request, requestJsonInfo, cancellationToken);
+    }
+
+    private HttpResponseMessage ExecuteAction<TRequest>(
+        string uri,
+        TRequest request,
+        JsonTypeInfo<TRequest> requestJsonInfo,
+        CancellationToken cancellationToken)
+    {
+        Debug.Assert(uri is not null);
+        Debug.Assert(request is not null);
+
+        var response = _httpClient.PostAsJsonAsync(
+            uri,
+            request,
+            requestJsonInfo,
+            cancellationToken: cancellationToken).Result;
+
+        if ((int)response.StatusCode is >= 400 and < 500)
+        {
+            var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
+
+            var errorResponse = response.Content.ReadFromJsonAsync(
+                errorResponseTypeInfo,
+                cancellationToken: cancellationToken).Result;
+
+            GeminiClientException.Throw(errorResponse!.Error);
+            return null!; // unreachable
+        }
+
+        return response;
     }
 }
