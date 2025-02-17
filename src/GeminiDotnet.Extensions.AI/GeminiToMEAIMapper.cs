@@ -6,20 +6,21 @@ namespace GeminiDotnet.Extensions.AI;
 
 internal static class GeminiToMEAIMapper
 {
-    public static StreamingChatCompletionUpdate CreateMappedStreamingChatCompletionUpdate(
+    public static ChatResponseUpdate CreateMappedChatResponseUpdate(
         GenerateContentResponse response,
         DateTimeOffset createdAt)
     {
         var candidate = response.Candidates.Single();
 
-        return new StreamingChatCompletionUpdate
+        return new ChatResponseUpdate
         {
             AuthorName = null,
             Role = CreateMappedChatRole(candidate.Content.Role),
             Contents = candidate.Content.Parts.Select(CreateMappedAIContent).ToList(),
             RawRepresentation = response,
             AdditionalProperties = null,
-            CompletionId = null,
+            ResponseId = null,
+            ChatThreadId = null,
             CreatedAt = createdAt,
             ChoiceIndex = 0,
             FinishReason = CreateMappedChatFinishReason(candidate.FinishReason),
@@ -103,13 +104,14 @@ internal static class GeminiToMEAIMapper
         }
     }
 
-    public static ChatCompletion CreateMappedChatCompletion(GenerateContentResponse response, DateTimeOffset createdAt)
+    public static ChatResponse CreateMappedChatResponse(GenerateContentResponse response, DateTimeOffset createdAt)
     {
         var choices = response.Candidates.Select(CreateMappedChatMessage).ToList();
 
-        return new ChatCompletion(choices)
+        return new ChatResponse(choices)
         {
-            CompletionId = null,
+            ResponseId = null,
+            ChatThreadId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,
             FinishReason = CreateMappedChatFinishReason(response.Candidates.First().FinishReason),

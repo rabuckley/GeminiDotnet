@@ -11,6 +11,7 @@ public sealed class GeminiChatClient : IChatClient
 {
     private readonly GeminiClient _client;
     private readonly TimeProvider _timeProvider;
+    private readonly ChatClientMetadata _metadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
@@ -41,48 +42,39 @@ public sealed class GeminiChatClient : IChatClient
         _client = client;
         _timeProvider = timeProvider;
 
-        Metadata = new ChatClientMetadata("Gemini", client.Endpoint);
+        _metadata = new ChatClientMetadata("Gemini", providerUri: client.Endpoint, modelId: client.Options.ModelId);
     }
 
-    /// <inheritdoc />
-    public ChatClientMetadata Metadata { get; }
 
     /// <inheritdoc />
-    public async Task<ChatCompletion> CompleteAsync(
+    public async Task<ChatResponse> GetResponseAsync(
         IList<ChatMessage> chatMessages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(chatMessages);
 
-        if (options?.ModelId is null)
-        {
-            throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
-        }
+        var model = GetModelId(options);
 
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
-        var response = await _client.GenerateContentAsync(options.ModelId, request, cancellationToken);
-        return GeminiToMEAIMapper.CreateMappedChatCompletion(response, _timeProvider.GetUtcNow());
+        var response = await _client.GenerateContentAsync(model, request, cancellationToken);
+        return GeminiToMEAIMapper.CreateMappedChatResponse(response, _timeProvider.GetUtcNow());
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<StreamingChatCompletionUpdate> CompleteStreamingAsync(
+    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IList<ChatMessage> chatMessages,
         ChatOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(chatMessages);
 
-        if (options?.ModelId is null)
-        {
-            throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
-        }
-
+        var model = GetModelId(options);
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
 
-        await foreach (var response in _client.GenerateContentStreamingAsync(options.ModelId, request, cancellationToken))
+        await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken))
         {
-            yield return GeminiToMEAIMapper.CreateMappedStreamingChatCompletionUpdate(
+            yield return GeminiToMEAIMapper.CreateMappedChatResponseUpdate(
                 response,
                 createdAt: _timeProvider.GetUtcNow());
         }
@@ -91,11 +83,38 @@ public sealed class GeminiChatClient : IChatClient
     /// <inheritdoc />
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
-        return serviceType == typeof(GeminiClient) ? _client : null;
+        if (serviceType == typeof(GeminiClient))
+        {
+            return _client;
+        }
+
+        if (serviceType == typeof(ChatClientMetadata))
+        {
+            return _metadata;
+        }
+
+        return null;
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
+    }
+
+    private string GetModelId(
+        ChatOptions? options,
+        [CallerArgumentExpression(nameof(options))]
+        string? parameterName = null)
+    {
+        var model = options?.ModelId ?? _metadata.ModelId;
+
+        if (model is null)
+        {
+            throw new ArgumentException(
+                $"The '{nameof(ChatOptions)}.{nameof(options.ModelId)}' property or must be set, or the model must be provided in the {nameof(GeminiClientOptions)} when constructing this client.",
+                parameterName);
+        }
+
+        return model;
     }
 }

@@ -19,11 +19,13 @@ public sealed class GeminiChatClientTests
     }
 
     [Fact]
-    public async Task CompleteAsync_WithSystemRole()
+    public async Task GetResponseAsync_WithSystemRole()
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+
+        var client =
+            new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
         var chatClient = new GeminiChatClient(client);
 
         List<ChatMessage> messages =
@@ -37,7 +39,7 @@ public sealed class GeminiChatClientTests
         var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash };
 
         // Act
-        var result = await chatClient.CompleteAsync(messages, chatOptions, cancellationToken);
+        var result = await chatClient.GetResponseAsync(messages, chatOptions, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -47,7 +49,7 @@ public sealed class GeminiChatClientTests
 
     [Theory]
     [MemberData(nameof(StableModels))]
-    public async Task CompleteAsyncTest(string model)
+    public async Task GetResponseAsyncTest(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -62,7 +64,7 @@ public sealed class GeminiChatClientTests
         var chatOptions = new ChatOptions { ModelId = model };
 
         // Act
-        var result = await chatClient.CompleteAsync(messages, chatOptions, cancellationToken);
+        var result = await chatClient.GetResponseAsync(messages, chatOptions, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -72,7 +74,7 @@ public sealed class GeminiChatClientTests
 
     [Theory]
     [MemberData(nameof(StableModels))]
-    public Task CompleteStreamingAsync_WithValidRequest_ShouldStreamResults(string model)
+    public Task GetStreamingResponseAsync_WithValidRequest_ShouldStreamResults(string model)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var options = new GeminiClientOptions { ApiKey = _apiKey };
@@ -81,7 +83,7 @@ public sealed class GeminiChatClientTests
 
     [Theory]
     [MemberData(nameof(ExperimentalModels))]
-    public Task CompleteStreamingAsync_WithValidRequestAndExperimentalModel_ShouldStreamResults(string model)
+    public Task GetStreamingResponseAsync_WithValidRequestAndExperimentalModel_ShouldStreamResults(string model)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
@@ -103,18 +105,21 @@ public sealed class GeminiChatClientTests
 
         var chatOptions = new ChatOptions { ModelId = model };
         var sb = new StringBuilder(512);
+        var count = 0;
 
         // Act
-        await foreach (var update in chatClient.CompleteStreamingAsync(messages, chatOptions, cancellationToken))
+        await foreach (var update in chatClient.GetStreamingResponseAsync(messages, chatOptions, cancellationToken))
         {
             Assert.NotNull(update.Text);
             sb.Append(update.Text);
+            count++;
         }
 
         var result = sb.ToString();
         _output.WriteLine(result);
 
         // Assert
+        Assert.True(count > 1);
         Assert.Contains("Armstrong", result, StringComparison.OrdinalIgnoreCase);
     }
 

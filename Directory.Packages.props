@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.1.0-preview.1.25064.3" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.3.0-preview.1.25114.11" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageVersion Include="System.Net.ServerSentEvents" Version="9.0.2" />
     <PackageVersion Include="xunit.v3" Version="1.1.0" />

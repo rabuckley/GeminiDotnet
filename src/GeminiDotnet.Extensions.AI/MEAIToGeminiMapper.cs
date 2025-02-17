@@ -12,7 +12,7 @@ internal static class MEAIToGeminiMapper
 {
     public static GenerateContentRequest CreateMappedGenerateContentRequest(
         IList<MEAI.ChatMessage> chatMessages,
-        MEAI.ChatOptions options)
+        MEAI.ChatOptions? options)
     {
         List<Content> contents = new(chatMessages.Count);
         Content? systemInstruction = null;
@@ -45,7 +45,7 @@ internal static class MEAIToGeminiMapper
             GenerationConfiguration = CreateMappedGenerationConfiguration(options),
             CachedContent = null,
             Contents = contents,
-            Tools = CreateMappedTools(options.Tools),
+            Tools = CreateMappedTools(options?.Tools),
             ToolConfiguration = null,
             SafetySettings = null,
         };
@@ -56,8 +56,13 @@ internal static class MEAIToGeminiMapper
             return null;
         }
 
-        static GenerationConfiguration? CreateMappedGenerationConfiguration(MEAI.ChatOptions options)
+        static GenerationConfiguration? CreateMappedGenerationConfiguration(MEAI.ChatOptions? options)
         {
+            if (options is null)
+            {
+                return null;
+            }
+            
             var configuration = new GenerationConfiguration
             {
                 StopSequences = options.StopSequences,
@@ -200,23 +205,19 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionCall = new FunctionCall
                     {
-                        Id = functionCall.CallId,
-                        Name = functionCall.Name,
-                        Arguments = functionCall.Arguments,
+                        Id = functionCall.CallId, Name = functionCall.Name, Arguments = functionCall.Arguments,
                     }
                 };
             }
 
             static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
             {
-                return new Part
-                {
-                    FunctionResponse = new FunctionResponse
-                    {
-                        Name = functionResult.Name,
-                        Response = functionResult.Result!.ToString()!
-                    }
-                };
+                GeminiMappingException.Throw(
+                    fromPropertyName: $"{typeof(MEAI.FunctionResultContent)}",
+                    toPropertyName: $"{typeof(Part)}",
+                    reason: "Functions are not yet supported");
+                
+                return null!; // unreachable
             }
         }
 
