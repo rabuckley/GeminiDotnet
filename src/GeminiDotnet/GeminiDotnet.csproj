@@ -10,7 +10,7 @@
         <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
         <RepositoryUrl>https://github.com/rabuckley/GeminiDotnet</RepositoryUrl>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
-        <PackageLicenceFile>../../LICENCE</PackageLicenceFile>
+        <PackageLicenseFile>LICENCE</PackageLicenseFile>
     </PropertyGroup>
 
     <ItemGroup>
