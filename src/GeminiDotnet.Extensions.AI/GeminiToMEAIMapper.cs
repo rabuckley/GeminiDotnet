@@ -1,9 +1,9 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
+using GeminiDotnet.Extensions.AI.Contents;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -69,27 +69,14 @@ internal static class GeminiToMEAIMapper
             return CreateMappedFileDataContent(messagePart.FileData);
         }
 
-        // For now, M.E.AI does not have a representation for executable code, so map it to text.
         if (messagePart.ExecutableCode is not null)
         {
-            return CreateMappedTextContent(
-                $"""
-                 ```{messagePart.ExecutableCode.Language}
-                 {messagePart.ExecutableCode.Code}
-                 ```
-                 """);
+            return CreateMappedExecutableCodeContent(messagePart.ExecutableCode);
         }
 
         if (messagePart.CodeExecutionResult is not null)
         {
-            return CreateMappedTextContent(
-                $"""
-                 ```
-                 {messagePart.CodeExecutionResult.Output}
-                 ```
-
-                 {nameof(CodeExecutionResult.Outcome)}: {messagePart.CodeExecutionResult.Outcome}
-                 """);
+            return CreateMappedCodeExecutionResultContent(messagePart.CodeExecutionResult);
         }
 
         throw new UnreachableException($"All properties of {nameof(Part)} are null.");
@@ -135,6 +122,36 @@ internal static class GeminiToMEAIMapper
             return new FunctionResultContent(responseId, functionResponse.Response)
             {
                 RawRepresentation = functionResponse,
+                AdditionalProperties = null
+            };
+        }
+
+        static ExecutableCodeContent CreateMappedExecutableCodeContent(ExecutableCode executableCode)
+        {
+            return new ExecutableCodeContent
+            {
+                Language = executableCode.Language,
+                Code = executableCode.Code,
+                RawRepresentation = executableCode,
+                AdditionalProperties = null
+            };
+        }
+
+        static CodeExecutionContent CreateMappedCodeExecutionResultContent(
+            CodeExecutionResult codeExecutionResult)
+        {
+            return new CodeExecutionContent
+            {
+                Output = codeExecutionResult.Output,
+                Status = codeExecutionResult.Outcome switch
+                {
+                    CodeExecutionOutcome.Unspecified => CodeExecutionStatus.None,
+                    CodeExecutionOutcome.Ok => CodeExecutionStatus.Success,
+                    CodeExecutionOutcome.Failed => CodeExecutionStatus.Error,
+                    CodeExecutionOutcome.DeadlineExceeded => CodeExecutionStatus.Timeout,
+                    _ => throw new ArgumentOutOfRangeException(nameof(codeExecutionResult.Outcome), codeExecutionResult.Outcome, null)
+                },
+                RawRepresentation = codeExecutionResult,
                 AdditionalProperties = null
             };
         }

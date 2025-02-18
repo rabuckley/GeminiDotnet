@@ -1,4 +1,5 @@
 using GeminiDotnet.ContentGeneration;
+using GeminiDotnet.Extensions.AI.Contents;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -23,14 +24,12 @@ public sealed class GeminiToMEAIMapperTests
         var text1 = Assert.IsType<TextContent>(contents[0]);
         Assert.Equal(actualContent.Parts[0].Text, text1.Text);
 
-        var code1 = Assert.IsType<TextContent>(contents[1]);
-        Assert.Contains(actualContent.Parts[1].ExecutableCode!.Code, code1.Text);
-        Assert.Contains(actualContent.Parts[1].ExecutableCode!.Language, code1.Text);
+        var code1 = Assert.IsType<ExecutableCodeContent>(contents[1]);
+        Assert.Equal(actualContent.Parts[1].ExecutableCode!.Code, code1.Code);
+        Assert.Equal(actualContent.Parts[1].ExecutableCode!.Language, code1.Language);
 
-        var code2 = Assert.IsType<TextContent>(contents[2]);
-        Assert.Contains(actualContent.Parts[2].CodeExecutionResult!.Output, code2.Text);
-        Assert.Contains(actualContent.Parts[2].CodeExecutionResult!.Outcome.ToString(), code2.Text);
-
+        var code2 = Assert.IsType<CodeExecutionContent>(contents[2]);
+        Assert.Equal(actualContent.Parts[2].CodeExecutionResult!.Output, code2.Output);
 
         var text2 = Assert.IsType<TextContent>(contents[3]);
         Assert.Equal(actualContent.Parts[3].Text, text2.Text);
