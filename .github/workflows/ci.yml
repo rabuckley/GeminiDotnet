@@ -25,4 +25,4 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Test
-      run: dotnet test --no-build -- --filter-query "/[Category!=Integration]"
+      run: dotnet test --no-build -- --filter-query "/[Category!=Integration]" --ignore-exit-code 8

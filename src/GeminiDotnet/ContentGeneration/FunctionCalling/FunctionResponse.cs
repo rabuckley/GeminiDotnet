@@ -4,10 +4,7 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.ContentGeneration.FunctionCalling;
 
 /// <summary>
-/// The result output from a <see cref="FunctionCall"/> that contains a string representing the
-/// <see cref="FunctionDeclaration.Name"/> name and a structured JSON object containing any output from the function is
-/// used as context to the model. This should contain the result of a <see cref="FunctionCall"/> made based on model
-/// prediction.
+/// The result output from a <see cref="FunctionCall"/> that contains a string representing the <see cref="FunctionDeclaration.Name"/> name and a structured JSON object containing any output from the function is used as context to the model. This should contain the result of a <see cref="FunctionCall"/> made based on model prediction.
 /// </summary>
 public sealed record FunctionResponse
 {
@@ -28,5 +25,5 @@ public sealed record FunctionResponse
     /// The function response in JSON object format.
     /// </summary>
     [JsonPropertyName("response")]
-    public required JsonElement Response { get; init; }
+    public required IDictionary<string, JsonElement> Response { get; init; }
 }

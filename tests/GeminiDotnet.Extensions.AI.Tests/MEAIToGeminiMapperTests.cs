@@ -174,7 +174,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Tricky to compare the schema directly, so just check the type for now.
         Assert.Equal(Schema.FromJsonElement(expectedFunction.JsonSchema).GetType(),
-            functionDeclaration.Schema?.GetType());
+            functionDeclaration.Parameters?.GetType());
     }
 
     private sealed class TestFunction : AIFunction

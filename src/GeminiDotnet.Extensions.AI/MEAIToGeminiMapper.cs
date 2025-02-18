@@ -76,7 +76,8 @@ internal static class MEAIToGeminiMapper
                     {
                         Name = function.Name,
                         Description = function.Description,
-                        Schema = Schema.FromJsonElement(function.JsonSchema),
+                        Parameters = CreateMappedFunctionParameters(function.JsonSchema),
+                        Response = null,
                     });
 
                     continue;
@@ -178,6 +179,11 @@ internal static class MEAIToGeminiMapper
                 return ChatRoles.Model;
             }
 
+            if (role == MEAI.ChatRole.Tool)
+            {
+                return ChatRoles.Model;
+            }
+
             GeminiMappingException.Throw(
                 fromPropertyName: $"{typeof(MEAI.ChatMessage)}.{nameof(MEAI.ChatMessage.Role)}",
                 toPropertyName: $"{typeof(Content)}.{nameof(Content.Role)}",
@@ -245,19 +251,32 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionCall = new FunctionCall
                     {
-                        Id = functionCall.CallId, Name = functionCall.Name, Arguments = functionCall.Arguments,
+                        Id = functionCall.CallId,
+                        Name = functionCall.Name,
+                        Arguments = functionCall.Arguments,
                     }
                 };
             }
 
             static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
             {
-                GeminiMappingException.Throw(
-                    fromPropertyName: $"{typeof(MEAI.FunctionResultContent)}",
-                    toPropertyName: $"{typeof(Part)}",
-                    reason: "Functions are not yet supported");
+                var jsonTypeInfo = MEAI.AIJsonUtilities.DefaultOptions.GetTypeInfo(typeof(object));
 
-                return null!; // unreachable
+                return new Part
+                {
+                    FunctionResponse = new FunctionResponse
+                    {
+                        Id = functionResult.CallId,
+                        Name = functionResult.CallId,
+                        Response = new Dictionary<string, JsonElement>
+                        {
+                            {
+                                "content",
+                                JsonSerializer.SerializeToElement(functionResult.Result, jsonTypeInfo)
+                            }
+                        }
+                    }
+                };
             }
         }
 
@@ -265,6 +284,66 @@ internal static class MEAIToGeminiMapper
         {
             return responseFormat is MEAI.ChatResponseFormatJson ? MediaTypeNames.Application.Json : null;
         }
+    }
+
+    private static ObjectSchema? CreateMappedFunctionParameters(JsonElement functionSchema)
+    {
+        // The element describes the whole function. For a function with no properties, this looks like
+        //
+        // ```json
+        // {
+        //     "title": "GetCurrentWeather",
+        //     "description": "Gets the current weather",
+        //     "type": "object",
+        //     "properties": {}
+        // }
+        // ```
+        // 
+        // We want
+        //
+        // ```json
+        // {
+        //     "name": "GetCurrentWeather",
+        //     "description": "Gets the current weather",
+        //     "parameters": {
+        //         "type": "object",
+        //         "properties": {}
+        //     }
+        // }
+        // ```
+
+        var properties = functionSchema.GetProperty("properties");
+
+        if (properties.ValueKind != JsonValueKind.Object)
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{functionSchema}",
+                toPropertyName: $"{typeof(FunctionDeclaration)}.{nameof(FunctionDeclaration.Parameters)}",
+                reason: $"Expected {JsonValueKind.Object} but got {properties.ValueKind}");
+        }
+
+        Dictionary<string, Schema>? parameters = null;
+
+        foreach (var param in properties.EnumerateObject())
+        {
+            parameters ??= new Dictionary<string, Schema>();
+            parameters[param.Name] = Schema.FromJsonElement(param.Value);
+        }
+
+        if (parameters is null)
+        {
+            // Gemini API expects all OBJECT schemas to have at least one property. For no parameters, return null.
+            return null;
+        }
+
+        return new ObjectSchema
+        {
+            Format = null,
+            Description = null,
+            Nullable = null,
+            Properties = parameters,
+            RequiredProperties = null
+        };
     }
 
     public static EmbedContentRequest CreateMappedEmbeddingRequest(
