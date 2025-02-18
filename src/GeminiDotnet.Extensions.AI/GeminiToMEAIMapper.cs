@@ -1,5 +1,6 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
+using GeminiDotnet.Embeddings;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
 
@@ -214,27 +215,28 @@ internal static class GeminiToMEAIMapper
 
         return default; // Unreachable
     }
-
-
+    
     public static GeneratedEmbeddings<Embedding<float>> CreateMappedGeneratedEmbeddings(
-        Embeddings.EmbeddingResponse response)
+        EmbedContentResponse response,
+        EmbeddingGenerationOptions? options)
     {
-        var rawEmbedding = response.Embedding.Values;
-
         // Currently all models return 768-dimensional embeddings.
         // https://ai.google.dev/gemini-api/docs/models/gemini?#text-embedding
-        const int embeddingSize = 768;
+        const int geminiEmbeddingSize = 768;
+        var embeddingSize = options?.Dimensions ?? geminiEmbeddingSize;
+        var vector = response.Embedding.Values;
 
-        if (rawEmbedding.Length % embeddingSize != 0)
+        if (vector.Length % embeddingSize != 0)
         {
-            throw new InvalidDataException("The response embedding size is not a multiple of the expected size.");
+            throw new InvalidOperationException(
+                $"The returned embedding vector's size is not a multiple of the expected dimensions '{embeddingSize}'.");
         }
 
-        var generatedEmbeddings = new GeneratedEmbeddings<Embedding<float>>(rawEmbedding.Length / embeddingSize);
+        var generatedEmbeddings = new GeneratedEmbeddings<Embedding<float>>(vector.Length / embeddingSize);
 
-        for (int i = 0; i < rawEmbedding.Length; i += embeddingSize)
+        for (int i = 0; i < vector.Length; i += embeddingSize)
         {
-            var embedding = new Embedding<float>(rawEmbedding.AsMemory(i, embeddingSize));
+            var embedding = new Embedding<float>(vector.AsMemory(i, embeddingSize));
             generatedEmbeddings.Add(embedding);
         }
 

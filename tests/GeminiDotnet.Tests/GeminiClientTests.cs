@@ -126,15 +126,9 @@ public sealed class GeminiClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
 
-        var request = new EmbeddingRequest
+        var request = new EmbedContentRequest
         {
-            Content = new EmbeddingContent
-            {
-                Parts =
-                [
-                    new Part { Text = "The quick brown fox jumps over the lazy dog." }
-                ]
-            }
+            Content = new Content { Parts = [new Part { Text = "The quick brown fox jumps over the lazy dog." }] }
         };
 
         // Act

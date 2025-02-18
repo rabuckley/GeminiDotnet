@@ -267,11 +267,14 @@ internal static class MEAIToGeminiMapper
         }
     }
 
-    public static EmbeddingRequest CreateMappedEmbeddingRequest(IEnumerable<string> values)
+    public static EmbedContentRequest CreateMappedEmbeddingRequest(
+        IEnumerable<string> values,
+        MEAI.EmbeddingGenerationOptions? options)
     {
-        return new EmbeddingRequest
+        return new EmbedContentRequest
         {
-            Content = new EmbeddingContent { Parts = [.. values.Select(v => new Part { Text = v })] }
+            Content = new Content { Parts = [.. values.Select(v => new Part { Text = v })] },
+            OutputDimensionality = options?.Dimensions,
         };
     }
 }

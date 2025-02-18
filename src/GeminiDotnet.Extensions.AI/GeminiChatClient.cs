@@ -54,8 +54,7 @@ public sealed class GeminiChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(chatMessages);
 
-        var model = GetModelId(options);
-
+        var model = ModelIdHelper.GetModelId(options, _metadata);
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
         var response = await _client.GenerateContentAsync(model, request, cancellationToken);
         return GeminiToMEAIMapper.CreateMappedChatResponse(response, _timeProvider.GetUtcNow());
@@ -69,7 +68,7 @@ public sealed class GeminiChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(chatMessages);
 
-        var model = GetModelId(options);
+        var model = ModelIdHelper.GetModelId(options, _metadata);
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
 
         await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken))
@@ -99,22 +98,5 @@ public sealed class GeminiChatClient : IChatClient
     /// <inheritdoc />
     public void Dispose()
     {
-    }
-
-    private string GetModelId(
-        ChatOptions? options,
-        [CallerArgumentExpression(nameof(options))]
-        string? parameterName = null)
-    {
-        var model = options?.ModelId ?? _metadata.ModelId;
-
-        if (model is null)
-        {
-            throw new ArgumentException(
-                $"The '{nameof(ChatOptions)}.{nameof(options.ModelId)}' property or must be set, or the model must be provided in the {nameof(GeminiClientOptions)} when constructing this client.",
-                parameterName);
-        }
-
-        return model;
     }
 }

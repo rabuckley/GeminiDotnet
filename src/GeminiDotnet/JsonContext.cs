@@ -10,7 +10,7 @@ namespace GeminiDotnet;
     UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
 [JsonSerializable(typeof(GenerateContentRequest))]
 [JsonSerializable(typeof(GenerateContentResponse))]
-[JsonSerializable(typeof(EmbeddingRequest))]
-[JsonSerializable(typeof(EmbeddingResponse))]
+[JsonSerializable(typeof(EmbedContentRequest))]
+[JsonSerializable(typeof(EmbedContentResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class JsonContext : JsonSerializerContext;

@@ -108,9 +108,9 @@ public sealed class GeminiClient
     // "content": { "parts":[{ "text": "What is the meaning of life?" }] }
     // }'
     // ```
-    public async Task<EmbeddingResponse> EmbedContentAsync(
+    public async Task<EmbedContentResponse> EmbedContentAsync(
         string model,
-        EmbeddingRequest request,
+        EmbedContentRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
@@ -118,10 +118,10 @@ public sealed class GeminiClient
 
         var uri = $"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}";
 
-        var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbeddingRequest>();
+        var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentRequest>();
         var response = ExecuteAction(uri, request, requestJsonInfo, cancellationToken);
 
-        var responseJsonInfo = JsonContext.Default.GetTypeInfo<EmbeddingResponse>();
+        var responseJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentResponse>();
 
         var responseJson = await response.Content
             .ReadFromJsonAsync(responseJsonInfo, cancellationToken: cancellationToken)

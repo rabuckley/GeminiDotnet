@@ -8,6 +8,7 @@ namespace GeminiDotnet.Extensions.AI;
 public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
     private readonly GeminiClient _client;
+    private readonly EmbeddingGeneratorMetadata _metadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiEmbeddingGenerator"/> class.
@@ -26,34 +27,44 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
         ArgumentNullException.ThrowIfNull(client);
 
         _client = client;
-        Metadata = new EmbeddingGeneratorMetadata("Gemini", client.Endpoint);
-    }
 
-    public EmbeddingGeneratorMetadata Metadata { get; }
+        _metadata = new EmbeddingGeneratorMetadata(
+            providerName: "Gemini",
+            providerUri: client.Endpoint,
+            modelId: client.Options.ModelId,
+            dimensions: 768);
+    }
 
     public async Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
         IEnumerable<string> values,
         EmbeddingGenerationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (options?.ModelId is null)
-        {
-            throw new ArgumentException($"The {nameof(options.ModelId)} property must be set", nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(values);
 
-        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(values);
-        var response = await _client.EmbedContentAsync(options.ModelId, request, cancellationToken).ConfigureAwait(false);
-        return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(response);
+        var modelId = ModelIdHelper.GetModelId(options, _metadata);
+        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(values, options);
+        var response = await _client.EmbedContentAsync(modelId, request, cancellationToken).ConfigureAwait(false);
+        return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(response, options);
     }
 
 
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
-        return serviceType == typeof(GeminiClient) ? _client : null;
+        if (serviceType == typeof(GeminiClient))
+        {
+            return _client;
+        }
+
+        if (serviceType == typeof(ChatClientMetadata))
+        {
+            return _metadata;
+        }
+
+        return null;
     }
 
     public void Dispose()
     {
-        throw new NotImplementedException();
     }
 }

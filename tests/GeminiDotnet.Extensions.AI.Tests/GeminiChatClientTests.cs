@@ -19,6 +19,51 @@ public sealed class GeminiChatClientTests
     }
 
     [Fact]
+    public async Task GetResponseAsync_WithNoModel_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var options = new GeminiClientOptions { ApiKey = "" };
+        var client = new GeminiChatClient(options);
+
+        // Act
+        Task Act() => client.GetResponseAsync(new List<ChatMessage>(), new ChatOptions(), cancellationToken);
+
+        // Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(Act);
+        Assert.Contains(nameof(ChatOptions.ModelId), ex.Message);
+        Assert.Contains(nameof(GeminiClientOptions), ex.Message);
+        Assert.Contains(nameof(ChatOptions), ex.Message);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithNoModel_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var options = new GeminiClientOptions { ApiKey = "" };
+        var client = new GeminiChatClient(options);
+
+        // Act
+        async Task Act()
+        {
+            List<ChatMessage> messages = [];
+            var chatOptions = new ChatOptions();
+
+            await foreach (var _ in client.GetStreamingResponseAsync(messages, chatOptions, cancellationToken))
+            {
+            }
+        }
+
+        // Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(Act);
+        Assert.Contains(nameof(ChatOptions.ModelId), ex.Message);
+        Assert.Contains(nameof(GeminiClientOptions), ex.Message);
+        Assert.Contains(nameof(ChatOptions), ex.Message);
+
+    }
+
+    [Fact]
     public async Task GetResponseAsync_WithSystemRole()
     {
         // Arrange
