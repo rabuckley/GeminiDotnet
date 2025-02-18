@@ -5,7 +5,7 @@ namespace GeminiDotnet.ContentGeneration.FunctionCalling;
 [JsonConverter(typeof(JsonStringEnumConverter<CodeExecutionOutcome>))]
 public enum CodeExecutionOutcome
 {
-    [JsonPropertyName("OUTCOME_UNSPECIFIED")]
+    [JsonStringEnumMemberName("OUTCOME_UNSPECIFIED")]
     Unspecified,
 
     [JsonStringEnumMemberName("OUTCOME_OK")]
