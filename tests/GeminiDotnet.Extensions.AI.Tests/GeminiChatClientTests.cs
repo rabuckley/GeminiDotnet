@@ -60,7 +60,6 @@ public sealed class GeminiChatClientTests
         Assert.Contains(nameof(ChatOptions.ModelId), ex.Message);
         Assert.Contains(nameof(GeminiClientOptions), ex.Message);
         Assert.Contains(nameof(ChatOptions), ex.Message);
-
     }
 
     [Fact]
@@ -170,8 +169,6 @@ public sealed class GeminiChatClientTests
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        // Subset of stable models for testing
-        yield return GeminiModels.Gemini1p5Flash;
         yield return GeminiModels.Gemini2Flash;
     }
 

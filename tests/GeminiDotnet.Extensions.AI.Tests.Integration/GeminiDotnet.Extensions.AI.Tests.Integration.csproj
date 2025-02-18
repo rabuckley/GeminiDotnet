@@ -1,7 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <ImplicitUsings>enable</ImplicitUsings>
         <OutputType>Exe</OutputType>
         <RootNamespace>GeminiDotnet.Extensions.AI</RootNamespace>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
@@ -18,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.AI" />
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="xunit.v3"/>
         <PackageReference Include="xunit.runner.visualstudio"/>
@@ -30,8 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\GeminiDotnet.Extensions.AI\GeminiDotnet.Extensions.AI.csproj" />
-      <ProjectReference Include="..\..\src\GeminiDotnet.Testing\GeminiDotnet.Testing.csproj" />
+        <ProjectReference Include="..\..\src\GeminiDotnet.Extensions.AI\GeminiDotnet.Extensions.AI.csproj" />
+        <ProjectReference Include="..\..\src\GeminiDotnet.Testing\GeminiDotnet.Testing.csproj" />
     </ItemGroup>
 
 </Project>

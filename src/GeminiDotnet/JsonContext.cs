@@ -6,8 +6,9 @@ namespace GeminiDotnet;
 
 [JsonSourceGenerationOptions(
     WriteIndented = false,
-    RespectNullableAnnotations = true,
-    UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
+    RespectNullableAnnotations = true
+// UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
+)]
 [JsonSerializable(typeof(GenerateContentRequest))]
 [JsonSerializable(typeof(GenerateContentResponse))]
 [JsonSerializable(typeof(EmbedContentRequest))]

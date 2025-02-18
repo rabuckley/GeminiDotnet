@@ -17,7 +17,7 @@ public sealed record Tool
     /// turn may contain a <see cref="FunctionResponse"/> with the <see cref="Content.Role"/> "function" generation
     /// context for the next model turn.
     /// </summary>
-    [JsonPropertyName("functionDeclaration")]
+    [JsonPropertyName("functionDeclarations")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IEnumerable<FunctionDeclaration>? FunctionDeclarations { get; init; }
 

@@ -4,7 +4,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <OutputType>Exe</OutputType>
         <RootNamespace>GeminiDotnet</RootNamespace>
-        <LangVersion>preview</LangVersion>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
         <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>

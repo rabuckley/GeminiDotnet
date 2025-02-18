@@ -1,4 +1,4 @@
-namespace GeminiDotnet;
+namespace GeminiDotnet.Testing;
 
 public static class TestConfiguration
 {

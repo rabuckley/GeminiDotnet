@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration;
 
+/// <summary>
+/// The Schema object allows the definition of input and output data types. These types can be objects, but also primitives and arrays. Represents a select subset of an <see href="https://spec.openapis.org/oas/v3.0.3#schema">OpenAPI 3.0 schema object</see>.
+/// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = TypePropertyName)]
 [JsonDerivedType(typeof(StringSchema), "STRING")]
 [JsonDerivedType(typeof(NumberSchema), "NUMBER")]
@@ -29,8 +32,7 @@ public abstract record Schema
     public string? Format { get; init; }
 
     /// <summary>
-    /// A brief description of the parameter. This could contain examples of use. Parameter description may be
-    /// formatted as Markdown.
+    /// A brief description of the parameter. This could contain examples of use. Parameter description may be formatted as Markdown.
     /// </summary>
     [JsonPropertyName(DescriptionPropertyName)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

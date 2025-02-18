@@ -3,6 +3,7 @@ using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -97,7 +98,8 @@ internal static class GeminiToMEAIMapper
         {
             return new DataContent(inlineData.Data, inlineData.MimeType)
             {
-                RawRepresentation = inlineData, AdditionalProperties = null
+                RawRepresentation = inlineData,
+                AdditionalProperties = null
             };
         }
 
@@ -105,7 +107,8 @@ internal static class GeminiToMEAIMapper
         {
             return new DataContent(fileData.Uri, fileData.MimeType)
             {
-                RawRepresentation = fileData, AdditionalProperties = null
+                RawRepresentation = fileData,
+                AdditionalProperties = null
             };
         }
 
@@ -116,37 +119,23 @@ internal static class GeminiToMEAIMapper
 
         static FunctionCallContent CreateMappedFunctionCallContent(FunctionCall functionCall)
         {
-            if (functionCall.Id is null)
-            {
-                GeminiMappingException.Throw(
-                    fromPropertyName: $"{typeof(FunctionCall)}.{nameof(FunctionCall.Id)}",
-                    toPropertyName: $"{typeof(FunctionCallContent)}",
-                    reason: $"'{typeof(FunctionCall)}.{nameof(FunctionCall.Id)}' must not be null.");
+            var callId = functionCall.Id ?? $"{functionCall.Name}/{Guid.NewGuid()}";
 
-                return null!; // Unreachable
-            }
-
-            return new FunctionCallContent(functionCall.Id, functionCall.Name, functionCall.Arguments)
+            return new FunctionCallContent(callId, functionCall.Name, functionCall.Arguments)
             {
-                RawRepresentation = functionCall, AdditionalProperties = null
+                RawRepresentation = functionCall,
+                AdditionalProperties = null
             };
         }
 
         static FunctionResultContent CreateMappedFunctionResultContent(FunctionResponse functionResponse)
         {
-            if (functionResponse.Id is null)
-            {
-                GeminiMappingException.Throw(
-                    fromPropertyName: $"{typeof(FunctionResponse)}.{nameof(FunctionResponse.Id)}",
-                    toPropertyName: $"{typeof(FunctionResultContent)}",
-                    reason: $"'{typeof(FunctionResponse)}.{nameof(FunctionResponse.Id)}' must not be null.");
+            var responseId = functionResponse.Id ?? $"{functionResponse.Name}/{Guid.NewGuid()}";
 
-                return null!; // Unreachable
-            }
-
-            return new FunctionResultContent(functionResponse.Id, functionResponse.Response)
+            return new FunctionResultContent(responseId, functionResponse.Response)
             {
-                RawRepresentation = functionResponse, AdditionalProperties = null
+                RawRepresentation = functionResponse,
+                AdditionalProperties = null
             };
         }
     }
@@ -215,7 +204,7 @@ internal static class GeminiToMEAIMapper
 
         return default; // Unreachable
     }
-    
+
     public static GeneratedEmbeddings<Embedding<float>> CreateMappedGeneratedEmbeddings(
         EmbedContentResponse response,
         EmbeddingGenerationOptions? options)
