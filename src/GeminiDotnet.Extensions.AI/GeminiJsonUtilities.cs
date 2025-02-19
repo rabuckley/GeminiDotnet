@@ -11,13 +11,13 @@ public static class GeminiJsonUtilities
     {
         var options = new JsonSerializerOptions(AIJsonUtilities.DefaultOptions);
 
-        options.AddAIContentType<ExecutableCodeContent>("executable_code");
-        options.AddAIContentType<CodeExecutionContent>("code_execution");
-
         options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
             JsonContext.Default,
             AIJsonUtilities.DefaultOptions.TypeInfoResolver
         );
+        
+        options.AddAIContentType<ExecutableCodeContent>("executable_code");
+        options.AddAIContentType<CodeExecutionContent>("code_execution");
 
         options.MakeReadOnly();
 
