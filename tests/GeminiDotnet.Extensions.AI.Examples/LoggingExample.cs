@@ -16,7 +16,7 @@ public sealed class LoggingExample
 
         IChatClient client = new ChatClientBuilder(geminiClient)
             .UseLogging(loggerFactory,
-                client => client.JsonSerializerOptions = GeminiJsonUtilities.CreateDefaultOptions())
+                client => client.JsonSerializerOptions = GeminiJsonUtilities.DefaultOptions)
             .Build();
 
         var chatOptions = new ChatOptions { Tools = [new CodeInterpreterTool()] };

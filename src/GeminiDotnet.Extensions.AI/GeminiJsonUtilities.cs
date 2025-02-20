@@ -5,17 +5,26 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace GeminiDotnet.Extensions.AI;
 
+/// <summary>
+/// Provides utility methods for working with JSON in Gemini.Extensions.AI.
+/// </summary>
 public static class GeminiJsonUtilities
 {
-    public static JsonSerializerOptions CreateDefaultOptions()
-    {
-        var options = new JsonSerializerOptions(AIJsonUtilities.DefaultOptions);
+    /// <summary>
+    /// Gets a <see cref="JsonSerializerOptions" /> singleton with the default settings for Gemini.Extensions.AI including registered custom <see cref="AIContent"/> types.
+    /// </summary>
+    public static JsonSerializerOptions DefaultOptions { get; } = CreateDefaultOptions();
 
-        options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
-            JsonContext.Default,
-            AIJsonUtilities.DefaultOptions.TypeInfoResolver
-        );
-        
+    private static JsonSerializerOptions CreateDefaultOptions()
+    {
+        var options = new JsonSerializerOptions(AIJsonUtilities.DefaultOptions)
+        {
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                JsonContext.Default,
+                AIJsonUtilities.DefaultOptions.TypeInfoResolver
+            )
+        };
+
         options.AddAIContentType<ExecutableCodeContent>("executable_code");
         options.AddAIContentType<CodeExecutionContent>("code_execution");
 
