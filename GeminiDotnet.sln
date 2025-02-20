@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiDotnet.Testing", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiDotnet.Extensions.AI.Tests.Integration", "tests\GeminiDotnet.Extensions.AI.Tests.Integration\GeminiDotnet.Extensions.AI.Tests.Integration.csproj", "{9241150D-5793-4787-B370-CA483C45E8FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiDotnet.Extensions.AI.Examples", "tests\GeminiDotnet.Extensions.AI.Examples\GeminiDotnet.Extensions.AI.Examples.csproj", "{0192581B-7B7A-4B75-9B77-DFCE0B7947AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,7 @@ Global
 		{2A22DA4C-8885-4FAB-99A1-BF61843E85D8} = {61BC6CB6-20FD-4B62-87D0-3FB7A2C695B9}
 		{5C54F60F-F49D-4F9F-834D-BDC585BCED97} = {A4B17025-F891-4C04-BFC2-903D3EFC1EBD}
 		{9241150D-5793-4787-B370-CA483C45E8FC} = {61BC6CB6-20FD-4B62-87D0-3FB7A2C695B9}
+		{0192581B-7B7A-4B75-9B77-DFCE0B7947AA} = {61BC6CB6-20FD-4B62-87D0-3FB7A2C695B9}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{431324FB-13B8-4B5D-B079-422390CF0019}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -54,5 +57,9 @@ Global
 		{9241150D-5793-4787-B370-CA483C45E8FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9241150D-5793-4787-B370-CA483C45E8FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9241150D-5793-4787-B370-CA483C45E8FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0192581B-7B7A-4B75-9B77-DFCE0B7947AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0192581B-7B7A-4B75-9B77-DFCE0B7947AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0192581B-7B7A-4B75-9B77-DFCE0B7947AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0192581B-7B7A-4B75-9B77-DFCE0B7947AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

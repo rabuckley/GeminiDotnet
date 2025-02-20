@@ -1,3 +1,4 @@
+using GeminiDotnet.Extensions.AI.Contents;
 using GeminiDotnet.Testing;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;
@@ -88,7 +89,16 @@ public sealed class ReadmeTests
             [new(ChatRole.User, "What is the sum of the first 42 fibonacci numbers? Generate and run code to do the calculation.")],
             chatOptions,
             cancellationToken);
+        
+        _ = Assert.Single(response.Message.Contents.OfType<ExecutableCodeContent>());
+        _ = Assert.Single(response.Message.Contents.OfType<CodeExecutionContent>());
 
-        _output.WriteLine(response.Message.ToString());
+        foreach (var content in response.Message.Contents)
+        {
+            if (content is TextContent textContent)
+            {
+                _output.WriteLine(textContent.Text);
+            }
+        }
     }
 }
