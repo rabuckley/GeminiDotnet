@@ -12,6 +12,9 @@ public static class GeminiJsonUtilities
 {
     /// <summary>
     /// Gets a <see cref="JsonSerializerOptions" /> singleton with the default settings for Gemini.Extensions.AI including registered custom <see cref="AIContent"/> types.
+    /// <remarks>
+    /// Note: this extends the types provided by <see cref="AIJsonUtilities.DefaultOptions"/>.
+    /// </remarks>
     /// </summary>
     public static JsonSerializerOptions DefaultOptions { get; } = CreateDefaultOptions();
 
