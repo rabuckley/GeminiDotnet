@@ -56,7 +56,7 @@ public sealed class GeminiChatClient : IChatClient
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
-        var response = await _client.GenerateContentAsync(model, request, cancellationToken);
+        var response = await _client.GenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false);
         return GeminiToMEAIMapper.CreateMappedChatResponse(response, _timeProvider.GetUtcNow());
     }
 
@@ -71,7 +71,7 @@ public sealed class GeminiChatClient : IChatClient
         var model = ModelIdHelper.GetModelId(options, _metadata);
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
 
-        await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken))
+        await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken).ConfigureAwait(false))
         {
             yield return GeminiToMEAIMapper.CreateMappedChatResponseUpdate(
                 response,

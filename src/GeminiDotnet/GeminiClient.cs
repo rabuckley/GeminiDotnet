@@ -87,7 +87,7 @@ public sealed class GeminiClient
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         var sseParser = SseParser.Create(stream, ParseSseItem);
 
-        await foreach (var item in sseParser.EnumerateAsync(cancellationToken))
+        await foreach (var item in sseParser.EnumerateAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return item.Data;
         }
@@ -158,6 +158,8 @@ public sealed class GeminiClient
         {
             var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
 
+        try
+        {
             var errorResponse = await response.Content.ReadFromJsonAsync(
                 errorResponseTypeInfo,
                 cancellationToken).ConfigureAwait(false);
