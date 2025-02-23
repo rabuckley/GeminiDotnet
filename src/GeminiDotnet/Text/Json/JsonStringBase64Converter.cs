@@ -10,16 +10,14 @@ public sealed class JsonStringBase64Converter : JsonConverter<ReadOnlyMemory<byt
         Type typeToConvert,
         JsonSerializerOptions options)
     {
-        if (reader.TokenType != JsonTokenType.String)
-        {
-            throw new JsonException();
-        }
-
-        return reader.GetBytesFromBase64();
+        return reader.TokenType == JsonTokenType.String
+            ? reader.GetBytesFromBase64()
+            : throw new JsonException("Expected a Base64 string");
     }
 
     public override void Write(Utf8JsonWriter writer, ReadOnlyMemory<byte> value, JsonSerializerOptions options)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteBase64StringValue(value.Span);
     }
 }
