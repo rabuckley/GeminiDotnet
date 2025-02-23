@@ -156,9 +156,12 @@ public sealed class GeminiClient
             requestJsonInfo,
             cancellationToken).ConfigureAwait(false);
 
-        if ((int)response.StatusCode is >= 400 and < 500)
+        if (response.IsSuccessStatusCode)
         {
-            var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
+            return response;
+        }
+
+        var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
 
         try
         {
@@ -169,7 +172,12 @@ public sealed class GeminiClient
             GeminiClientException.Throw(errorResponse!.Error);
             return null!; // unreachable
         }
+        catch (JsonException)
+        {
+        }
 
-        return response;
+        // Fall back to throwing the HttpRequestException
+        response.EnsureSuccessStatusCode();
+        return null!; // unreachable
     }
 }

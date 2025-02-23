@@ -3,8 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace GeminiDotnet;
 
 /// <summary>
-/// An exception thrown by the <see cref="GeminiClient"/> when a client error (status code 4xx) is returned from
-/// the Gemini API.
+/// An exception thrown by the <see cref="GeminiClient"/> when a client or server error (status code 4xx or 5xx) is returned from the Gemini API.
 /// </summary>
 public sealed class GeminiClientException : Exception
 {
