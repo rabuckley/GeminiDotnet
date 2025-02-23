@@ -53,7 +53,8 @@ public sealed class GeminiClient
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var uri = $"/{Options.ApiVersion}/models/{model}:generateContent?key={Options.ApiKey}";
+        var uri = new Uri($"/{Options.ApiVersion}/models/{model}:generateContent?key={Options.ApiKey}",
+            UriKind.Relative);
 
         var response = await GenerateContentCore(uri, request, cancellationToken).ConfigureAwait(false);
 
@@ -80,7 +81,8 @@ public sealed class GeminiClient
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var uri = $"/{Options.ApiVersion}/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}";
+        var uri = new Uri($"/{Options.ApiVersion}/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}",
+            UriKind.Relative);
 
         var response = await GenerateContentCore(uri, request, cancellationToken).ConfigureAwait(false);
 
@@ -116,7 +118,7 @@ public sealed class GeminiClient
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var uri = $"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}";
+        var uri = new Uri($"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}", UriKind.Relative);
 
         var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentRequest>();
         var response = await ExecuteAction(uri, request, requestJsonInfo, cancellationToken).ConfigureAwait(false);
@@ -131,7 +133,7 @@ public sealed class GeminiClient
     }
 
     private ValueTask<HttpResponseMessage> GenerateContentCore(
-        string uri,
+        Uri uri,
         GenerateContentRequest request,
         CancellationToken cancellationToken)
     {
@@ -140,7 +142,7 @@ public sealed class GeminiClient
     }
 
     private async ValueTask<HttpResponseMessage> ExecuteAction<TRequest>(
-        string uri,
+        Uri uri,
         TRequest request,
         JsonTypeInfo<TRequest> requestJsonInfo,
         CancellationToken cancellationToken)
