@@ -242,7 +242,7 @@ internal static class GeminiToMEAIMapper
 
         for (int i = 0; i < vector.Length; i += embeddingSize)
         {
-            var embedding = new Embedding<float>(vector.AsMemory(i, embeddingSize));
+            var embedding = new Embedding<float>(vector.Slice(i, embeddingSize));
             generatedEmbeddings.Add(embedding);
         }
 

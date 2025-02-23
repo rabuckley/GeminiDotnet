@@ -11,5 +11,5 @@ public sealed record ContentEmbedding
     /// The embedding values.
     /// </summary>
     [JsonPropertyName("values")]
-    public required float[] Values { get; init; }
+    public required ReadOnlyMemory<float> Values { get; init; }
 }

@@ -136,7 +136,7 @@ public sealed class GeminiClientTests
 
         // Assert
         Assert.NotNull(result.Embedding);
-        Assert.NotEmpty(result.Embedding.Values);
+        Assert.NotEqual(0, result.Embedding.Values.Length);
     }
 
     [Fact]
