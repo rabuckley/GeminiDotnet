@@ -11,7 +11,7 @@ public sealed record WebChunk
     /// URI reference of the chunk.
     /// </summary>
     [JsonPropertyName("uri")]
-    public required string Uri { get; init; }
+    public required Uri Uri { get; init; }
 
     /// <summary>
     /// Title of the chunk.

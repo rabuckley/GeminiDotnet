@@ -289,6 +289,49 @@ public sealed class GeminiClientTests
         Assert.True(int.TryParse(choice.Text, out var integer));
         Assert.InRange(integer, 0, 100);
     }
+    
+    [Fact]
+    public async Task GenerateContentAsync_WithSearchTool_ShouldReturnSearchResults()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var client = new GeminiClient(options);
+        
+        var request = new GenerateContentRequest
+        {
+            Tools = [new Tool { GoogleSearch = new GoogleSearch() }],
+            Contents =
+            [
+                new Content
+                {
+                    Role = ChatRoles.User,
+                    Parts = [new Part { Text = "When is the next total solar eclipse in the United States?" }]
+                }
+            ]
+        };
+        
+        // Act
+        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+
+        // Assert
+        Assert.NotNull(result);
+        var candidate = Assert.Single(result.Candidates);
+        Assert.NotNull(candidate.GroundingMetadata);
+
+        foreach (var search in candidate.GroundingMetadata.WebSearchQueries)
+        {
+            _output.WriteLine($"Searched for: '{search}'");
+        }
+
+        foreach (var chunk in candidate.GroundingMetadata.GroundingChunks)
+        {
+            _output.WriteLine($"{chunk.Web!.Title}: {chunk.Web!.Uri}");
+        }
+
+        Assert.NotNull(candidate.GroundingMetadata.SearchEntryPoint?.RenderedContent);
+        _output.WriteLine(candidate.GroundingMetadata.SearchEntryPoint.RenderedContent);
+    }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {

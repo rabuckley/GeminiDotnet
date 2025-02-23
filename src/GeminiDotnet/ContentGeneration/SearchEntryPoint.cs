@@ -7,13 +7,16 @@ namespace GeminiDotnet.ContentGeneration;
 /// </summary>
 public sealed record SearchEntryPoint
 {
+    /// <summary>
+    /// Web content snippet that can be embedded in a web page or an app webview.
+    /// </summary>
     [JsonPropertyName("renderedContent")]
-    public required string RenderedContent { get; init; }
+    public string? RenderedContent { get; init; }
 
     /// <summary>
     /// Base64 encoded JSON representing array of <c>&lt;search term, search url&gt;</c> tuple.
     /// A base64-encoded string.
     /// </summary>
     [JsonPropertyName("sdkBlob")]
-    public required string SdkBlob { get; init; }
+    public string? SdkBlob { get; init; }
 }
