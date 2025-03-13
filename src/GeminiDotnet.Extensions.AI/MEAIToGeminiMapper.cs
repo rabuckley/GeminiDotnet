@@ -14,7 +14,10 @@ internal static class MEAIToGeminiMapper
         IEnumerable<MEAI.ChatMessage> chatMessages,
         MEAI.ChatOptions? options)
     {
-        List<Content> contents = new(chatMessages.Count());
+        List<Content> contents = chatMessages.TryGetNonEnumeratedCount(out var count)
+            ? new(count)
+            : new();
+
         Content? systemInstruction = null;
 
         foreach (var m in chatMessages)
