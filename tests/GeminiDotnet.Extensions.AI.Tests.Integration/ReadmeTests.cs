@@ -90,10 +90,13 @@ public sealed class ReadmeTests
             chatOptions,
             cancellationToken);
         
-        _ = Assert.Single(response.Message.Contents.OfType<ExecutableCodeContent>());
-        _ = Assert.Single(response.Message.Contents.OfType<CodeExecutionContent>());
+        Assert.NotEmpty(response.Messages);
+        var message = response.Messages[0];
 
-        foreach (var content in response.Message.Contents)
+        _ = Assert.Single(message.Contents.OfType<ExecutableCodeContent>());
+        _ = Assert.Single(message.Contents.OfType<CodeExecutionContent>());
+
+        foreach (var content in message.Contents)
         {
             if (content is TextContent textContent)
             {

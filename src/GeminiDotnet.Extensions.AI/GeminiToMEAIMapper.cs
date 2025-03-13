@@ -25,7 +25,6 @@ internal static class GeminiToMEAIMapper
             ResponseId = null,
             ChatThreadId = null,
             CreatedAt = createdAt,
-            ChoiceIndex = 0,
             FinishReason = CreateMappedChatFinishReason(candidate.FinishReason),
             ModelId = response.ModelVersion
         };

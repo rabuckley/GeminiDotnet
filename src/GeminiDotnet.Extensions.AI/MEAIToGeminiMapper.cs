@@ -11,10 +11,10 @@ namespace GeminiDotnet.Extensions.AI;
 internal static class MEAIToGeminiMapper
 {
     public static GenerateContentRequest CreateMappedGenerateContentRequest(
-        IList<MEAI.ChatMessage> chatMessages,
+        IEnumerable<MEAI.ChatMessage> chatMessages,
         MEAI.ChatOptions? options)
     {
-        List<Content> contents = new(chatMessages.Count);
+        List<Content> contents = new(chatMessages.Count());
         Content? systemInstruction = null;
 
         foreach (var m in chatMessages)
@@ -221,13 +221,13 @@ internal static class MEAIToGeminiMapper
 
             static Part CreateInlineDataPart(MEAI.DataContent dataContent)
             {
-                if (dataContent.Data is null)
+                if (dataContent.Data.IsEmpty)
                 {
                     GeminiMappingException.Throw(
                         fromPropertyName: $"{typeof(MEAI.DataContent)}.{nameof(MEAI.DataContent.Data)}",
                         toPropertyName: $"{typeof(Part)}.{nameof(Part.InlineData)}",
                         reason:
-                        $"{nameof(MEAI.DataContent.Data)} cannot be null when creating an {nameof(Part.InlineData)} part.");
+                        $"{nameof(MEAI.DataContent.Data)} cannot be empty when creating an {nameof(Part.InlineData)} part.");
                 }
 
                 if (dataContent.MediaType is null)
@@ -241,7 +241,7 @@ internal static class MEAIToGeminiMapper
 
                 return new Part
                 {
-                    InlineData = new Blob { Data = dataContent.Data.Value, MimeType = dataContent.MediaType }
+                    InlineData = new Blob { Data = dataContent.Data, MimeType = dataContent.MediaType }
                 };
             }
 
