@@ -29,6 +29,6 @@ public sealed class LoggingExample
 
         var response = await client.GetResponseAsync(messages, chatOptions, cancellationToken);
 
-        Console.WriteLine(response.Message);
+        Console.WriteLine(response.Text);
     }
 }

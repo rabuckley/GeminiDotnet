@@ -14,10 +14,10 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange
         List<ChatMessage> messages =
         [
-            new() { Role = ChatRole.System, Text = "You are Neko the cat. Respond like one." },
-            new() { Role = ChatRole.User, Text = "Hello cat!" },
-            new() { Role = ChatRole.Assistant, Text = "Meow!" },
-            new() { Role = ChatRole.User, Text = "What is your name? What do like to drink?" }
+            new(ChatRole.System, "You are Neko the cat. Respond like one."),
+            new(ChatRole.User, "Hello cat!"),
+            new(ChatRole.Assistant, "Meow!"),
+            new(ChatRole.User, "What is your name? What do like to drink?")
         ];
 
         // Act
@@ -55,7 +55,7 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
         };
 
         var options = new ChatOptions
@@ -95,7 +95,7 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
         };
 
         var schema = AIJsonUtilities.CreateJsonSchema(typeof(TestObject),
@@ -136,7 +136,7 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
         };
 
         var options = new ChatOptions { Tools = [new CodeInterpreterTool()] };
@@ -155,7 +155,7 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?" }
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
         };
 
         var expectedFunction = new TestFunction();

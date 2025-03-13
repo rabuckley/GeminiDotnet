@@ -74,10 +74,10 @@ public sealed class GeminiChatClientTests
 
         List<ChatMessage> messages =
         [
-            new() { Role = ChatRole.System, Text = "You are Neko the cat. Respond like one." },
-            new() { Role = ChatRole.User, Text = "Hello cat!" },
-            new() { Role = ChatRole.Assistant, Text = "Meow!" },
-            new() { Role = ChatRole.User, Text = "What is your name? What do like to drink?" }
+            new(ChatRole.System, "You are Neko the cat. Respond like one."),
+            new(ChatRole.User, "Hello cat!"),
+            new(ChatRole.Assistant, "Meow!"),
+            new(ChatRole.User, "What is your name? What do like to drink?")
         ];
 
         var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash };
@@ -87,8 +87,7 @@ public sealed class GeminiChatClientTests
 
         // Assert
         Assert.NotNull(result);
-        var choice = Assert.Single(result.Choices);
-        Assert.Contains("Neko", choice.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Neko", result.Text, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
@@ -102,7 +101,7 @@ public sealed class GeminiChatClientTests
 
         List<ChatMessage> messages =
         [
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?", }
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
         ];
 
         var chatOptions = new ChatOptions { ModelId = model };
@@ -112,7 +111,7 @@ public sealed class GeminiChatClientTests
 
         // Assert
         Assert.NotNull(result);
-        var choice = Assert.Single(result.Choices);
+        var choice = Assert.Single(result.Messages);
         Assert.Contains("Armstrong", choice.Text, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -144,7 +143,7 @@ public sealed class GeminiChatClientTests
 
         List<ChatMessage> messages =
         [
-            new() { Role = ChatRole.User, Text = "Who was the first person to walk on the moon?", }
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
         ];
 
         var chatOptions = new ChatOptions { ModelId = model };

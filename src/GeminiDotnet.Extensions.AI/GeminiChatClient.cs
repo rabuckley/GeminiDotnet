@@ -48,28 +48,28 @@ public sealed class GeminiChatClient : IChatClient
 
     /// <inheritdoc />
     public async Task<ChatResponse> GetResponseAsync(
-        IList<ChatMessage> chatMessages,
+        IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(chatMessages);
+        ArgumentNullException.ThrowIfNull(messages);
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
         var response = await _client.GenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false);
         return GeminiToMEAIMapper.CreateMappedChatResponse(response, _timeProvider.GetUtcNow());
     }
 
     /// <inheritdoc />
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
-        IList<ChatMessage> chatMessages,
+        IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(chatMessages);
+        ArgumentNullException.ThrowIfNull(messages);
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(chatMessages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
 
         await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken).ConfigureAwait(false))
         {

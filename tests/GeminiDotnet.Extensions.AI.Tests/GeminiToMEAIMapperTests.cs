@@ -19,7 +19,7 @@ public sealed class GeminiToMEAIMapperTests
         var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
 
         // Assert
-        var contents = Assert.Single(result.Choices).Contents;
+        var contents = Assert.Single(result.Messages).Contents;
 
         var text1 = Assert.IsType<TextContent>(contents[0]);
         Assert.Equal(actualContent.Parts[0].Text, text1.Text);
