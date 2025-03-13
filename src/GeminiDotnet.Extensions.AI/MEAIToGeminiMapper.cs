@@ -233,15 +233,6 @@ internal static class MEAIToGeminiMapper
                         $"{nameof(MEAI.DataContent.Data)} cannot be empty when creating an {nameof(Part.InlineData)} part.");
                 }
 
-                if (dataContent.MediaType is null)
-                {
-                    GeminiMappingException.Throw(
-                        fromPropertyName: $"{typeof(MEAI.DataContent)}.{nameof(MEAI.DataContent.MediaType)}",
-                        toPropertyName: $"{typeof(Part)}.{nameof(Part.InlineData)}",
-                        reason:
-                        $"{nameof(MEAI.DataContent.MediaType)} cannot be null when creating an {nameof(Part.InlineData)} part.");
-                }
-
                 return new Part
                 {
                     InlineData = new Blob { Data = dataContent.Data, MimeType = dataContent.MediaType }
