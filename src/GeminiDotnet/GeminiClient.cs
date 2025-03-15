@@ -56,7 +56,9 @@ public sealed class GeminiClient
         var uri = new Uri($"/{Options.ApiVersion}/models/{model}:generateContent?key={Options.ApiKey}",
             UriKind.Relative);
 
-        var response = await GenerateContentCore(uri, request, cancellationToken).ConfigureAwait(false);
+        var response =
+            await GenerateContentCore(uri, request, HttpCompletionOption.ResponseContentRead, cancellationToken)
+                .ConfigureAwait(false);
 
         var responseJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
 
@@ -84,7 +86,9 @@ public sealed class GeminiClient
         var uri = new Uri($"/{Options.ApiVersion}/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}",
             UriKind.Relative);
 
-        var response = await GenerateContentCore(uri, request, cancellationToken).ConfigureAwait(false);
+        var response =
+            await GenerateContentCore(uri, request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
 
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         var sseParser = SseParser.Create(stream, ParseSseItem);
@@ -121,7 +125,10 @@ public sealed class GeminiClient
         var uri = new Uri($"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}", UriKind.Relative);
 
         var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentRequest>();
-        var response = await ExecuteAction(uri, request, requestJsonInfo, cancellationToken).ConfigureAwait(false);
+
+        var response =
+            await ExecuteAction(uri, request, requestJsonInfo, HttpCompletionOption.ResponseContentRead,
+                cancellationToken).ConfigureAwait(false);
 
         var responseJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentResponse>();
 
@@ -135,26 +142,27 @@ public sealed class GeminiClient
     private ValueTask<HttpResponseMessage> GenerateContentCore(
         Uri uri,
         GenerateContentRequest request,
+        HttpCompletionOption completion,
         CancellationToken cancellationToken)
     {
         var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
-        return ExecuteAction(uri, request, requestJsonInfo, cancellationToken);
+        return ExecuteAction(uri, request, requestJsonInfo, completion, cancellationToken);
     }
 
     private async ValueTask<HttpResponseMessage> ExecuteAction<TRequest>(
         Uri uri,
         TRequest request,
         JsonTypeInfo<TRequest> requestJsonInfo,
+        HttpCompletionOption completion,
         CancellationToken cancellationToken)
     {
         Debug.Assert(uri is not null);
         Debug.Assert(request is not null);
 
-        var response = await _httpClient.PostAsJsonAsync(
-            uri,
-            request,
-            requestJsonInfo,
-            cancellationToken).ConfigureAwait(false);
+        using var message = new HttpRequestMessage(HttpMethod.Post, uri);
+        message.Content = JsonContent.Create(request, requestJsonInfo);
+
+        var response = await _httpClient.SendAsync(message, completion, cancellationToken).ConfigureAwait(false);
 
         if (response.IsSuccessStatusCode)
         {

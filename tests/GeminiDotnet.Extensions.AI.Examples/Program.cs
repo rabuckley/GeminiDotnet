@@ -18,7 +18,8 @@ Console.CancelKeyPress += (s, e) => cts.Cancel();
 Dictionary<int, Func<GeminiChatClient, CancellationToken, Task>> examples = new()
 {
     { 1, FunctionCallingExample.ExecuteAsync }, 
-    { 2, LoggingExample.ExecuteAsync }
+    { 2, LoggingExample.ExecuteAsync },
+    { 3, StreamingExample.ExecuteAsync }
 };
 
 Console.WriteLine("Enter the number of the example you'd like to run:\n");
