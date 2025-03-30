@@ -12,8 +12,12 @@ public static class GeminiModels
 
     public const string Gemini2Flash = "gemini-2.0-flash";
 
+    public const string Gemini2FlashLite = "gemini-2.0-flash-lite";
+
     public static class Experimental
     {
         public const string Gemini2FlashThinking = "gemini-2.0-flash-thinking-exp";
+
+        public const string Gemini2p5Pro = "gemini-2.5-pro-exp-03-25";
     }
 }
