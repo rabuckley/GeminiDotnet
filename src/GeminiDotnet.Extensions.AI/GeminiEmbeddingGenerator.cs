@@ -31,8 +31,8 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
         _metadata = new EmbeddingGeneratorMetadata(
             providerName: "Gemini",
             providerUri: client.Endpoint,
-            modelId: client.Options.ModelId,
-            dimensions: 768);
+            defaultModelId: client.Options.ModelId,
+            defaultModelDimensions: 768);
     }
 
     public async Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(

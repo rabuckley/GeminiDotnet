@@ -139,7 +139,7 @@ public sealed class MEAIToGeminiMapperTests
             new(ChatRole.User, "Who was the first person to walk on the moon?")
         };
 
-        var options = new ChatOptions { Tools = [new CodeInterpreterTool()] };
+        var options = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
 
         // Act
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
@@ -181,11 +181,11 @@ public sealed class MEAIToGeminiMapperTests
     {
         public override JsonElement JsonSchema { get; } = AIJsonUtilities.CreateJsonSchema(typeof(TestObject));
 
-        protected override Task<object?> InvokeCoreAsync(
-            IEnumerable<KeyValuePair<string, object?>> arguments,
+        protected override ValueTask<object?> InvokeCoreAsync(
+            AIFunctionArguments arguments,
             CancellationToken cancellationToken)
         {
-            return Task.FromResult<object?>(null);
+            return ValueTask.FromResult<object?>(null);
         }
     }
 

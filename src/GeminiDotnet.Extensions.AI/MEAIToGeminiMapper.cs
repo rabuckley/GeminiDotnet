@@ -65,7 +65,7 @@ internal static class MEAIToGeminiMapper
 
             foreach (var tool in tools)
             {
-                if (tool is MEAI.CodeInterpreterTool)
+                if (tool is MEAI.HostedCodeInterpreterTool)
                 {
                     mappedTools.Add(new Tool { CodeExecution = new CodeExecution() });
                     continue;
