@@ -19,7 +19,7 @@ public sealed class LoggingExample
                 client => client.JsonSerializerOptions = GeminiJsonUtilities.DefaultOptions)
             .Build();
 
-        var chatOptions = new ChatOptions { Tools = [new CodeInterpreterTool()] };
+        var chatOptions = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
 
         IList<ChatMessage> messages =
         [

@@ -11,7 +11,7 @@ internal static class ModelIdHelper
         [CallerArgumentExpression(nameof(options))]
         string? parameterName = null)
     {
-        var model = options?.ModelId ?? metadata.ModelId;
+        var model = options?.ModelId ?? metadata.DefaultModelId;
 
         if (model is null)
         {
@@ -25,7 +25,7 @@ internal static class ModelIdHelper
 
     public static string GetModelId(EmbeddingGenerationOptions? options, EmbeddingGeneratorMetadata metadata)
     {
-        var model = options?.ModelId ?? metadata.ModelId;
+        var model = options?.ModelId ?? metadata.DefaultModelId;
 
         if (model is null)
         {

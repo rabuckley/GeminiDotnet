@@ -42,7 +42,7 @@ public sealed class GeminiChatClient : IChatClient
         _client = client;
         _timeProvider = timeProvider;
 
-        _metadata = new ChatClientMetadata("Gemini", providerUri: client.Endpoint, modelId: client.Options.ModelId);
+        _metadata = new ChatClientMetadata("Gemini", providerUri: client.Endpoint, defaultModelId: client.Options.ModelId);
     }
 
 
