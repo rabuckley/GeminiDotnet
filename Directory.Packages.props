@@ -5,12 +5,12 @@
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.AI" Version="9.4.0-preview.1.25207.5" />
     <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.4.0-preview.1.25207.5" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageVersion Include="System.Net.ServerSentEvents" Version="9.0.3" />
-    <PackageVersion Include="xunit.v3" Version="1.1.0" />
+    <PackageVersion Include="System.Net.ServerSentEvents" Version="9.0.4" />
+    <PackageVersion Include="xunit.v3" Version="2.0.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
-    <PackageVersion Include="xunit.v3.extensibility.core" Version="1.1.0" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="2.0.1" />
   </ItemGroup>
 </Project>
