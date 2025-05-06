@@ -23,7 +23,7 @@ internal static class GeminiToMEAIMapper
             RawRepresentation = response,
             AdditionalProperties = null,
             ResponseId = null,
-            ChatThreadId = null,
+            ConversationId = null,
             CreatedAt = createdAt,
             FinishReason = CreateMappedChatFinishReason(candidate.FinishReason),
             ModelId = response.ModelVersion
@@ -163,7 +163,7 @@ internal static class GeminiToMEAIMapper
         return new ChatResponse(choices)
         {
             ResponseId = null,
-            ChatThreadId = null,
+            ConversationId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,
             FinishReason = CreateMappedChatFinishReason(response.Candidates[0].FinishReason),
