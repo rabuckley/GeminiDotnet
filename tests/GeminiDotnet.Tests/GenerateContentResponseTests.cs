@@ -27,6 +27,7 @@ public sealed class GenerateContentResponseTests
         yield return CodeExExample2;
         yield return JsonSchemaOutputExample;
         yield return VideoExampleResponse;
+        yield return GoogleSearchExampleResponse;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
@@ -201,6 +202,107 @@ public sealed class GenerateContentResponseTests
               },
               {
                 "modality": "AUDIO"
+              }
+            ]
+          },
+          "modelVersion": "gemini-2.0-flash"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    public const string GoogleSearchExampleResponse =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "The next total solar eclipse visible from the contiguous United States will be on August 23, 2044. However, the path of totality will only pass through a few northern states like Montana, North Dakota, and South Dakota.\n\nFollowing that, a total solar eclipse will occur on August 12, 2045, with a path spanning from California to Florida.\n"
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "groundingMetadata": {
+                "searchEntryPoint": {
+                  "renderedContent": "removed for brevity"
+                },
+                "groundingChunks": [
+                  {
+                    "web": {
+                      "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AbF9wXGoTY8RbwxkbUqVu8f2FbrRG_vbF5lDHQDFxZxfLv6XMQh45T4O-twXiZgD4O1tQEb6cWGJdtvLG0iRY0fs0Q2bQI2m3HKKc11pDW8Et53ybNwMAe_9VdlG-bN6kOnoFtDRXtTfOealkNf3H0M_MrhaW_Hq7S7qJ80vt4M=",
+                      "title": "cbsnews.com"
+                    }
+                  },
+                  {
+                    "web": {
+                      "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AbF9wXG4o9PFe-Dy2zFb29Q-R1YWxiC1G73kbRrI7AssWEO1FP8knH6TKZMTqm3ikTXH61M9z1oqeZDIhGEXnp7QzfEobM5tRzi6fzlH1hQZcKpJ5k9vLFhYR-AW9DT-yrOfk9LRgwFiICXVb4Id2L_r8nU9lEHtPRWTOjrEiw==",
+                      "title": "nasa.gov"
+                    }
+                  },
+                  {
+                    "web": {
+                      "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AbF9wXEI6bmS_EaMWBes0nAhlHrvbXvQSkzEa5fnyw_6v2M-4-3ihCwFA9RjdddXHIGW8u8N4npbDC_tfOLjjhACf_VF4Tg3UYlqecj-FMZdEhQC9Ab7vCoZ_d1CXLAAgSPzFzbM4AArWQ5LQ7byrqYNlsW7smr3l4vzPbHrU14C5pkVs5kWJaoilFkerQi3vsMCf5VZ6Vnr7nB_r0sIUAVj-6kLPdg=",
+                      "title": "fox26houston.com"
+                    }
+                  }
+                ],
+                "groundingSupports": [
+                  {
+                    "segment": {
+                      "endIndex": 97,
+                      "text": "The next total solar eclipse visible from the contiguous United States will be on August 23, 2044"
+                    },
+                    "groundingChunkIndices": [
+                      0,
+                      1,
+                      2
+                    ]
+                  },
+                  {
+                    "segment": {
+                      "startIndex": 99,
+                      "endIndex": 218,
+                      "text": "However, the path of totality will only pass through a few northern states like Montana, North Dakota, and South Dakota"
+                    },
+                    "groundingChunkIndices": [
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "segment": {
+                      "startIndex": 221,
+                      "endIndex": 337,
+                      "text": "Following that, a total solar eclipse will occur on August 12, 2045, with a path spanning from California to Florida"
+                    },
+                    "groundingChunkIndices": [
+                      0
+                    ]
+                  }
+                ],
+                "retrievalMetadata": {},
+                "webSearchQueries": [
+                  "next total solar eclipse United States"
+                ]
+              }
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 12,
+            "candidatesTokenCount": 81,
+            "totalTokenCount": 93,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 12
+              }
+            ],
+            "candidatesTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 81
               }
             ]
           },
