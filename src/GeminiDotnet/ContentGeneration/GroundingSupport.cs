@@ -20,7 +20,8 @@ public sealed record GroundingSupport
     /// the same size as the groundingChunkIndices.
     /// </summary>
     [JsonPropertyName("confidenceScores")]
-    public required IReadOnlyList<double> ConfidenceScores { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<double>? ConfidenceScores { get; init; }
 
     /// <summary>
     /// Segment of the content this support belongs to.
