@@ -7,19 +7,23 @@ var key = Environment.GetEnvironmentVariable("GEMINI_DOTNET_API_KEY")
 
 var options = new GeminiClientOptions
 {
-    ApiKey = key, ModelId = GeminiModels.Gemini2Flash, ApiVersion = GeminiApiVersions.V1Beta
+    ApiKey = key,
+    ModelId = GeminiModels.Gemini2Flash,
+    ApiVersion = GeminiApiVersions.V1Beta,
+    RequestTimeout = TimeSpan.FromMinutes(5),
 };
 
-var client = new GeminiChatClient(options);
+var chatClient = new GeminiChatClient(options);
 
 var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (s, e) => cts.Cancel();
 
 Dictionary<int, Func<GeminiChatClient, CancellationToken, Task>> examples = new()
 {
-    { 1, FunctionCallingExample.ExecuteAsync }, 
+    { 1, FunctionCallingExample.ExecuteAsync },
     { 2, LoggingExample.ExecuteAsync },
-    { 3, StreamingExample.ExecuteAsync }
+    { 3, StreamingExample.ExecuteAsync },
+    { 4, YouTubeExample.ExecuteAsync },
 };
 
 Console.WriteLine("Enter the number of the example you'd like to run:\n");
@@ -36,5 +40,5 @@ if (!int.TryParse(Console.ReadLine(), out var choice) || !examples.TryGetValue(c
     return -1;
 }
 
-await example(client, cts.Token);
+await example(chatClient, cts.Token);
 return 0;

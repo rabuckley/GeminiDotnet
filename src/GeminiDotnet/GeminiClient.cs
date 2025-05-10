@@ -21,6 +21,12 @@ public sealed class GeminiClient
         ArgumentNullException.ThrowIfNull(options);
 
         _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+
+        if (options.RequestTimeout is not null)
+        {
+            _httpClient.Timeout = options.RequestTimeout.Value;
+        }
+
         Options = options;
     }
 
