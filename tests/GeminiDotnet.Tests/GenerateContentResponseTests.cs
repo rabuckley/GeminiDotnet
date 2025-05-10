@@ -26,6 +26,7 @@ public sealed class GenerateContentResponseTests
         yield return PythonCodeExecutionExampleResponse;
         yield return CodeExExample2;
         yield return JsonSchemaOutputExample;
+        yield return VideoExampleResponse;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
@@ -164,6 +165,42 @@ public sealed class GenerateContentResponseTests
               {
                 "modality": "TEXT",
                 "tokenCount": 8190
+              }
+            ]
+          },
+          "modelVersion": "gemini-2.0-flash"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    public const string VideoExampleResponse =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": ":\\n\\nIn a talk from Lenny's Podcast between Lenny Ratchitsky and Michael Tru"
+                  }
+                ],
+                "role": "model"
+              }
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 21,
+            "totalTokenCount": 21,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 21
+              },
+              {
+                "modality": "VIDEO"
+              },
+              {
+                "modality": "AUDIO"
               }
             ]
           },
