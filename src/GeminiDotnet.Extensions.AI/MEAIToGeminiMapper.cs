@@ -1,6 +1,7 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
+using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text.Json;
@@ -201,6 +202,7 @@ internal static class MEAIToGeminiMapper
             {
                 MEAI.TextContent textContent => CreateTextPart(textContent),
                 MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
+                MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
                 MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
                 MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
                 _ => ThrowUnsupportedContentException(content),
@@ -236,6 +238,15 @@ internal static class MEAIToGeminiMapper
                 return new Part
                 {
                     InlineData = new Blob { Data = dataContent.Data, MimeType = dataContent.MediaType }
+                };
+            }
+
+
+            static Part CreateFileDataPart(UriContent uriContent)
+            {
+                return new Part
+                {
+                    FileData = new FileData { Uri = uriContent.Uri, MimeType = uriContent.MediaType }
                 };
             }
 

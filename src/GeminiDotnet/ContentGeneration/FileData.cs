@@ -7,9 +7,10 @@ namespace GeminiDotnet.ContentGeneration;
 /// </summary>
 public sealed record FileData
 {
-    [JsonPropertyName("mime_type")]
-    public required string MimeType { get; init; }
+    [JsonPropertyName("mimeType")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MimeType { get; init; }
 
-    [JsonPropertyName("uri")]
+    [JsonPropertyName("fileUri")]
     public required Uri Uri { get; init; }
 }
