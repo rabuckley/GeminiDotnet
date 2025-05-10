@@ -3,32 +3,45 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.ContentGeneration;
 
 /// <summary>
-/// Supported modalities of the response.
+/// Content Part modality.
 /// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter<Modality>))]
-public enum Modality
+[JsonConverter(typeof(JsonStringEnumConverter<ContentPartModality>))]
+public enum ContentPartModality
 {
     /// <summary>
-    /// Default value.
+    /// Unspecified modality.
     /// </summary>
     [JsonStringEnumMemberName("MODALITY_UNSPECIFIED")]
     Unspecified,
 
     /// <summary>
-    /// Indicates the model should return text.
+    /// Plain text.
     /// </summary>
     [JsonStringEnumMemberName("TEXT")]
     Text,
 
     /// <summary>
-    /// Indicates the model should return images.
+    /// Image.
     /// </summary>
     [JsonStringEnumMemberName("IMAGE")]
     Image,
+
+    /// <summary>
+    /// Video.
+    /// </summary>
+    [JsonStringEnumMemberName("VIDEO")]
+    Video,
 
     /// <summary>
     /// Indicates the model should return audio.
     /// </summary>
     [JsonStringEnumMemberName("AUDIO")]
     Audio,
+
+    /// <summary>
+    /// Document.
+    /// </summary>
+    [JsonStringEnumMemberName("DOCUMENT")]
+    Document,
 }
+

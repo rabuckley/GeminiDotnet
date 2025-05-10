@@ -38,7 +38,7 @@ public sealed record GenerationConfiguration
     /// </summary>
     [JsonPropertyName("responseModalities")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IEnumerable<Modality>? ResponseModalities { get; init; }
+    public IList<ResponseModality>? ResponseModalities { get; init; }
 
     /// <summary>
     /// Number of generated responses to return.
