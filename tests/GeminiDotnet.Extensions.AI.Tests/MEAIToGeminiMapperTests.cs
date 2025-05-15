@@ -102,10 +102,12 @@ public sealed class MEAIToGeminiMapperTests
             inferenceOptions: new AIJsonSchemaCreateOptions
             {
                 TransformSchemaNode = null,
-                IncludeTypeInEnumSchemas = false,
-                DisallowAdditionalProperties = true,
                 IncludeSchemaKeyword = false,
-                RequireAllProperties = false,
+                TransformOptions = new()
+                {
+                    DisallowAdditionalProperties = true,
+                    RequireAllProperties = false,
+                },
             });
 
         var options = new ChatOptions { ResponseFormat = ChatResponseFormat.ForJsonSchema(schema) };
