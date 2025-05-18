@@ -1,10 +1,8 @@
 # GeminiDotnet.Extensions.AI
 
-This package provides implementations of the [`Microsoft.Extensions.AI.Abstractions`](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/) APIs. These provide common abstractions over generative AI models, allowing users to swap out their model provider without rewriting their code. These implementations are backed by the modern and lightweight [`GeminiDotnet`](https://www.nuget.org/packages/GeminiDotnet/) package.
+This package provides implementations of the [`Microsoft.Extensions.AI.Abstractions`](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) APIs backed by Google's Gemini API. These provide common abstractions over generative AI models, allowing users to swap out their model provider without rewriting their code. These implementations are backed by the modern and lightweight [`GeminiDotnet`](https://www.nuget.org/packages/GeminiDotnet/) package.
 
-Note: This package is marked as "preview" because `Microsoft.Extensions.AI.Abstractions` is in preview. It will become stable once `Microsoft.Extensions.AI` is.
-
-For more information on why you may want to use the [`Microsoft.Extensions.AI.Abstractions`](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/) APIs, you can read its announcement [blog post](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/).
+For more information on why you may want to use the [`Microsoft.Extensions.AI.Abstractions`](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) APIs, you can read its announcement [blog post](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/).
 
 ## Getting Started
 
