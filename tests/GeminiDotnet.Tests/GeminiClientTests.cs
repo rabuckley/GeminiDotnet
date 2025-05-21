@@ -210,13 +210,22 @@ public sealed class GeminiClientTests
 
         // Act
         await foreach (var result in client.GenerateContentStreamingAsync(
-                           GeminiModels.Experimental.Gemini2FlashThinking,
+                           GeminiModels.Experimental.Gemini2p5FlashPreview,
                            request,
                            cancellationToken))
         {
             var response = result.Candidates.Single().Content.Parts.Single();
+
             Assert.NotNull(response.Text);
-            sb.Append(response.Text);
+
+            if (response.IsThought)
+            {
+                sb.Append($"Thought: {response.Text}");
+            }
+            else
+            {
+                sb.Append(response.Text);
+            }
         }
 
         var resultText = sb.ToString();
@@ -289,7 +298,7 @@ public sealed class GeminiClientTests
         Assert.True(int.TryParse(choice.Text, out var integer));
         Assert.InRange(integer, 0, 100);
     }
-    
+
     [Fact]
     public async Task GenerateContentAsync_WithSearchTool_ShouldReturnSearchResults()
     {
@@ -297,7 +306,7 @@ public sealed class GeminiClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
         var client = new GeminiClient(options);
-        
+
         var request = new GenerateContentRequest
         {
             Tools = [new Tool { GoogleSearch = new GoogleSearch() }],
@@ -310,7 +319,7 @@ public sealed class GeminiClientTests
                 }
             ]
         };
-        
+
         // Act
         var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
 

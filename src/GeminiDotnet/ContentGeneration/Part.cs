@@ -9,6 +9,13 @@ namespace GeminiDotnet.ContentGeneration;
 public sealed record Part
 {
     /// <summary>
+    /// Indicates if the part is thought from the model.
+    /// </summary>
+    [JsonPropertyName("thought")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IsThought { get; init; }
+    
+    /// <summary>
     /// Inline text.
     /// </summary>
     [JsonPropertyName("text")]
