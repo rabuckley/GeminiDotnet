@@ -208,23 +208,26 @@ public sealed class GeminiClientTests
 
         var sb = new StringBuilder();
 
+        GenerateContentResponse? response = null;
+
         // Act
         await foreach (var result in client.GenerateContentStreamingAsync(
                            GeminiModels.Experimental.Gemini2p5FlashPreview,
                            request,
                            cancellationToken))
         {
-            var response = result.Candidates.Single().Content.Parts.Single();
+            response = result;
+            var part = result.Candidates.Single().Content.Parts.Single();
 
-            Assert.NotNull(response.Text);
+            Assert.NotNull(part.Text);
 
-            if (response.IsThought)
+            if (part.IsThought)
             {
-                sb.Append($"Thought: {response.Text}");
+                sb.Append($"Thought: {part.Text}");
             }
             else
             {
-                sb.Append(response.Text);
+                sb.Append(part.Text);
             }
         }
 
@@ -232,6 +235,8 @@ public sealed class GeminiClientTests
         _output.WriteLine(resultText);
 
         // Assert
+        Assert.NotNull(response);
+        Assert.True(response.UsageMetadata.ThoughtsTokenCount > 0);
         Assert.Contains("prisoner", resultText, StringComparison.OrdinalIgnoreCase);
     }
 

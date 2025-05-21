@@ -14,15 +14,37 @@ public sealed record UsageMetadata
     public required int PromptTokenCount { get; init; }
 
     /// <summary>
+    /// Number of tokens in the cached part of the prompt (the cached content)
+    /// </summary>
+    [JsonPropertyName("cachedContentTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int CachedContentTokenCount { get; init; }
+
+    /// <summary>
     /// Total number of tokens across all the generated response candidates.
     /// </summary>
     [JsonPropertyName("candidatesTokenCount")]
     public int? CandidatesTokenCount { get; init; }
 
     /// <summary>
+    /// Number of tokens present in tool-use prompt(s).
+    /// </summary>
+    [JsonPropertyName("toolUsePromptTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int ToolUsePromptTokenCount { get; init; }
+
+    /// <summary>
+    /// Number of tokens of thoughts for thinking models.
+    /// </summary>
+    [JsonPropertyName("thoughtsTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int ThoughtsTokenCount { get; init; }
+
+    /// <summary>
     /// Total token count for the generation request (prompt + response candidates).
     /// </summary>
     [JsonPropertyName("totalTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public required int TotalTokenCount { get; init; }
 
     /// <summary>
