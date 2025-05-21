@@ -62,6 +62,12 @@ public sealed record Candidate
     /// </summary>
     [JsonPropertyName("logprobsResult")]
     public LogprobsResult? LogprobsResult { get; init; }
+    
+    /// <summary>
+    /// Metadata related to url context retrieval tool.
+    /// </summary>
+    [JsonPropertyName("urlRetrievalMetadata")]
+    public UrlRetrievalMetadata? UrlRetrievalMetadata { get; init; }
 
     /// <summary>
     /// Index of the candidate in the list of response candidates.
