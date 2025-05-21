@@ -159,7 +159,7 @@ public sealed class GeminiClientTests
                     Role = ChatRoles.User,
                     Parts =
                     [
-                        new Part { Text = "Can you print Hello, World! using Python?" }
+                        new Part { Text = "Can you print Hello, World! using Python? Generate and run the program." }
                     ]
                 }
             ]
