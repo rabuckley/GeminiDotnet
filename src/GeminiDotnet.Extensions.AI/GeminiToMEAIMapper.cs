@@ -45,7 +45,7 @@ internal static class GeminiToMEAIMapper
     {
         if (messagePart.Text is not null)
         {
-            return CreateMappedTextContent(messagePart.Text);
+            return CreateMappedTextContent(messagePart.Text, messagePart.IsThought);
         }
 
         if (messagePart.InlineData is not null)
@@ -98,8 +98,13 @@ internal static class GeminiToMEAIMapper
             };
         }
 
-        static TextContent CreateMappedTextContent(string text)
+        static AIContent CreateMappedTextContent(string text, bool isThought)
         {
+            if (isThought)
+            {
+                return new TextReasoningContent(text) { RawRepresentation = text, AdditionalProperties = null };
+            }
+            
             return new TextContent(text) { RawRepresentation = text, AdditionalProperties = null };
         }
 

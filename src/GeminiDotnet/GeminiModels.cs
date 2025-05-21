@@ -19,5 +19,9 @@ public static class GeminiModels
         public const string Gemini2FlashThinking = "gemini-2.0-flash-thinking-exp";
 
         public const string Gemini2p5Pro = "gemini-2.5-pro-exp-03-25";
+        
+        public const string Gemini2p5FlashPreview = "gemini-2.5-flash-preview-05-20";
+        
+        public const string Gemini2p5ProPreview = "gemini-2.5-pro-preview-05-06";
     }
 }
