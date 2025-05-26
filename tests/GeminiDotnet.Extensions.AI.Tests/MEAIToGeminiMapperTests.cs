@@ -179,6 +179,36 @@ public sealed class MEAIToGeminiMapperTests
             functionDeclaration.Parameters?.GetType());
     }
 
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithThinkingConfiguration_ShouldMapThinkingConfig()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
+        };
+
+        var thinkingConfig = new ThinkingConfiguration
+        {
+            IncludeThoughts = true,
+            ThinkingBudget = 1000
+        };
+
+        var options = new ChatOptions
+        {
+            AdditionalProperties = new AdditionalPropertiesDictionary
+            {
+                ["thinkingConfig"] = thinkingConfig
+            }
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.Equal(thinkingConfig, request.GenerationConfiguration?.ThinkingConfiguration);
+    }
+
     private sealed class TestFunction : AIFunction
     {
         public override JsonElement JsonSchema { get; } = AIJsonUtilities.CreateJsonSchema(typeof(TestObject));

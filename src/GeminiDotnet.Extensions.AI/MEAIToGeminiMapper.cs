@@ -1,7 +1,6 @@
 using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.ContentGeneration.FunctionCalling;
 using GeminiDotnet.Embeddings;
-using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text.Json;
@@ -108,6 +107,14 @@ internal static class MEAIToGeminiMapper
                 return null;
             }
 
+            ThinkingConfiguration? thinkingConfiguration = null;
+
+            if (options.AdditionalProperties?.TryGetValue("thinkingConfig", out var thinkingConfigObj) is true
+                && thinkingConfigObj is ThinkingConfiguration thinkingConfig)
+            {
+                thinkingConfiguration = thinkingConfig;
+            }
+
             var configuration = new GenerationConfiguration
             {
                 StopSequences = options.StopSequences,
@@ -126,8 +133,9 @@ internal static class MEAIToGeminiMapper
                 Logprobs = null,
                 EnableEnhancedCivicAnswers = null,
                 SpeechConfiguration = null,
-                ThinkingConfiguration = null,
+                ThinkingConfiguration = thinkingConfiguration
             };
+
 
             return configuration;
         }
@@ -242,7 +250,7 @@ internal static class MEAIToGeminiMapper
             }
 
 
-            static Part CreateFileDataPart(UriContent uriContent)
+            static Part CreateFileDataPart(MEAI.UriContent uriContent)
             {
                 return new Part
                 {
