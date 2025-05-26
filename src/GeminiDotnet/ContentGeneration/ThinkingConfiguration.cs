@@ -5,7 +5,7 @@ namespace GeminiDotnet.ContentGeneration;
 /// <summary>
 /// Config for thinking features.
 /// </summary>
-public sealed class ThinkingConfiguration
+public sealed record ThinkingConfiguration
 {
     /// <summary>
     /// Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.
