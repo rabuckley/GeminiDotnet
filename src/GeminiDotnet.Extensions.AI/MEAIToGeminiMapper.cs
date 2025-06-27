@@ -71,6 +71,12 @@ internal static class MEAIToGeminiMapper
                     continue;
                 }
 
+                if (tool is MEAI.HostedWebSearchTool)
+                {
+                    mappedTools.Add(new Tool { GoogleSearch = new GoogleSearch() });
+                    continue;
+                }
+
                 if (tool is MEAI.AIFunction function)
                 {
                     functionDeclarations ??= [];
