@@ -209,6 +209,25 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equal(thinkingConfig, request.GenerationConfiguration?.ThinkingConfiguration);
     }
 
+    [Fact]
+    public void HostedWebSearchTool_ShouldMapToGoogleSearchTool()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
+        };
+
+        var options = new ChatOptions { Tools = [new HostedWebSearchTool()] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.NotNull(request.Tools);
+        Assert.Single(request.Tools, t => t.GoogleSearch is not null);
+    }
+
     private sealed class TestFunction : AIFunction
     {
         public override JsonElement JsonSchema { get; } = AIJsonUtilities.CreateJsonSchema(typeof(TestObject));
