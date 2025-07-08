@@ -11,19 +11,22 @@ public sealed record GroundingMetadata
     /// List of supporting references retrieved from specified grounding source.
     /// </summary>
     [JsonPropertyName("groundingChunks")]
-    public required IReadOnlyList<GroundingChunk> GroundingChunks { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<GroundingChunk>? GroundingChunks { get; init; }
 
     /// <summary>
     /// List of grounding support.
     /// </summary>
     [JsonPropertyName("groundingSupports")]
-    public required IReadOnlyList<GroundingSupport> GroundingSupports { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<GroundingSupport>? GroundingSupports { get; init; }
 
     /// <summary>
     /// Web search queries for the following-up web search.
     /// </summary>
     [JsonPropertyName("webSearchQueries")]
-    public required IReadOnlyList<string> WebSearchQueries { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? WebSearchQueries { get; init; }
 
     /// <summary>
     /// Google search entry for the following-up web searches.
@@ -35,5 +38,6 @@ public sealed record GroundingMetadata
     /// Metadata related to retrieval in the grounding flow.
     /// </summary>
     [JsonPropertyName("retrievalMetadata")]
-    public required RetrievalMetadata RetrievalMetadata { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RetrievalMetadata? RetrievalMetadata { get; init; }
 }
