@@ -49,6 +49,7 @@ public sealed record Candidate
     /// Grounding metadata for the candidate. This field is populated for GenerateContent calls.
     /// </summary>
     [JsonPropertyName("groundingMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public GroundingMetadata? GroundingMetadata { get; init; }
 
     /// <summary>

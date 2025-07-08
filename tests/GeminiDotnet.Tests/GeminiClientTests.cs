@@ -332,6 +332,8 @@ public sealed class GeminiClientTests
         Assert.NotNull(result);
         var candidate = Assert.Single(result.Candidates);
         Assert.NotNull(candidate.GroundingMetadata);
+        Assert.NotNull(candidate.GroundingMetadata.WebSearchQueries);
+        Assert.NotNull(candidate.GroundingMetadata.GroundingChunks);
 
         foreach (var search in candidate.GroundingMetadata.WebSearchQueries)
         {
@@ -345,6 +347,46 @@ public sealed class GeminiClientTests
 
         Assert.NotNull(candidate.GroundingMetadata.SearchEntryPoint?.RenderedContent);
         _output.WriteLine(candidate.GroundingMetadata.SearchEntryPoint.RenderedContent);
+    }
+
+    [Fact]
+    public async Task Github_22()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var client = new GeminiClient(options);
+
+        GenerateContentRequest request = new()
+        {
+            Contents =
+            [
+                new Content
+                {
+                    Parts =
+                    [
+                        new Part
+                        {
+                            FileData = new FileData { Uri = new Uri("https://www.youtube.com/watch?v=JxlB5kYz990") }
+                        },
+                        new Part { Text = "Write a summary of the video." }
+                    ]
+                }
+            ],
+            Tools = [new Tool { GoogleSearch = new GoogleSearch() }]
+        };
+
+        await foreach (var update in client.GenerateContentStreamingAsync("gemini-2.5-flash", request, cancellationToken))
+        {
+            var response = update.Candidates.Single().Content.Parts.Single();
+
+            if (response.Text is not null)
+            {
+                _output.Write(response.Text);
+            }
+        }
+
+        // Assert
+        // Passed.
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
