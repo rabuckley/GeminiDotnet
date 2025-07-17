@@ -389,6 +389,38 @@ public sealed class GeminiClientTests
         // Passed.
     }
 
+    [Fact]
+    public async Task GenerateContent_WithThinkingBudget0_ShouldHaveNoThinkingTokenUsage()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var client = new GeminiClient(options);
+
+        var request = new GenerateContentRequest
+        {
+            GenerationConfiguration = new GenerationConfiguration
+            {
+                ThinkingConfiguration = new ThinkingConfiguration { ThinkingBudget = 0 }
+            },
+            Contents =
+            [
+                new Content { Role = ChatRoles.User, Parts = [new Part { Text = "Explain the prisoner's dilemma" }] }
+            ]
+        };
+
+        // Act
+        var response = await client.GenerateContentAsync(
+            "gemini-2.5-flash",
+            request,
+            cancellationToken);
+
+        // Assert
+        Assert.Equal(0, response.UsageMetadata.ThoughtsTokenCount);
+    }
+
+
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
         yield return GeminiModels.Gemini1p5Flash8b;

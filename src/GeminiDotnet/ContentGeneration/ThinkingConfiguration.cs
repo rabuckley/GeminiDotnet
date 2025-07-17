@@ -18,6 +18,6 @@ public sealed record ThinkingConfiguration
     /// The number of thoughts tokens that the model should generate.
     /// </summary>
     [JsonPropertyName("thinkingBudget")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public int ThinkingBudget { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ThinkingBudget { get; init; }
 }
