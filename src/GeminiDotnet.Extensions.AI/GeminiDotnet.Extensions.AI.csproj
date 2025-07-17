@@ -4,7 +4,7 @@
         <IsAotCompatible>true</IsAotCompatible>
         <IsPackable>true</IsPackable>
         <PackageId>GeminiDotnet.Extensions.AI</PackageId>
-        <Version>0.14.0</Version>
+        <Version>0.14.1</Version>
         <Authors>Ryan Buckley</Authors>
         <Description>A lightweight, modern implementation of the Microsoft.Extensions.AI.Abstractions APIs for interacting with Google Gemini models.</Description>
         <PackageTags>AI, Gemini, Microsoft.Extensions.AI</PackageTags>
