@@ -11,7 +11,7 @@ public sealed record Blob
     /// <summary>
     /// The IANA standard MIME type of the source data.
     /// </summary>
-    [JsonPropertyName("mime_type")]
+    [JsonPropertyName("mimeType")]
     public required string MimeType { get; init; }
 
     /// <summary>
