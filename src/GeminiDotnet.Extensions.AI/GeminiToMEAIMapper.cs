@@ -22,7 +22,7 @@ internal static class GeminiToMEAIMapper
             Contents = candidate.Content.Parts.Select(CreateMappedAIContent).ToList(),
             RawRepresentation = response,
             AdditionalProperties = null,
-            ResponseId = null,
+            ResponseId = response.ResponseId,
             ConversationId = null,
             CreatedAt = createdAt,
             FinishReason = CreateMappedChatFinishReason(candidate.FinishReason),
