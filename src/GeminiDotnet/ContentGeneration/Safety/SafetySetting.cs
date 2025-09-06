@@ -5,8 +5,8 @@ namespace GeminiDotnet.ContentGeneration.Safety;
 public sealed record SafetySetting
 {
     [JsonPropertyName("category")]
-    public required string HarmCategory { get; init; }
+    public required HarmCategory HarmCategory { get; init; }
 
     [JsonPropertyName("threshold")]
-    public required string BlockThreshold { get; init; }
+    public required HarmBlockThreshold BlockThreshold { get; init; }
 }
