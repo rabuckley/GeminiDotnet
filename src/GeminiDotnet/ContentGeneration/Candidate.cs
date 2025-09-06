@@ -67,8 +67,8 @@ public sealed record Candidate
     /// <summary>
     /// Metadata related to url context retrieval tool.
     /// </summary>
-    [JsonPropertyName("urlRetrievalMetadata")]
-    public UrlRetrievalMetadata? UrlRetrievalMetadata { get; init; }
+    [JsonPropertyName("urlContextMetadata")]
+    public UrlContextMetadata? UrlRetrievalMetadata { get; init; }
 
     /// <summary>
     /// Index of the candidate in the list of response candidates.

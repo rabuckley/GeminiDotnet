@@ -420,6 +420,44 @@ public sealed class GeminiClientTests
         Assert.Equal(0, response.UsageMetadata.ThoughtsTokenCount);
     }
 
+    [Fact]
+    public async Task GenerateContentAsync_WithUrlContext()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var client = new GeminiClient(options);
+
+        const string url = "https://en.wikipedia.org/wiki/Artificial_intelligence";
+
+        var request = new GenerateContentRequest
+        {
+            Tools = [new Tool { UrlContext = new UrlContext() }],
+            Contents =
+            [
+                new Content
+                {
+                    Role = ChatRoles.User,
+                    Parts = [new Part { Text = $"Summarize the content from the URL {url}." }]
+                }
+            ],
+        };
+
+        // Act
+        var response = await client.GenerateContentAsync(
+            "gemini-2.5-flash",
+            request,
+            cancellationToken);
+
+        // Assert
+        var candidate = Assert.Single(response.Candidates);
+        var metadata = candidate.UrlRetrievalMetadata?.UrlMetadata;
+        Assert.NotNull(metadata);
+        var urlContext = Assert.Single(metadata);
+        Assert.Equal(url, urlContext.RetrievedUrl);
+        Assert.Equal(UrlRetrievalStatus.Success, urlContext.UrlRetrievalStatus);
+    }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
