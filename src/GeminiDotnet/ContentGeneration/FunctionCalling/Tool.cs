@@ -41,4 +41,11 @@ public sealed record Tool
     [JsonPropertyName("googleSearch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public GoogleSearch? GoogleSearch { get; init; }
+
+    /// <summary>
+    /// Tool to support URL context retrieval.
+    /// </summary>
+    [JsonPropertyName("urlContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public UrlContext? UrlContext { get; init; }
 }
