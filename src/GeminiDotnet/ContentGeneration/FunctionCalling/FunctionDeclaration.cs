@@ -20,6 +20,12 @@ public sealed record FunctionDeclaration
     public required string Description { get; init; }
 
     /// <summary>
+    /// Optional. Specifies the function Behavior. Currently only supported by the BidiGenerateContent method.
+    /// </summary>
+    [JsonPropertyName("behavior")]
+    public FunctionBehavior? Behavior { get; init; }
+
+    /// <summary>
     /// Describes the parameters to this function. Reflects the Open API 3.03 Parameter Object string Key: the name of the parameter. Parameter names are case-sensitive. Schema Value: the Schema defining the type used for the parameter.
     /// </summary>
     [JsonPropertyName("parameters")]
