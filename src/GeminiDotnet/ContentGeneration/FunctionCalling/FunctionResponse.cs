@@ -26,4 +26,24 @@ public sealed record FunctionResponse
     /// </summary>
     [JsonPropertyName("response")]
     public required IDictionary<string, JsonElement> Response { get; init; }
+
+    /// <summary>
+    /// Optional. Signals that function call continues, and more responses will be returned, turning the function call
+    /// into a generator. Is only applicable to NON_BLOCKING function calls, is ignored otherwise. If set to
+    /// <see langword="false"/>, future responses will not be considered. It is allowed to return empty response
+    /// with <see cref="WillContinue"/> = <see langword="false"/> to signal that the function call is finished. This may
+    /// still trigger the model generation. To avoid triggering the generation and finish the function call,
+    /// additionally set scheduling to SILENT.
+    /// </summary>
+    [JsonPropertyName("willContinue")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? WillContinue { get; init; }
+
+    /// <summary>
+    /// Optional. Specifies how the response should be scheduled in the conversation. Only applicable to
+    /// <see cref="FunctionBehavior.NonBlocking"/> function calls, is ignored otherwise. Defaults to <see cref="FunctionResponseScheduling.WhenIdle"/>
+    /// </summary>
+    [JsonPropertyName("scheduling")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FunctionResponseScheduling? Scheduling { get; init; }
 }
