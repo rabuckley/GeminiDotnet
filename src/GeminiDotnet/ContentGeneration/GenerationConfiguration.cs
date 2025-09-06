@@ -41,7 +41,8 @@ public sealed record GenerationConfiguration
     public IList<ResponseModality>? ResponseModalities { get; init; }
 
     /// <summary>
-    /// Number of generated responses to return.
+    /// Number of generated responses to return. If <see langword="null"/>, this will default to 1. Please note that
+    /// this doesn't work for previous generation models (Gemini 1.0 family)    
     /// </summary>
     [JsonPropertyName("candidateCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -141,4 +142,11 @@ public sealed record GenerationConfiguration
     [JsonPropertyName("thinkingConfig")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ThinkingConfiguration? ThinkingConfiguration { get; init; }
+
+    /// <summary>
+    /// If specified, the media resolution specified will be used.
+    /// </summary>
+    [JsonPropertyName("mediaResolution")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MediaResolution? MediaResolution { get; init; }
 }
