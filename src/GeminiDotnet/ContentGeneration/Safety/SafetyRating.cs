@@ -8,13 +8,13 @@ public sealed class SafetyRating
     /// The category for this rating.
     /// </summary>
     [JsonPropertyName("category")]
-    public required string Category { get; init; }
+    public required HarmCategory Category { get; init; }
 
     /// <summary>
     /// The probability of harm for this content.
     /// </summary>
     [JsonPropertyName("probability")]
-    public required string Probability { get; init; }
+    public required HarmProbability Probability { get; init; }
 
     /// <summary>
     /// Was this content blocked because of this rating?
