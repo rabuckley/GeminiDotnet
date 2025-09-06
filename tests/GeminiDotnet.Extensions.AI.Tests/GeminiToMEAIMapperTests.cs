@@ -73,7 +73,8 @@ public sealed class GeminiToMEAIMapperTests
             "candidatesTokenCount": 81,
             "totalTokenCount": 91
           },
-          "modelVersion": "gemini-1.5-flash"
+          "modelVersion": "gemini-1.5-flash",
+          "responseId": "bvq7aInSLPn9nsEP3MKX6A4"
         }
         """;
 }
