@@ -37,6 +37,11 @@ internal static class GeminiToMEAIMapper
             FinishReason.Stop => ChatFinishReason.Stop,
             FinishReason.MaxTokens => ChatFinishReason.Length,
             FinishReason.Safety => ChatFinishReason.ContentFilter,
+            FinishReason.SPII => ChatFinishReason.ContentFilter,
+            FinishReason.BlockedReasonUnspecified => ChatFinishReason.ContentFilter,
+            FinishReason.Recitation => ChatFinishReason.ContentFilter,
+            FinishReason.ProhibitedContent => ChatFinishReason.ContentFilter,
+
             _ => null
         };
     }
