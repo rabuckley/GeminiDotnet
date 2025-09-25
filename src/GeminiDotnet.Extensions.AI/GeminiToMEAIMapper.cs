@@ -34,14 +34,23 @@ internal static class GeminiToMEAIMapper
     {
         return finishReason switch
         {
+            FinishReason.Unspecified => throw new ArgumentOutOfRangeException(
+                nameof(finishReason),
+                finishReason,
+                "Unspecified is not a valid finish reason."),
             FinishReason.Stop => ChatFinishReason.Stop,
             FinishReason.MaxTokens => ChatFinishReason.Length,
             FinishReason.Safety => ChatFinishReason.ContentFilter,
-            FinishReason.SPII => ChatFinishReason.ContentFilter,
-            FinishReason.BlockedReasonUnspecified => ChatFinishReason.ContentFilter,
             FinishReason.Recitation => ChatFinishReason.ContentFilter,
+            FinishReason.Language => ChatFinishReason.ContentFilter,
+            FinishReason.Other => ChatFinishReason.ContentFilter,
+            FinishReason.Blocklist => ChatFinishReason.ContentFilter,
             FinishReason.ProhibitedContent => ChatFinishReason.ContentFilter,
-
+            FinishReason.SPII => ChatFinishReason.ContentFilter,
+            FinishReason.MalformedFunctionCall => null,
+            FinishReason.ImageSafety => ChatFinishReason.ContentFilter,
+            FinishReason.UnexpectedToolCall => null,
+            FinishReason.TooManyToolCalls => null,
             _ => null
         };
     }
@@ -109,7 +118,7 @@ internal static class GeminiToMEAIMapper
             {
                 return new TextReasoningContent(text) { RawRepresentation = text, AdditionalProperties = null };
             }
-            
+
             return new TextContent(text) { RawRepresentation = text, AdditionalProperties = null };
         }
 
