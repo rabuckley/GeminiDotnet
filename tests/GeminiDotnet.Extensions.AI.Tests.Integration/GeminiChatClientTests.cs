@@ -143,4 +143,29 @@ public sealed class GeminiChatClientTests
         // Assert
         Assert.Contains("yes", output, StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// https://github.com/rabuckley/GeminiDotnet/issues/7
+    /// </summary>
+    [Fact]
+    public void ToChatResponse_WithToolCall_RegressionTest()
+    {
+        // Arrange
+        var callId = Guid.NewGuid().ToString();
+        const string name = "GetCapitalCity";
+        var arguments = new Dictionary<string, object?> { { "country", "France" } };
+
+        List<ChatResponseUpdate> updates =
+        [
+            new(ChatRole.Assistant, [new FunctionCallContent(callId, name, arguments)]),
+            new(ChatRole.Tool, [new FunctionResultContent(callId, "Paris")]),
+            new(ChatRole.Assistant, [new TextContent("Paris is the capital of France.")]),
+        ];
+
+        // Act
+        var response = updates.ToChatResponse();
+
+        // Assert
+        Assert.Equal(3, response.Messages.Count);
+    }
 }
