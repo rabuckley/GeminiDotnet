@@ -44,7 +44,9 @@ internal static class MEAIToGeminiMapper
 
         return new GenerateContentRequest
         {
-            SystemInstruction = systemInstruction,
+            SystemInstruction = options?.Instructions is not null
+              ? CreateMappedContent(new MEAI.ChatMessage(MEAI.ChatRole.System, options.Instructions))
+              : systemInstruction,
             GenerationConfiguration = CreateMappedGenerationConfiguration(options),
             CachedContent = null,
             Contents = contents,
