@@ -9,7 +9,6 @@ var options = new GeminiClientOptions
 {
     ApiKey = key,
     ModelId = GeminiModels.Gemini2Flash,
-    ApiVersion = GeminiApiVersions.V1Beta,
     RequestTimeout = TimeSpan.FromMinutes(5),
 };
 

@@ -44,7 +44,7 @@ Using [`Microsoft.Extensions.AI.FunctionInvokingChatClient`](https://learn.micro
 ```cs
 var geminiClient = new GeminiChatClient(new GeminiClientOptions
 {
-    ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash, ApiVersion = GeminiApiVersions.V1Beta
+    ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash
 });
 
 [Description("Gets the current weather")]
@@ -77,7 +77,7 @@ The Gemini API provides a code execution feature that enables the model to gener
 ```cs
 var options = new GeminiClientOptions
 {
-    ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash, ApiVersion = GeminiApiVersions.V1Beta
+    ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash
 };
 
 IChatClient geminiClient = new GeminiChatClient(options);
