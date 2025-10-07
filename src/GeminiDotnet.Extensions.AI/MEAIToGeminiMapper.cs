@@ -15,53 +15,31 @@ internal static class MEAIToGeminiMapper
         MEAI.ChatOptions? options)
     {
         List<Content> contents = chatMessages.TryGetNonEnumeratedCount(out var count)
-            ? new(count)
-            : new();
+            ? new List<Content>(count)
+            : [];
 
-        MEAI.ChatMessage? systemChatMessage = null;
+        List<Part> systemInstructionParts = options?.Instructions is { } instructions
+            ? [new Part { Text = instructions }]
+            : [];
 
-        foreach (var m in chatMessages)
+        foreach (var message in chatMessages)
         {
-            if (m.Role == MEAI.ChatRole.System)
+            if (message.Role == MEAI.ChatRole.System)
             {
-                if (systemChatMessage is not null)
-                {
-                    GeminiMappingException.Throw(
-                        fromPropertyName: $"{typeof(MEAI.ChatRole)}.{nameof(MEAI.ChatRole.System)}",
-                        toPropertyName:
-                        $"{typeof(GenerateContentRequest)}.{nameof(GenerateContentRequest.SystemInstruction)}",
-                        reason: "Cannot use multiple system instructions");
-
-                    return null!; // unreachable
-                }
-
-                systemChatMessage = m;
+                AppendSystemInstructionParts(message, systemInstructionParts);
                 continue;
             }
 
-            contents.Add(CreateMappedContent(m));
+            contents.Add(CreateMappedContent(message));
         }
 
-        if (options?.Instructions is not null)
-        {
-            var chatOptionsSystemMessage = new MEAI.ChatMessage(MEAI.ChatRole.System, options.Instructions);
-
-            if (systemChatMessage is not null)
-            {
-                foreach (var part in systemChatMessage.Contents)
-                {
-                    chatOptionsSystemMessage.Contents.Add(part);
-                }
-            }
-
-            systemChatMessage = chatOptionsSystemMessage;
-        }
-
-        var systemInstructionContent = systemChatMessage is not null ? CreateMappedContent(systemChatMessage) : null;
+        var systemInstruction = systemInstructionParts.Count > 0
+            ? new Content { Role = null, Parts = systemInstructionParts }
+            : null;
 
         return new GenerateContentRequest
         {
-            SystemInstruction = systemInstructionContent,
+            SystemInstruction = systemInstruction,
             GenerationConfiguration = CreateMappedGenerationConfiguration(options),
             CachedContent = null,
             Contents = contents,
@@ -319,6 +297,28 @@ internal static class MEAIToGeminiMapper
         static string? CreateMappedResponseMimeType(MEAI.ChatResponseFormat? responseFormat)
         {
             return responseFormat is MEAI.ChatResponseFormatJson ? MediaTypeNames.Application.Json : null;
+        }
+    }
+
+    private static void AppendSystemInstructionParts(
+        MEAI.ChatMessage message,
+        List<Part> systemInstructionParts)
+    {
+        foreach (var content in message.Contents)
+        {
+            if (content is not MEAI.TextContent textContent)
+            {
+                GeminiMappingException.Throw(
+                    fromPropertyName: $"{typeof(MEAI.ChatMessage)}.{nameof(MEAI.ChatMessage.Contents)}",
+                    toPropertyName:
+                    $"{typeof(GenerateContentRequest)}.{nameof(GenerateContentRequest.SystemInstruction)}",
+                    reason:
+                    $"Only {typeof(MEAI.TextContent)} is supported in system instructions because Gemini doesn't support non-text system instructions. Got {content.GetType()}");
+
+                return; // unreachable
+            }
+
+            systemInstructionParts.Add(new Part { Text = textContent.Text });
         }
     }
 

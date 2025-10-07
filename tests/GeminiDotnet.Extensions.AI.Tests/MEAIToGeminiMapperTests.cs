@@ -228,6 +228,78 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Single(request.Tools, t => t.GoogleSearch is not null);
     }
 
+    [Fact]
+    public void OptionsInstruction_ShouldBeInsertedIntoSystemInstruction()
+    {
+        // Arrange
+        List<ChatMessage> messages = [new(ChatRole.User, "Who was the first person to walk on the moon?")];
+
+        const string instructions = "You are a helpful assistant.";
+
+        var options = new ChatOptions { Instructions = instructions };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.NotNull(request.SystemInstruction);
+        var part = Assert.Single(request.SystemInstruction.Parts);
+        Assert.Null(request.SystemInstruction.Role);
+        Assert.Equal(instructions, part.Text);
+    }
+
+    [Fact]
+    public void OptionsInstructionAndSystemMessage_ShouldBeCombinedIntoSingleSystemInstruction()
+    {
+        // Arrange
+        const string systemMessage = "You are a helpful assistant that translates text.";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.System, systemMessage),
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
+        ];
+
+        const string instructions = "Also, be very concise in your answers.";
+
+        var options = new ChatOptions { Instructions = instructions };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+
+        // Assert
+        Assert.NotNull(request.SystemInstruction);
+        Assert.Equal(2, request.SystemInstruction.Parts.Count);
+        Assert.Null(request.SystemInstruction.Role);
+        Assert.Equal(instructions, request.SystemInstruction.Parts[0].Text);
+        Assert.Equal(systemMessage, request.SystemInstruction.Parts[1].Text);
+    }
+
+    [Fact]
+    public void MultipleSystemMessages_ShouldBeCombinedIntoSingleSystemInstruction()
+    {
+        // Arrange
+        const string firstMessage = "You are a helpful assistant that translates text.";
+        const string secondMessage = "Always respond in a cheerful tone.";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.System, firstMessage),
+            new(ChatRole.System, secondMessage),
+            new(ChatRole.User, "Translate the following text to French: 'Hello, how are you?'")
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, null);
+
+        // Assert
+        Assert.NotNull(request.SystemInstruction);
+        Assert.Equal(2, request.SystemInstruction.Parts.Count);
+        Assert.Null(request.SystemInstruction.Role);
+        Assert.Equal(firstMessage, request.SystemInstruction.Parts[0].Text);
+        Assert.Equal(secondMessage, request.SystemInstruction.Parts[1].Text);
+    }
+
     private sealed class TestFunction : AIFunction
     {
         public override JsonElement JsonSchema { get; } = AIJsonUtilities.CreateJsonSchema(typeof(TestObject));
