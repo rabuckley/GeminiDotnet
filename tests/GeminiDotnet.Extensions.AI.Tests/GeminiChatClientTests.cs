@@ -69,7 +69,7 @@ public sealed class GeminiChatClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var client =
-            new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+            new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
         var chatClient = new GeminiChatClient(client);
 
         List<ChatMessage> messages =
@@ -129,7 +129,7 @@ public sealed class GeminiChatClientTests
     public Task GetStreamingResponseAsync_WithValidRequestAndExperimentalModel_ShouldStreamResults(string model)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         return StreamingCompletionTestCore(model, options, cancellationToken);
     }
 

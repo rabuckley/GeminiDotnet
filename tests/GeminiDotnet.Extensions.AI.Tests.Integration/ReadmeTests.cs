@@ -42,7 +42,6 @@ public sealed class ReadmeTests
         {
             ApiKey = _apiKey,
             ModelId = GeminiModels.Gemini2Flash,
-            ApiVersion = GeminiApiVersions.V1Beta
         });
 
         [Description("Gets the current weather")]
@@ -78,7 +77,6 @@ public sealed class ReadmeTests
         {
             ApiKey = _apiKey,
             ModelId = GeminiModels.Gemini2Flash,
-            ApiVersion = GeminiApiVersions.V1Beta
         };
 
         IChatClient client = new GeminiChatClient(options);

@@ -65,8 +65,7 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var client =
-            new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta });
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
 
         var request = new GenerateContentRequest
         {
@@ -146,7 +145,7 @@ public sealed class GeminiClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(httpClient, options);
 
         var request = new GenerateContentRequest
@@ -268,7 +267,7 @@ public sealed class GeminiClientTests
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options);
 
         var integerSchema = JsonDocument.Parse(
@@ -309,7 +308,7 @@ public sealed class GeminiClientTests
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options);
 
         var request = new GenerateContentRequest
@@ -353,7 +352,7 @@ public sealed class GeminiClientTests
     public async Task Github_22()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options);
 
         GenerateContentRequest request = new()
@@ -395,7 +394,7 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options);
 
         var request = new GenerateContentRequest
@@ -426,7 +425,7 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Beta };
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options);
 
         const string url = "https://en.wikipedia.org/wiki/Artificial_intelligence";
