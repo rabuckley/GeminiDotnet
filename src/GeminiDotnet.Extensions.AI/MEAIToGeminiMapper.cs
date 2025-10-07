@@ -110,10 +110,21 @@ internal static class MEAIToGeminiMapper
 
             ThinkingConfiguration? thinkingConfiguration = null;
 
-            if (options.AdditionalProperties?.TryGetValue("thinkingConfig", out var thinkingConfigObj) is true
+            if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ThinkingConfiguration,
+                    out var thinkingConfigObj) is true
                 && thinkingConfigObj is ThinkingConfiguration thinkingConfig)
             {
                 thinkingConfiguration = thinkingConfig;
+            }
+
+            IList<ResponseModality>? responseModalities = null;
+
+            if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ResponseModalities,
+                    out var responseModalitiesObj) is true
+                && responseModalitiesObj is IEnumerable<ResponseModality> responseModalitiesList)
+            {
+                responseModalities =
+                    responseModalitiesObj as IList<ResponseModality> ?? responseModalitiesList.ToList();
             }
 
             var configuration = new GenerationConfiguration
@@ -121,7 +132,7 @@ internal static class MEAIToGeminiMapper
                 StopSequences = options.StopSequences,
                 ResponseMimeType = CreateMappedResponseMimeType(options.ResponseFormat),
                 ResponseSchema = CreateMappedResponseSchema(options.ResponseFormat),
-                ResponseModalities = null,
+                ResponseModalities = responseModalities,
                 CandidateCount = null,
                 MaxOutputTokens = options.MaxOutputTokens,
                 Temperature = options.Temperature,
