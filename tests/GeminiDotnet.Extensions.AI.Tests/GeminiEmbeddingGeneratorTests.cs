@@ -13,15 +13,17 @@ public sealed class GeminiEmbeddingGeneratorTests
         _output = output;
     }
 
-    [Fact]
-    public async Task GenerateAsync_ShouldDoReturnEmbeddings()
+    [Theory]
+    [InlineData("text-embedding-004")]
+    [InlineData("gemini-embedding-001")]
+    public async Task GenerateAsync_ShouldDoReturnEmbeddings(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
         var options = new GeminiClientOptions { ApiKey = TestConfiguration.GetApiKey() };
         var client = new GeminiEmbeddingGenerator(options);
 
-        var embeddingOptions = new EmbeddingGenerationOptions { ModelId = GeminiModels.TextEmbedding004 };
+        var embeddingOptions = new EmbeddingGenerationOptions { ModelId = model };
 
         // Act
         var embeddings = await client.GenerateAsync(["Hello, world!"], embeddingOptions, cancellationToken);

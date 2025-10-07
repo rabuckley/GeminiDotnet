@@ -79,7 +79,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -118,8 +118,10 @@ public sealed class GeminiClientTests
         Assert.Contains("Armstrong", resultText, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task EmbedContentAsync_WithTextContent_ShouldReturnEmbeddings()
+    [Theory]
+    [InlineData("text-embedding-004")]
+    [InlineData("gemini-embedding-001")]
+    public async Task EmbedContentAsync_WithTextContent_ShouldReturnEmbeddings(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -131,7 +133,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.EmbedContentAsync(GeminiModels.TextEmbedding004, request, cancellationToken);
+        var result = await client.EmbedContentAsync(model, request, cancellationToken);
 
         // Assert
         Assert.NotNull(result.Embedding);
@@ -165,7 +167,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
 
         // Assert
         var candidate = result.Candidates.Single();
@@ -211,7 +213,7 @@ public sealed class GeminiClientTests
 
         // Act
         await foreach (var result in client.GenerateContentStreamingAsync(
-                           GeminiModels.Experimental.Gemini2p5FlashPreview,
+                           "gemini-2.5-pro",
                            request,
                            cancellationToken))
         {
@@ -254,7 +256,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        async Task Act() => await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+        async Task Act() => await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
 
         // Assert
         var ex = await Assert.ThrowsAsync<GeminiClientException>(Act);
@@ -293,7 +295,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -325,7 +327,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(GeminiModels.Gemini2Flash, request, cancellationToken);
+        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -460,6 +462,6 @@ public sealed class GeminiClientTests
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return GeminiModels.Gemini1p5Flash8b;
+        yield return "gemini-2.5-flash-lite";
     }
 }

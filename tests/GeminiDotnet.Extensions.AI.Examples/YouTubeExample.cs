@@ -6,7 +6,7 @@ public sealed class YouTubeExample
 {
     public static async Task ExecuteAsync(IChatClient geminiClient, CancellationToken cancellationToken)
     {
-        var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash, };
+        var chatOptions = new ChatOptions { ModelId = "gemini-2.5-flash-lite", };
 
         IList<ChatMessage> messages =
         [

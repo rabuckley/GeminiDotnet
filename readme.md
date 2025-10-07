@@ -27,7 +27,7 @@ The following examples use the [`GeminiDotnet.Extensions.AI`](https://www.nuget.
 To get incremental updates while the model continues to output its response, you can use the streaming overloads.
 
 ```cs
-var options = new GeminiClientOptions { ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash };
+var options = new GeminiClientOptions { ApiKey = _apiKey, ModelId = "gemini-2.5-flash" };
 
 IChatClient client = new GeminiChatClient(options);
 
@@ -44,7 +44,7 @@ Using [`Microsoft.Extensions.AI.FunctionInvokingChatClient`](https://learn.micro
 ```cs
 var geminiClient = new GeminiChatClient(new GeminiClientOptions
 {
-    ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash
+    ApiKey = _apiKey, ModelId = "gemini-2.5-flash"
 });
 
 [Description("Gets the current weather")]
@@ -77,7 +77,7 @@ The Gemini API provides a code execution feature that enables the model to gener
 ```cs
 var options = new GeminiClientOptions
 {
-    ApiKey = _apiKey, ModelId = GeminiModels.Gemini2Flash
+    ApiKey = _apiKey, ModelId = "gemini-2.5-flash"
 };
 
 IChatClient geminiClient = new GeminiChatClient(options);
