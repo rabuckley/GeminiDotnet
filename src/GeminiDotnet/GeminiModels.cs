@@ -1,5 +1,6 @@
 namespace GeminiDotnet;
 
+[Obsolete("GeminiModels will be removed in a future release. Please pass model names directly as strings.")]
 public static class GeminiModels
 {
     public const string TextEmbedding004 = "text-embedding-004";

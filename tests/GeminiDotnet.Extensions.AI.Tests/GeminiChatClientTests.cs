@@ -80,7 +80,7 @@ public sealed class GeminiChatClientTests
             new(ChatRole.User, "What is your name? What do like to drink?")
         ];
 
-        var chatOptions = new ChatOptions { ModelId = GeminiModels.Gemini2Flash };
+        var chatOptions = new ChatOptions { ModelId = "gemini-2.5-flash" };
 
         // Act
         var result = await chatClient.GetResponseAsync(messages, chatOptions, cancellationToken);
@@ -124,15 +124,6 @@ public sealed class GeminiChatClientTests
         return StreamingCompletionTestCore(model, options, cancellationToken);
     }
 
-    [Theory]
-    [MemberData(nameof(ExperimentalModels))]
-    public Task GetStreamingResponseAsync_WithValidRequestAndExperimentalModel_ShouldStreamResults(string model)
-    {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = _apiKey };
-        return StreamingCompletionTestCore(model, options, cancellationToken);
-    }
-
     private async Task StreamingCompletionTestCore(
         string model,
         GeminiClientOptions options,
@@ -143,7 +134,7 @@ public sealed class GeminiChatClientTests
 
         List<ChatMessage> messages =
         [
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
+            new(ChatRole.User, "Explain the theory of relativity in simple terms.")
         ];
 
         var chatOptions = new ChatOptions { ModelId = model };
@@ -163,16 +154,11 @@ public sealed class GeminiChatClientTests
 
         // Assert
         Assert.True(count > 1);
-        Assert.Contains("Armstrong", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Einstein", result, StringComparison.OrdinalIgnoreCase);
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return GeminiModels.Gemini2Flash;
-    }
-
-    public static IEnumerable<TheoryDataRow<string>> ExperimentalModels()
-    {
-        yield return GeminiModels.Experimental.Gemini2FlashThinking;
+        yield return "gemini-2.5-flash-lite";
     }
 }

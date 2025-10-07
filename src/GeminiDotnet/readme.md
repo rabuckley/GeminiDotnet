@@ -38,7 +38,7 @@ var request = new GenerateContentRequest
     ]
 };
 
-await foreach (var result in client.GenerateContentStreamingAsync("gemini-2.0-flash", request, cancellationToken))
+await foreach (var result in client.GenerateContentStreamingAsync("gemini-2.5-flash", request, cancellationToken))
 {
     // Use the result as it is returned.
 }
