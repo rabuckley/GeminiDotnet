@@ -168,4 +168,41 @@ public sealed class GeminiChatClientTests
         // Assert
         Assert.Equal(3, response.Messages.Count);
     }
+
+    [Fact]
+    public async Task InstructionAndSystemMessage()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        
+        var geminiClient = new GeminiChatClient(new GeminiClientOptions
+        {
+            ApiKey = _apiKey,
+            ModelId = GeminiModels.Gemini2Flash,
+            ApiVersion = GeminiApiVersions.V1Beta
+        });
+        
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are a helpful assistant that translates text."),
+            new(ChatRole.User, "Translate the following text to French: 'Hello, how are you?'"),
+        };
+        
+        var options = new ChatOptions
+        {
+            Instructions = "Please provide a concise translation.",
+        };
+        
+        var response = geminiClient.GetStreamingResponseAsync(messages, options, cancellationToken);
+        
+        var sb = new StringBuilder();
+        
+        await foreach (var update in response)
+        {
+            foreach (var content in update.Contents)
+            {
+                sb.Append(content);
+                _output.Write(content.ToString() ?? "<null>");
+            }
+        }
+    }
 }
