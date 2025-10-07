@@ -18,13 +18,13 @@ internal static class MEAIToGeminiMapper
             ? new(count)
             : new();
 
-        Content? systemInstruction = null;
+        MEAI.ChatMessage? systemChatMessage = null;
 
         foreach (var m in chatMessages)
         {
             if (m.Role == MEAI.ChatRole.System)
             {
-                if (systemInstruction is not null)
+                if (systemChatMessage is not null)
                 {
                     GeminiMappingException.Throw(
                         fromPropertyName: $"{typeof(MEAI.ChatRole)}.{nameof(MEAI.ChatRole.System)}",
@@ -35,16 +35,33 @@ internal static class MEAIToGeminiMapper
                     return null!; // unreachable
                 }
 
-                systemInstruction = CreateMappedContent(m);
+                systemChatMessage = m;
                 continue;
             }
 
             contents.Add(CreateMappedContent(m));
         }
 
+        if (options?.Instructions is not null)
+        {
+            var chatOptionsSystemMessage = new MEAI.ChatMessage(MEAI.ChatRole.System, options.Instructions);
+
+            if (systemChatMessage is not null)
+            {
+                foreach (var part in systemChatMessage.Contents)
+                {
+                    chatOptionsSystemMessage.Contents.Add(part);
+                }
+            }
+
+            systemChatMessage = chatOptionsSystemMessage;
+        }
+
+        var systemInstructionContent = systemChatMessage is not null ? CreateMappedContent(systemChatMessage) : null;
+
         return new GenerateContentRequest
         {
-            SystemInstruction = systemInstruction,
+            SystemInstruction = systemInstructionContent,
             GenerationConfiguration = CreateMappedGenerationConfiguration(options),
             CachedContent = null,
             Contents = contents,
