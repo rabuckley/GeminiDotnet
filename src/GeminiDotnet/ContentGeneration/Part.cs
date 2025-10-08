@@ -16,6 +16,14 @@ public sealed record Part
     public bool IsThought { get; init; }
     
     /// <summary>
+    /// Optional. An opaque signature for the thought so it can be reused in subsequent requests.
+    /// A base64-encoded string.
+    /// </summary>
+    [JsonPropertyName("thoughtSignature")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? ThoughtSignature { get; init; }
+    
+    /// <summary>
     /// Inline text.
     /// </summary>
     [JsonPropertyName("text")]

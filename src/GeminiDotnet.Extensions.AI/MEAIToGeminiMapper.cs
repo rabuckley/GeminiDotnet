@@ -221,6 +221,7 @@ internal static class MEAIToGeminiMapper
             return content switch
             {
                 MEAI.TextContent textContent => CreateTextPart(textContent),
+                MEAI.TextReasoningContent textReasoningContent => CreateTextReasoningPart(textReasoningContent),
                 MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
                 MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
                 MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
@@ -309,6 +310,16 @@ internal static class MEAIToGeminiMapper
         {
             return responseFormat is MEAI.ChatResponseFormatJson ? MediaTypeNames.Application.Json : null;
         }
+    }
+
+    private static Part CreateTextReasoningPart(MEAI.TextReasoningContent content)
+    {
+        return new Part
+        {
+            IsThought = true,
+            Text = content.Text,
+            ThoughtSignature = content.ProtectedData,
+        };
     }
 
     private static void AppendSystemInstructionParts(
