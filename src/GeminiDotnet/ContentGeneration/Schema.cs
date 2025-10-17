@@ -168,3 +168,11 @@ public abstract record Schema
         }
     }
 }
+
+internal static class JsonElementExtensions
+{
+    public static bool TryGetFromReference<T>(this JsonElement element, out T? value)
+    {
+        throw new NotImplementedException();
+    }
+}
