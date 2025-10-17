@@ -176,7 +176,11 @@ public sealed record ResponseFormatTestCase : IXunitSerializable
         ExpectedSchema = new ObjectSchema();
     }
 
-    public ResponseFormatTestCase(string testCaseName, Type schemaType, Schema expectedSchema)
+    public ResponseFormatTestCase(
+        string testCaseName,
+        Type schemaType,
+        Schema expectedSchema
+    )
     {
         TestCaseName = testCaseName;
         SchemaType = schemaType;
