@@ -165,9 +165,9 @@ public sealed class ResponseFormatTestCases : TheoryData<ResponseFormatTestCase>
 
 public sealed record ResponseFormatTestCase : IXunitSerializable
 {
-    public string TestCaseName { get; set; }
-    public Type SchemaType { get; set; }
-    public Schema ExpectedSchema { get; set; }
+    public string TestCaseName { get; private set; }
+    public Type SchemaType { get; private set; }
+    public Schema ExpectedSchema { get; private set; }
 
     public ResponseFormatTestCase()
     {
