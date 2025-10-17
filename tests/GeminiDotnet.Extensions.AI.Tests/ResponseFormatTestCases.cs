@@ -18,86 +18,46 @@ public sealed class ResponseFormatTestCases : TheoryData<ResponseFormatTestCase>
             Items = new StringSchema(),
         }));
 
-        Add(new ResponseFormatTestCase(
-            "Object with nullable property",
-            typeof(TestParentObjectWithNullableProperty),
-            new ObjectSchema()
-            {
-                Properties = new Dictionary<string, Schema>()
+        Add(
+            new ResponseFormatTestCase(
+                "Object with nullable property",
+                typeof(TestParentObjectWithNullableProperty),
+                new ObjectSchema()
                 {
-                    ["value"] = new IntegerSchema()
+                    Properties = new Dictionary<string, Schema>()
                     {
-                        Nullable = true
+                        ["value"] = new IntegerSchema()
+                        {
+                            Nullable = true
+                        },
+                    }
+                }
+            )
+        );
+
+        Add(
+            new ResponseFormatTestCase(
+                "Object with non-nullable property",
+                typeof(TestParentObjectWithNonNullableProperty),
+                new ObjectSchema()
+                {
+                    Properties = new Dictionary<string, Schema>()
+                    {
+                        ["value"] = new IntegerSchema(),
                     },
                 }
-            })
+            )
         );
 
-        Add(new ResponseFormatTestCase(
-            "Object with non-nullable property",
-            typeof(TestParentObjectWithNonNullableProperty),
-            new ObjectSchema()
-            {
-                Properties = new Dictionary<string, Schema>()
+        Add(
+            new ResponseFormatTestCase(
+                "Nested Object",
+                typeof(TestParentObjectWithChild),
+                new ObjectSchema()
                 {
-                    ["value"] = new IntegerSchema(),
-                },
-            })
-        );
-
-        Add(new ResponseFormatTestCase(
-            "Nested Object",
-            typeof(TestParentObjectWithChild),
-            new ObjectSchema()
-            {
-                Properties = new Dictionary<string, Schema>
-                {
-                    ["child"] = new ObjectSchema()
+                    Properties = new Dictionary<string, Schema>
                     {
-                        Properties = new Dictionary<string, Schema>()
-                        {
-                            ["name"] = new StringSchema(),
-                        },
-                    },
-                },
-            })
-        );
-
-        Add(new ResponseFormatTestCase(
-            "Object with multiple child refs",
-            typeof(TestParentObjectWithChildren),
-            new ObjectSchema()
-            {
-                Properties = new Dictionary<string, Schema>()
-                {
-                    ["child1"] = new ObjectSchema()
-                    {
-                        Properties = new Dictionary<string, Schema>
-                        {
-                            ["name"] = new StringSchema(),
-                        },
-                    },
-                    ["child2"] = new ObjectSchema()
-                    {
-                        Properties = new Dictionary<string, Schema>()
-                        {
-                            ["name"] = new StringSchema(),
-                        },
-                    },
-                },
-            })
-        );
-
-        Add(new ResponseFormatTestCase(
-            "Object with collection of child refs",
-            typeof(TestParentObjectWithChildrenRefs),
-            new ObjectSchema()
-            {
-                Properties = new Dictionary<string, Schema>()
-                {
-                    ["children"] = new ArraySchema()
-                    {
-                        Items = new ObjectSchema()
+                        ["child"] = new ObjectSchema()
                         {
                             Properties = new Dictionary<string, Schema>()
                             {
@@ -105,9 +65,26 @@ public sealed class ResponseFormatTestCases : TheoryData<ResponseFormatTestCase>
                             },
                         },
                     },
-                    ["stepChildren"] = new ArraySchema()
+                }
+            )
+        );
+
+        Add(
+            new ResponseFormatTestCase(
+                "Object with multiple child refs",
+                typeof(TestParentObjectWithChildren),
+                new ObjectSchema()
+                {
+                    Properties = new Dictionary<string, Schema>()
                     {
-                        Items = new ObjectSchema()
+                        ["child1"] = new ObjectSchema()
+                        {
+                            Properties = new Dictionary<string, Schema>
+                            {
+                                ["name"] = new StringSchema(),
+                            },
+                        },
+                        ["child2"] = new ObjectSchema()
                         {
                             Properties = new Dictionary<string, Schema>()
                             {
@@ -115,8 +92,41 @@ public sealed class ResponseFormatTestCases : TheoryData<ResponseFormatTestCase>
                             },
                         },
                     },
-                },
-            })
+                }
+            )
+        );
+
+        Add(
+            new ResponseFormatTestCase(
+                "Object with collection of child refs",
+                typeof(TestParentObjectWithChildrenRefs),
+                new ObjectSchema()
+                {
+                    Properties = new Dictionary<string, Schema>()
+                    {
+                        ["children"] = new ArraySchema()
+                        {
+                            Items = new ObjectSchema()
+                            {
+                                Properties = new Dictionary<string, Schema>()
+                                {
+                                    ["name"] = new StringSchema(),
+                                },
+                            },
+                        },
+                        ["stepChildren"] = new ArraySchema()
+                        {
+                            Items = new ObjectSchema()
+                            {
+                                Properties = new Dictionary<string, Schema>()
+                                {
+                                    ["name"] = new StringSchema(),
+                                },
+                            },
+                        },
+                    },
+                }
+            )
         );
     }
 
