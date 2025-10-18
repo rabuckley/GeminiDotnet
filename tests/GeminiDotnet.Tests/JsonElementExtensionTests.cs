@@ -1,15 +1,19 @@
+using GeminiDotnet.ContentGeneration;
 using System.Text.Json;
 using Xunit.Sdk;
 
 namespace GeminiDotnet;
 
-public class JsonElementExtensionTests
+public sealed class JsonElementExtensionTests
 {
     [Theory]
     [ClassData(typeof(ReferenceTestCases))]
     public void TryGetFromReference_WhenCalledWithJsonElementReference_ItShouldReturnExpectedValue(ReferenceTestCase testCase)
     {
-        throw new NotImplementedException(testCase.TestCaseName);
+        var result = testCase.JsonElement.TryGetFromReference(testCase.ReferencePath, out var resultValue);
+
+        Assert.Equal(testCase.ExpectedResult, result);
+        Assert.Equivalent(testCase.ExpectedValue, resultValue);
     }
 }
 
