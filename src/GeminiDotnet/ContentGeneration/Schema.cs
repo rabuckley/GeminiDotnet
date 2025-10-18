@@ -65,24 +65,24 @@ public abstract record Schema
     /// Creates a <see cref="Schema"/> from the specified <paramref name="element" />
     /// </summary>
     /// <param name="element">The JSON element to create the schema from.</param>
-    /// <param name="rootElement">The root JSON element, used to resolve references.</param>"
+    /// <param name="rootElement">The root JSON element, used to resolve references.</param>
     /// <returns>A <see cref="Schema"/> instance representing the supplied <param name="element" />.</returns>
     /// <exception cref="JsonException">Thrown if the <paramref name="element" /> cannot be converted to a <see cref="Schema" />.</exception>
     public static Schema FromJsonElement(JsonElement element, JsonElement rootElement)
     {
         if (element.TryGetProperty(ReferencePropertyName, out var referenceProperty))
         {
-            var refPropVale = referenceProperty.GetString();
+            var refPropValue = referenceProperty.GetString();
 
             if (
-                refPropVale is not null &&
-                rootElement.TryGetFromReference(refPropVale, out var referencedElement)
+                refPropValue is not null &&
+                rootElement.TryGetFromReference(refPropValue, out var referencedElement)
             )
             {
                 return FromJsonElement(referencedElement, rootElement);
             }
 
-            throw new JsonException($"Could not resolve reference '{refPropVale}'");
+            throw new JsonException($"Could not resolve reference '{refPropValue}'");
         }
 
         var typeProperty = element.GetProperty(TypePropertyName);
