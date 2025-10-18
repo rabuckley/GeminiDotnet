@@ -70,7 +70,7 @@ public abstract record Schema
     /// <exception cref="JsonException">Thrown if the <paramref name="element" /> cannot be converted to a <see cref="Schema" />.</exception>
     public static Schema FromJsonElement(JsonElement element, JsonElement rootElement)
     {
-        return FromJsonElement(element, rootElement, new HashSet<string>());
+        return FromJsonElement(element, rootElement, []);
     }
 
     /// <summary>
