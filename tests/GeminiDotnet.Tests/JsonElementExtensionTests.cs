@@ -145,4 +145,28 @@ public sealed class JsonElementExtensionTests
         Assert.False(result);
         Assert.Equivalent(expectedValue, resultValue);
     }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithRootPath_ItShouldReturnExpectedResult()
+    {
+        var reference = "#";
+        var expectedValue = _testSchema;
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.True(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithEmptyPath_ItShouldReturnExpectedResult()
+    {
+        var reference = string.Empty;
+        JsonElement expectedValue = default;
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.False(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
 }
