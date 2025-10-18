@@ -12,6 +12,7 @@ public sealed class MEAIToGeminiMapperTests
     public MEAIToGeminiMapperTests()
     {
     }
+
     [Fact]
     public void CreateMappedGenerateRequest_WithSystemRole_ShouldPopulateSystemInstruction()
     {
