@@ -23,12 +23,12 @@ public sealed record ObjectSchema : Schema
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IEnumerable<string>? RequiredProperties { get; init; }
 
-    internal static ObjectSchema Create(JsonElement element, SchemaInfo schemaInfo, JsonElement rootElement)
+    internal static ObjectSchema Create(JsonElement element, SchemaInfo schemaInfo, JsonElement rootElement, HashSet<string> resolvedReferences)
     {
         var properties = element.TryGetProperty(PropertiesPropertyName, out var propertiesElement)
             ? propertiesElement.EnumerateObject().ToDictionary(
                 kvp => kvp.Name,
-                kvp => FromJsonElement(kvp.Value, rootElement))
+                kvp => FromJsonElement(kvp.Value, rootElement, resolvedReferences))
             : null;
 
         var requiredProperties = element.TryGetProperty(RequiredPropertiesPropertyName, out var requiredElement)

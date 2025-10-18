@@ -128,6 +128,33 @@ public sealed class ResponseFormatTestCases : TheoryData<ResponseFormatTestCase>
                 }
             )
         );
+
+        Add(
+            new ResponseFormatTestCase(
+                "Cyclic Object Reference",
+                typeof(TestParentCyclicObject),
+                new ObjectSchema()
+                {
+                    Properties = new Dictionary<string, Schema>()
+                    {
+                        ["child"] = new ObjectSchema()
+                        {
+                            Properties = new Dictionary<string, Schema>()
+                            {
+                                ["name"] = new StringSchema(),
+                                ["grandChild"] = new ObjectSchema()
+                                {
+                                    Properties = new Dictionary<string, Schema>()
+                                    {
+                                        ["name"] = new StringSchema(),
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }
+            )
+        );
     }
 
     private sealed class TestParentObjectWithNullableProperty
@@ -170,6 +197,21 @@ public sealed class ResponseFormatTestCases : TheoryData<ResponseFormatTestCase>
     {
         [JsonPropertyName("name")]
         public string Name { get; init; } = string.Empty;
+    }
+
+    private sealed class TestParentCyclicObject
+    {
+        [JsonPropertyName("child")]
+        public TestChildCyclicObject Child { get; init; } = new TestChildCyclicObject();
+    }
+
+    private sealed class TestChildCyclicObject
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; init; } = string.Empty;
+
+        [JsonPropertyName("grandChild")]
+        public TestChildCyclicObject GrandChild { get; init; } = new TestChildCyclicObject();
     }
 }
 

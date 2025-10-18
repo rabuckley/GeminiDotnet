@@ -32,10 +32,10 @@ public sealed record ArraySchema : Schema
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Schema? Items { get; init; }
 
-    internal static ArraySchema Create(JsonElement element, SchemaInfo schemaInfo, JsonElement rootElement)
+    internal static ArraySchema Create(JsonElement element, SchemaInfo schemaInfo, JsonElement rootElement, HashSet<string> resolvedReferences)
     {
         var items = element.TryGetProperty(ItemsPropertyName, out var itemsElement)
-            ? FromJsonElement(itemsElement, rootElement)
+            ? FromJsonElement(itemsElement, rootElement, resolvedReferences)
             : null;
 
         return new ArraySchema

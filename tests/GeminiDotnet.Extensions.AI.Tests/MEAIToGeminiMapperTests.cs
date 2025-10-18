@@ -228,6 +228,17 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equivalent(testCase.ExpectedSchema, request.GenerationConfiguration?.ResponseSchema);
     }
 
+    class Parent
+    {
+        public Child[] Children { get; set; } = [];
+        public Child[] StepChildren { get; set; } = [];
+    }
+
+    class Child
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
     [Fact]
     public void HostedWebSearchTool_ShouldMapToGoogleSearchTool()
     {
