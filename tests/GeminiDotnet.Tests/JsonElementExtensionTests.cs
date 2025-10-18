@@ -114,7 +114,7 @@ public sealed class JsonElementExtensionTests
     public void TryGetFromReference_WhenCalledWithInvalidNonExistentDefinition_ItShouldReturnExpectedResult()
     {
         var reference = "#/definitions/nonexistent";
-        JsonElement? expectedValue = null;
+        JsonElement expectedValue = default;
 
         var result = _testSchema.TryGetFromReference(reference, out var resultValue);
 
@@ -126,7 +126,7 @@ public sealed class JsonElementExtensionTests
     public void TryGetFromReference_WhenCalledWithInvalidIndex_ItShouldReturnExpectedResult()
     {
         var reference = "#/definitions/errorCodes/5";
-        JsonElement? expectedValue = null;
+        JsonElement expectedValue = default;
 
         var result = _testSchema.TryGetFromReference(reference, out var resultValue);
 
@@ -138,7 +138,7 @@ public sealed class JsonElementExtensionTests
     public void TryGetFromReference_WhenCalledWithNonAbsolutePath_ItShouldReturnExpectedResult()
     {
         var reference = "definitions/user";
-        JsonElement? expectedValue = null;
+        JsonElement expectedValue = default;
 
         var result = _testSchema.TryGetFromReference(reference, out var resultValue);
 
