@@ -19,9 +19,15 @@ internal static class JsonElementExtensions
     {
         value = default;
 
+        if (referencePath == RootCharacter.ToString())
+        {
+            value = element;
+            return true;
+        }
+
         if (
             string.IsNullOrEmpty(referencePath) ||
-            !referencePath.StartsWith(RootPathStart, StringComparison.OrdinalIgnoreCase)
+            !referencePath.StartsWith(RootPathStart, StringComparison.Ordinal)
         )
         {
             return false;
@@ -37,12 +43,12 @@ internal static class JsonElementExtensions
                 .Replace(
                     EscapedSeparator,
                     SeparatorCharacter.ToString(),
-                    StringComparison.CurrentCultureIgnoreCase
+                    StringComparison.Ordinal
                 )
                 .Replace(
                     EscapedTilde,
                     TildeCharacter.ToString(),
-                    StringComparison.OrdinalIgnoreCase
+                    StringComparison.Ordinal
                 );
 
             if (current.ValueKind is JsonValueKind.Object)
@@ -75,6 +81,9 @@ internal static class JsonElementExtensions
                 current = next;
                 continue;
             }
+
+            result = false;
+            break;
         }
 
         value = result ? current : default;
