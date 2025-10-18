@@ -283,7 +283,7 @@ public sealed class GeminiClientTests
             GenerationConfiguration = new GenerationConfiguration
             {
                 ResponseMimeType = MediaTypeNames.Application.Json,
-                ResponseSchema = Schema.FromJsonElement(integerSchema)
+                ResponseSchema = Schema.FromJsonElement(integerSchema, integerSchema)
             },
             Contents =
             [

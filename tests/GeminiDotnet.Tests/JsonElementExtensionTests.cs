@@ -6,18 +6,159 @@ namespace GeminiDotnet;
 
 public sealed class JsonElementExtensionTests
 {
-    [Theory]
-    [ClassData(typeof(ReferenceTestCases))]
-    public void TryGetFromReference_WhenCalledWithJsonElementReference_ItShouldReturnExpectedValue(ReferenceTestCase testCase)
+    private const string TestSchemaJson = """
     {
-        var result = testCase.JsonElement.TryGetFromReference(testCase.ReferencePath, out var resultValue);
-
-        Assert.Equal(testCase.ExpectedResult, result);
-        Assert.Equivalent(testCase.ExpectedValue, resultValue);
+        "definitions": {
+            "user": {
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" },
+                    "email": { "type": "string" }
+                }
+            },
+            "errorCodes": [
+                400,
+                404,
+                500
+            ],
+            "a/b": {
+                "description": "A key containing a forward slash."
+            },
+            "c~d": {
+                "description": "A key containing a tilde."
+            }
+        },
+        "userReference": {
+            "$ref": "#/definitions/user"
+        }
     }
+    """;
+
+    private readonly JsonElement _testSchema;
+
+    public JsonElementExtensionTests()
+    {
+        _testSchema = JsonDocument.Parse(TestSchemaJson).RootElement;
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithValidObjectDefinition_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/user";
+        var expectedValue = _testSchema.GetProperty("definitions").GetProperty("user");
+        
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.True(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithValidReferenceToPropertyOfObjectDefinition_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/user/properties/name";
+        var expectedValue = _testSchema
+            .GetProperty("definitions")
+            .GetProperty("user")
+            .GetProperty("properties")
+            .GetProperty("name");
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.True(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithValidReferenceToArrayItem_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/errorCodes/1";
+        var expectedValue = _testSchema
+            .GetProperty("definitions")
+            .GetProperty("errorCodes")[1];
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.True(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithValidReferenceWithEscapedForwardSlash_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/a~1b";
+        var expectedValue = _testSchema
+            .GetProperty("definitions")
+            .GetProperty("a/b");
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.True(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithValidReferenceWithEscapedTilde_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/c~0d";
+        var expectedValue = _testSchema
+            .GetProperty("definitions")
+            .GetProperty("c~d");
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.True(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithInvalidNonExistentDefinition_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/nonexistent";
+        JsonElement? expectedValue = null;
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.False(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithInvalidIndex_ItShouldReturnExpectedResult()
+    {
+        var reference = "#/definitions/errorCodes/5";
+        JsonElement? expectedValue = null;
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.False(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    [Fact]
+    public void TryGetFromReference_WhenCalledWithNonAbsolutePath_ItShouldReturnExpectedResult()
+    {
+        var reference = "definitions/user";
+        JsonElement? expectedValue = null;
+
+        var result = _testSchema.TryGetFromReference(reference, out var resultValue);
+
+        Assert.False(result);
+        Assert.Equivalent(expectedValue, resultValue);
+    }
+
+    // [Theory]
+    // [ClassData(typeof(ReferenceTestCases))]
+    // public void TryGetFromReference_WhenCalledWithJsonElementReference_ItShouldReturnExpectedValue(ReferenceTestCase testCase)
+    // {
+    //     var result = testCase.JsonElement.TryGetFromReference(testCase.ReferencePath, out var resultValue);
+
+    //     Assert.Equal(testCase.ExpectedResult, result);
+    //     Assert.Equivalent(testCase.ExpectedValue, resultValue);
+    // }
 }
 
-public sealed class ReferenceTestCases : TheoryData<ReferenceTestCase>
+public class ReferenceTestCases : TheoryData<ReferenceTestCase>
 {
     private const string TestSchemaJson = """
     {
@@ -143,7 +284,7 @@ public sealed class ReferenceTestCases : TheoryData<ReferenceTestCase>
     }
 }
 
-public sealed record ReferenceTestCase : IXunitSerializable
+public class ReferenceTestCase : IXunitSerializable
 {
     public string TestCaseName { get; private set; }
     public JsonElement JsonElement { get; private set; }
@@ -177,19 +318,11 @@ public sealed record ReferenceTestCase : IXunitSerializable
 
     public void Deserialize(IXunitSerializationInfo info)
     {
-        TestCaseName = info.GetValue<string>(nameof(TestCaseName)) ?? string.Empty;
-        JsonElement = info.GetValue<JsonElement>(nameof(JsonElement));
-        ReferencePath = info.GetValue<string>(nameof(ReferencePath)) ?? string.Empty;
-        ExpectedResult = info.GetValue<bool>(nameof(ExpectedResult));
-        ExpectedValue = info.GetValue<JsonElement?>(nameof(ExpectedValue));
     }
 
     public void Serialize(IXunitSerializationInfo info)
     {
-        info.AddValue(nameof(TestCaseName), TestCaseName);
-        info.AddValue(nameof(JsonElement), JsonElement);
-        info.AddValue(nameof(ReferencePath), ReferencePath);
-        info.AddValue(nameof(ExpectedResult), ExpectedResult);
-        info.AddValue(nameof(ExpectedValue), ExpectedValue);
     }
+
+    public override string ToString() => TestCaseName;
 }
