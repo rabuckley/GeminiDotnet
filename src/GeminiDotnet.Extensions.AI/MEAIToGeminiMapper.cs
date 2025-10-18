@@ -155,7 +155,7 @@ internal static class MEAIToGeminiMapper
 
             if (responseFormat is MEAI.ChatResponseFormatJson { Schema: JsonElement schema })
             {
-                return Schema.FromJsonElement(schema);
+                return Schema.FromJsonElement(schema, schema);
             }
 
             if (responseFormat is MEAI.ChatResponseFormatText)
@@ -346,7 +346,7 @@ internal static class MEAIToGeminiMapper
         foreach (var param in properties.EnumerateObject())
         {
             parameters ??= new Dictionary<string, Schema>();
-            parameters[param.Name] = Schema.FromJsonElement(param.Value);
+            parameters[param.Name] = Schema.FromJsonElement(param.Value, functionSchema);
         }
 
         if (parameters is null)

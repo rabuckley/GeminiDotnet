@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -23,6 +24,8 @@ public abstract record Schema
     private const string DescriptionPropertyName = "description";
 
     private const string NullablePropertyName = "nullable";
+
+    private const string ReferencePropertyName = "$ref";
 
     /// <summary>
     /// The format of the data. This is used only for primitive datatypes.
@@ -54,17 +57,34 @@ public abstract record Schema
     public static Schema FromJsonNode(JsonNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
-        return FromJsonElement(node.Deserialize(JsonContext.Default.JsonElement));
+        var element = node.Deserialize(JsonContext.Default.JsonElement);
+        return FromJsonElement(element, element);
     }
 
     /// <summary>
     /// Creates a <see cref="Schema"/> from the specified <paramref name="element" />
     /// </summary>
     /// <param name="element">The JSON element to create the schema from.</param>
+    /// <param name="rootElement">The root JSON element, used to resolve references.</param>"
     /// <returns>A <see cref="Schema"/> instance representing the supplied <param name="element" />.</returns>
     /// <exception cref="JsonException">Thrown if the <paramref name="element" /> cannot be converted to a <see cref="Schema" />.</exception>
-    public static Schema FromJsonElement(JsonElement element)
+    public static Schema FromJsonElement(JsonElement element, JsonElement rootElement)
     {
+        if (element.TryGetProperty(ReferencePropertyName, out var referenceProperty))
+        {
+            var refPropVale = referenceProperty.GetString();
+
+            if (
+                refPropVale is not null &&
+                rootElement.TryGetFromReference(refPropVale, out var referencedElement)
+            )
+            {
+                return FromJsonElement(referencedElement, rootElement);
+            }
+
+            throw new JsonException($"Could not resolve reference '{refPropVale}'");
+        }
+
         var typeProperty = element.GetProperty(TypePropertyName);
         bool? isNullable = null;
         string? type = null;
@@ -131,12 +151,12 @@ public abstract record Schema
 
         if (string.Equals(type, "ARRAY", StringComparison.OrdinalIgnoreCase))
         {
-            return ArraySchema.Create(element, schemaInfo);
+            return ArraySchema.Create(element, schemaInfo, rootElement);
         }
 
         if (string.Equals(type, "OBJECT", StringComparison.OrdinalIgnoreCase))
         {
-            return ObjectSchema.Create(element, schemaInfo);
+            return ObjectSchema.Create(element, schemaInfo, rootElement);
         }
 
         throw new JsonException($"Invalid schema {TypePropertyName}: '{type}'");
@@ -181,10 +201,10 @@ internal static class JsonElementExtensions
     public static bool TryGetFromReference(
         this JsonElement element,
         string referencePath,
-        out JsonElement? value
+        out JsonElement value
     )
     {
-        value = null;
+        value = default;
 
         if (
             string.IsNullOrEmpty(referencePath) ||
@@ -201,8 +221,16 @@ internal static class JsonElementExtensions
         foreach (var segment in segments)
         {
             var unescapedSegment = segment
-                .Replace(EscapedSeparator, SeparatorCharacter.ToString())
-                .Replace(EscapedTilde, TildeCharacter.ToString());
+                .Replace(
+                    EscapedSeparator,
+                    SeparatorCharacter.ToString(),
+                    StringComparison.CurrentCultureIgnoreCase
+                )
+                .Replace(
+                    EscapedTilde,
+                    TildeCharacter.ToString(),
+                    StringComparison.OrdinalIgnoreCase
+                );
 
             if (current.ValueKind is JsonValueKind.Object)
             {
@@ -213,6 +241,7 @@ internal static class JsonElementExtensions
                 }
 
                 current = next;
+                continue;
             }
 
             if (current.ValueKind is JsonValueKind.Array)
@@ -231,10 +260,11 @@ internal static class JsonElementExtensions
 
                 var next = current[index];
                 current = next;
+                continue;
             }
         }
 
-        value = current;
+        value = result ? current : default;
         return result;
     }
 }
