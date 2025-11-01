@@ -117,19 +117,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.Equal(MediaTypeNames.Application.Json, request.GenerationConfiguration?.ResponseMimeType);
-
-        var actual = Assert.IsType<ObjectSchema>(request.GenerationConfiguration?.ResponseSchema);
-        Assert.NotNull(actual.RequiredProperties);
-        Assert.Contains("name", actual.RequiredProperties);
-
-        if (actual.Properties?.TryGetValue("name", out var name) is not true)
-        {
-            Assert.Fail("Expected 'name' property in schema.");
-            return;
-        }
-
-        var nameSchema = Assert.IsType<StringSchema>(name);
-        Assert.Null(nameSchema.Nullable);
+        Assert.Equal(schema, request.GenerationConfiguration?.ResponseJsonSchema);
     }
 
     [Fact]
@@ -173,10 +161,7 @@ public sealed class MEAIToGeminiMapperTests
 
         Assert.Equal(expectedFunction.Name, functionDeclaration.Name);
         Assert.Equal(expectedFunction.Description, functionDeclaration.Description);
-
-        // Tricky to compare the schema directly, so just check the type for now.
-        Assert.Equal(Schema.FromJsonElement(expectedFunction.JsonSchema).GetType(),
-            functionDeclaration.Parameters?.GetType());
+        Assert.Equal(expectedFunction.JsonSchema, functionDeclaration.ParametersJsonSchema);
     }
 
     [Fact]
@@ -298,6 +283,28 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Null(request.SystemInstruction.Role);
         Assert.Equal(firstMessage, request.SystemInstruction.Parts[0].Text);
         Assert.Equal(secondMessage, request.SystemInstruction.Parts[1].Text);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithRefsResponseFormat_ShouldMapResponseFormat()
+    {
+        var responseFormat = ChatResponseFormat.ForJsonSchema<Parent>();
+        var options = new ChatOptions { ResponseFormat = responseFormat };
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest([], options);
+
+        Assert.Equal(MediaTypeNames.Application.Json, request.GenerationConfiguration?.ResponseMimeType);
+        Assert.Equal(responseFormat.Schema, request.GenerationConfiguration?.ResponseJsonSchema);
+    }
+
+    class Parent
+    {
+        public Child[] Children { get; set; } = [];
+        public Child[] StepChildren { get; set; } = [];
+    }
+
+    class Child
+    {
+        public string Name { get; set; } = string.Empty;
     }
 
     private sealed class TestFunction : AIFunction

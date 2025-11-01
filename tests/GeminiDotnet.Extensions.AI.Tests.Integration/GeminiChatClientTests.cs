@@ -56,11 +56,8 @@ public sealed class GeminiChatClientTests
 
         await foreach (var update in response)
         {
-            foreach (var content in update.Contents)
-            {
-                sb.Append(content);
-                _output.Write(content.ToString() ?? "<null>");
-            }
+            sb.Append(update.Text);
+            _output.Write(update.Text);
         }
 
         var output = sb.ToString();
@@ -196,7 +193,7 @@ public sealed class GeminiChatClientTests
             }
         }
     }
-    
+
     [Fact]
     public async Task FunctionCallingExample()
     {
@@ -230,17 +227,64 @@ public sealed class GeminiChatClientTests
         };
 
         var response = await client.GetResponseAsync(messages, options, cancellationToken);
-        
+
         messages.AddRange(response.Messages);
         messages.Add(new ChatMessage(ChatRole.User, "Thanks!"));
-        
+
         var response2 = await client.GetResponseAsync(messages, options, cancellationToken);
-        
+
         messages.AddRange(response2.Messages);
 
         Assert.All(
             messages.Where(m => m.Contents.Any(c => c is TextReasoningContent)),
             content => Assert.All(content.Contents.OfType<TextReasoningContent>(),
                 reasoningContent => Assert.NotNull(reasoningContent.ProtectedData)));
+    }
+
+    record WeatherInfo(string Location, DateOnly Date, string Summary);
+
+    [Fact]
+    public async Task FunctionCalling_WithObjectReturnType()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        IChatClient geminiClient = new GeminiChatClient(new GeminiClientOptions
+        {
+            ApiKey = _apiKey, ModelId = "gemini-2.5-flash",
+        });
+
+        [Description("Gets the current weather")]
+        static WeatherInfo GetCurrentWeather(string location, DateOnly date)
+        {
+            return new WeatherInfo(location, date, $"It's raining in {location} on {date}.");
+        }
+
+        IChatClient client = new ChatClientBuilder(geminiClient)
+            .UseFunctionInvocation()
+            .Build();
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User,
+                "Get the current weather in London tomorrow (2000-10-01) using the function.")
+        ];
+
+        var options = new ChatOptions
+        {
+            Tools = [AIFunctionFactory.Create(GetCurrentWeather, nameof(GetCurrentWeather))]
+        };
+
+        var response = await client.GetResponseAsync(messages, options, cancellationToken);
+
+        var functionCall = response.Messages
+            .SelectMany(m => m.Contents)
+            .OfType<FunctionCallContent>()
+            .FirstOrDefault();
+
+        Assert.NotNull(functionCall);
+        Assert.Equal(nameof(GetCurrentWeather), functionCall.Name);
+        Assert.NotNull(functionCall.Arguments);
+        Assert.Equal("London", functionCall.Arguments["location"]?.ToString());
+        Assert.Equal(DateOnly.Parse("2000-10-01"), DateOnly.Parse(functionCall.Arguments["date"]!.ToString()!));
     }
 }

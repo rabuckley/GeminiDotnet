@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.ContentGeneration;
@@ -23,12 +24,24 @@ public sealed record GenerationConfiguration
     public string? ResponseMimeType { get; init; }
 
     /// <summary>
-    /// Output schema of the generated candidate text. Schemas must be a subset of the OpenAPI schema and can be
+    /// Optional. Output schema of the generated candidate text. Schemas must be a subset of the OpenAPI schema and can be
     /// objects, primitives or arrays. If set, a compatible <see cref="ResponseMimeType"/> must also be set.
     /// </summary>
     [JsonPropertyName("responseSchema")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Schema? ResponseSchema { get; init; }
+
+    /// <summary>
+    /// Optional. Output schema of the generated response. This is an alternative to <see cref="ResponseSchema"/> that
+    /// accepts JSON Schema. If set, <see cref="ResponseSchema"/>  must be omitted, but <see cref="ResponseMimeType"/>
+    /// is required.
+    /// <remarks>
+    /// While the full JSON Schema may be sent, not all features are supported.
+    /// </remarks>
+    /// </summary>
+    [JsonPropertyName("responseJsonSchema")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement ResponseJsonSchema { get; init; }
 
     /// <summary>
     /// The requested modalities of the response. Represents the set of modalities that the model can return, and
