@@ -7,6 +7,9 @@ This respository contains two packages which users can choose from. The recommen
 - [`GeminiDotnet`](./src/GeminiDotnet) for direct interaction with Gemini API
 - [`GeminiDotnet.Extensions.AI`](./src/GeminiDotnet.Extensions.AI) for use with [`Microsoft.Extensions.AI`](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) (recommended).
 
+> [!NOTE]
+> Google have since released [first-party support for C#](https://github.com/googleapis/dotnet-genai), which you may prefer. As of 2025-11-17, it does not include first-party support for Microsoft.Extensions.AI, but that may come in the future.
+
 ### Versions
 
 | Package | Latest | Downloads |
