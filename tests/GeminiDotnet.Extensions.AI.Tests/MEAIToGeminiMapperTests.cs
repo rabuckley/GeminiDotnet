@@ -1,4 +1,4 @@
-﻿using GeminiDotnet.ContentGeneration;
+﻿using GeminiDotnet.V1Beta;
 using Microsoft.Extensions.AI;
 using System.Net.Mime;
 using System.Text.Json;
@@ -21,7 +21,7 @@ public sealed class MEAIToGeminiMapperTests
         ];
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, new ChatOptions());
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, new ChatOptions());
 
         // Assert
         Assert.NotNull(request);
@@ -76,7 +76,7 @@ public sealed class MEAIToGeminiMapperTests
         };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.Equal(options.Temperature, request.GenerationConfiguration?.Temperature);
@@ -113,7 +113,7 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { ResponseFormat = ChatResponseFormat.ForJsonSchema(schema) };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.Equal(MediaTypeNames.Application.Json, request.GenerationConfiguration?.ResponseMimeType);
@@ -132,7 +132,7 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.NotNull(request.Tools);
@@ -152,7 +152,7 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { Tools = [expectedFunction] };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.NotNull(request.Tools);
@@ -188,7 +188,7 @@ public sealed class MEAIToGeminiMapperTests
         };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.Equal(thinkingConfig, request.GenerationConfiguration?.ThinkingConfiguration);
@@ -206,7 +206,7 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { Tools = [new HostedWebSearchTool()] };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.NotNull(request.Tools);
@@ -224,7 +224,7 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { Instructions = instructions };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
@@ -250,7 +250,7 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { Instructions = instructions };
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
@@ -275,7 +275,7 @@ public sealed class MEAIToGeminiMapperTests
         ];
 
         // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, null);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, null);
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
@@ -290,7 +290,7 @@ public sealed class MEAIToGeminiMapperTests
     {
         var responseFormat = ChatResponseFormat.ForJsonSchema<Parent>();
         var options = new ChatOptions { ResponseFormat = responseFormat };
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest([], options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", [], options);
 
         Assert.Equal(MediaTypeNames.Application.Json, request.GenerationConfiguration?.ResponseMimeType);
         Assert.Equal(responseFormat.Schema, request.GenerationConfiguration?.ResponseJsonSchema);

@@ -9,7 +9,6 @@ var options = new GeminiClientOptions
 {
     ApiKey = key,
     ModelId = "gemini-2.5-flash",
-    RequestTimeout = TimeSpan.FromMinutes(5),
 };
 
 var chatClient = new GeminiChatClient(options);
@@ -23,6 +22,7 @@ Dictionary<int, Func<GeminiChatClient, CancellationToken, Task>> examples = new(
     { 2, LoggingExample.ExecuteAsync },
     { 3, StreamingExample.ExecuteAsync },
     { 4, YouTubeExample.ExecuteAsync },
+    { 5, ImageGenerationExample.ExecuteAsync },
 };
 
 Console.WriteLine("Enter the number of the example you'd like to run:\n");

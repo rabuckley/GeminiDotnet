@@ -1,6 +1,5 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace GeminiDotnet.Extensions.AI.Examples;
 

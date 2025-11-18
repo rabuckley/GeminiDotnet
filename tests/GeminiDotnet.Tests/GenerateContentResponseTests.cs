@@ -1,4 +1,4 @@
-using GeminiDotnet.ContentGeneration;
+using GeminiDotnet.V1Beta;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 

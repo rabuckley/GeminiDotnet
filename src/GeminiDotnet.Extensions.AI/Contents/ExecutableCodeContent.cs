@@ -1,3 +1,4 @@
+using GeminiDotnet.V1Beta;
 using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI.Contents;
@@ -10,7 +11,7 @@ public sealed class ExecutableCodeContent : AIContent
     /// <summary>
     /// The language of the code.
     /// </summary>
-    public required string Language { get; set; }
+    public required ExecutableCodeLanguage Language { get; set; }
 
     /// <summary>
     /// The code the model will execute.

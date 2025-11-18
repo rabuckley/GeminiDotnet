@@ -1,6 +1,6 @@
-using GeminiDotnet.ContentGeneration;
-using GeminiDotnet.ContentGeneration.FunctionCalling;
-using GeminiDotnet.Embeddings;
+using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1Beta.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text.Json;
@@ -11,6 +11,7 @@ namespace GeminiDotnet.Extensions.AI;
 internal static class MEAIToGeminiMapper
 {
     public static GenerateContentRequest CreateMappedGenerateContentRequest(
+        string model,
         IEnumerable<MEAI.ChatMessage> chatMessages,
         MEAI.ChatOptions? options)
     {
@@ -39,6 +40,7 @@ internal static class MEAIToGeminiMapper
 
         return new GenerateContentRequest
         {
+            Model = model,
             SystemInstruction = systemInstruction,
             GenerationConfiguration = CreateMappedGenerationConfiguration(options),
             CachedContent = null,
@@ -48,7 +50,7 @@ internal static class MEAIToGeminiMapper
             SafetySettings = null,
         };
 
-        static IEnumerable<Tool>? CreateMappedTools(IList<MEAI.AITool>? tools)
+        static IReadOnlyList<Tool>? CreateMappedTools(IList<MEAI.AITool>? tools)
         {
             if (tools is null)
             {
@@ -117,19 +119,19 @@ internal static class MEAIToGeminiMapper
                 thinkingConfiguration = thinkingConfig;
             }
 
-            IList<ResponseModality>? responseModalities = null;
+            IReadOnlyList<ResponseModality>? responseModalities = null;
 
             if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ResponseModalities,
                     out var responseModalitiesObj) is true
                 && responseModalitiesObj is IEnumerable<ResponseModality> responseModalitiesList)
             {
                 responseModalities =
-                    responseModalitiesObj as IList<ResponseModality> ?? responseModalitiesList.ToList();
+                    responseModalitiesObj as IReadOnlyList<ResponseModality> ?? responseModalitiesList.ToList();
             }
 
             var configuration = new GenerationConfiguration
             {
-                StopSequences = options.StopSequences,
+                StopSequences = options.StopSequences is null ? null : [.. options.StopSequences],
                 ResponseMimeType = CreateMappedResponseMimeType(options.ResponseFormat),
                 ResponseJsonSchema = CreateMappedResponseSchema(options.ResponseFormat),
                 ResponseModalities = responseModalities,
@@ -138,7 +140,7 @@ internal static class MEAIToGeminiMapper
                 Temperature = options.Temperature,
                 TopP = options.TopP,
                 TopK = options.TopK,
-                Seed = options.Seed,
+                Seed = (int?)options.Seed, // TODO: can we support long seeds?
                 PresencePenalty = options.PresencePenalty,
                 FrequencyPenalty = options.FrequencyPenalty,
                 ResponseLogprobs = null,
@@ -257,26 +259,32 @@ internal static class MEAIToGeminiMapper
             {
                 return new Part
                 {
-                    FileData = new FileData { Uri = uriContent.Uri, MimeType = uriContent.MediaType }
+                    FileData = new FileData { FileUri = uriContent.Uri.ToString(), MimeType = uriContent.MediaType }
                 };
             }
 
             static Part CreateFunctionCallPart(MEAI.FunctionCallContent functionCall)
             {
+                JsonElement arguments = JsonSerializer.SerializeToElement(
+                    functionCall.Arguments,
+                    JsonContext.Default.IDictionaryStringObject);
+
                 return new Part
                 {
                     FunctionCall = new FunctionCall
                     {
                         Id = functionCall.CallId,
                         Name = functionCall.Name,
-                        Arguments = functionCall.Arguments,
+                        Arguments = arguments
                     }
                 };
             }
 
             static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
             {
-                var jsonTypeInfo = MEAI.AIJsonUtilities.DefaultOptions.GetTypeInfo(typeof(object));
+                var response = functionResult.Exception is null 
+                    ? new Dictionary<string, object?> { { "result", functionResult.Result } } 
+                    : new Dictionary<string, object?> { { "error", functionResult.Result }, };
 
                 return new Part
                 {
@@ -284,13 +292,7 @@ internal static class MEAIToGeminiMapper
                     {
                         Id = functionResult.CallId,
                         Name = functionResult.CallId,
-                        Response = new Dictionary<string, JsonElement>
-                        {
-                            {
-                                "content",
-                                JsonSerializer.SerializeToElement(functionResult.Result, jsonTypeInfo)
-                            }
-                        }
+                        Response = JsonSerializer.SerializeToElement(response, JsonContext.Default.IDictionaryStringObject)
                     }
                 };
             }
@@ -306,7 +308,7 @@ internal static class MEAIToGeminiMapper
     {
         return new Part
         {
-            IsThought = true,
+            Thought = true,
             Text = content.Text,
             ThoughtSignature = content.ProtectedData,
         };
@@ -335,11 +337,13 @@ internal static class MEAIToGeminiMapper
     }
 
     public static EmbedContentRequest CreateMappedEmbeddingRequest(
+        string model,
         IEnumerable<string> values,
         MEAI.EmbeddingGenerationOptions? options)
     {
         return new EmbedContentRequest
         {
+            Model = model,
             Content = new Content { Parts = [.. values.Select(v => new Part { Text = v })] },
             OutputDimensionality = options?.Dimensions,
         };

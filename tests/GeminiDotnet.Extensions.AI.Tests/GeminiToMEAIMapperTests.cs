@@ -1,5 +1,5 @@
-using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.Extensions.AI.Contents;
+using GeminiDotnet.V1Beta;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;

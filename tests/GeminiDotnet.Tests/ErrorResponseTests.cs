@@ -11,7 +11,7 @@ public sealed class ErrorResponseTests
     public void Deserialize_WithErrorResponse()
     {
         // Arrange
-        var typeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
+        var typeInfo = V1BetaJsonContext.Default.GetTypeInfo<ErrorResponse>();
 
         // Act
         var errorResponse = JsonSerializer.Deserialize(ErrorResponseJson, typeInfo);

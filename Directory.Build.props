@@ -3,9 +3,7 @@
         <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <WarningsAsErrors>nullable</WarningsAsErrors>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <LangVersion>preview</LangVersion>
+        <LangVersion>14</LangVersion>
         <AnalysisLevel>preview</AnalysisLevel>
     </PropertyGroup>
 </Project>

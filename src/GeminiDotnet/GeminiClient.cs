@@ -1,197 +1,47 @@
-using GeminiDotnet.ContentGeneration;
-using GeminiDotnet.Embeddings;
-using GeminiDotnet.Text.Json;
-using System.Diagnostics;
-using System.Net.Http.Json;
-using System.Net.ServerSentEvents;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
+using GeminiDotnet.V1;
+using GeminiDotnet.V1Beta;
 
 namespace GeminiDotnet;
 
-public sealed class GeminiClient
+public sealed class GeminiClient : IGeminiClient
 {
-    private const string BaseUrl = "https://generativelanguage.googleapis.com";
-
     private readonly HttpClient _httpClient;
 
     public GeminiClient(GeminiClientOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var httpClient = new HttpClient { BaseAddress = options.Endpoint };
 
-        if (options.RequestTimeout is not null)
-        {
-            _httpClient.Timeout = options.RequestTimeout.Value;
-        }
-
-        Options = options;
-    }
-
-    public GeminiClient(HttpClient httpClient, GeminiClientOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(httpClient);
-        ArgumentNullException.ThrowIfNull(options);
+        httpClient.DefaultRequestHeaders.Add("x-goog-api-key", options.ApiKey);
 
         _httpClient = httpClient;
         Options = options;
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="GeminiClient"/> class.
+    /// </summary>
+    /// <remarks>
+    /// The provided <see cref="HttpClient"/> must be pre-configured with the appropriate base address and headers.
+    /// </remarks>
+    /// <param name="httpClient">The preconfigured HttpClient</param>
+    public GeminiClient(HttpClient httpClient)
+    {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        _httpClient = httpClient;
+        Options = new GeminiClientOptions { Endpoint = httpClient.BaseAddress, ApiKey = null! };
+    }
+
+    /// <summary>
     /// The options that this client is configured with.
     /// </summary>
-    public GeminiClientOptions Options { get; }
+    public IGeminiClientOptions Options { get; }
 
     public Uri? Endpoint => _httpClient.BaseAddress;
 
-    // ```
-    // curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GOOGLE_API_KEY}" \
-    // -H 'Content-Type: application/json' \
-    // -d '{ "contents":[{"parts":[{"text": "Write a cute story about cats."}]}]}'
-    // ```
-    public async Task<GenerateContentResponse> GenerateContentAsync(
-        string model,
-        GenerateContentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(model);
-        ArgumentNullException.ThrowIfNull(request);
+    public IGeminiV1Client V1 => field ??= new GeminiV1Client(new GeminiRequester(_httpClient, V1JsonContext.Default));
 
-        var uri = new Uri($"/{Options.ApiVersion}/models/{model}:generateContent?key={Options.ApiKey}",
-            UriKind.Relative);
-
-        var response =
-            await GenerateContentCore(uri, request, HttpCompletionOption.ResponseContentRead, cancellationToken)
-                .ConfigureAwait(false);
-
-        var responseJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
-
-        var responseJson = await response.Content
-            .ReadFromJsonAsync(responseJsonInfo, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
-        return responseJson!;
-    }
-
-    // ```
-    // curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:streamGenerateContent?alt=sse&key=${GOOGLE_API_KEY}" \
-    // -H 'Content-Type: application/json' \
-    // --no-buffer \
-    // -d '{ "contents":[{"parts":[{"text": "Write a cute story about cats."}]}]}'
-    // ```
-    public async IAsyncEnumerable<GenerateContentResponse> GenerateContentStreamingAsync(
-        string model,
-        GenerateContentRequest request,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(model);
-        ArgumentNullException.ThrowIfNull(request);
-
-        var uri = new Uri($"/{Options.ApiVersion}/models/{model}:streamGenerateContent?alt=sse&key={Options.ApiKey}",
-            UriKind.Relative);
-
-        var response =
-            await GenerateContentCore(uri, request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                .ConfigureAwait(false);
-
-        var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        var sseParser = SseParser.Create(stream, ParseSseItem);
-
-        await foreach (var item in sseParser.EnumerateAsync(cancellationToken).ConfigureAwait(false))
-        {
-            yield return item.Data;
-        }
-
-        static GenerateContentResponse ParseSseItem(string eventType, ReadOnlySpan<byte> data)
-        {
-            var typeInfo = JsonContext.Default.GetTypeInfo<GenerateContentResponse>();
-            var response = JsonSerializer.Deserialize(data, typeInfo);
-            return response!;
-        }
-    }
-
-    // ```
-    // curl "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=$GEMINI_API_KEY" \
-    // -H 'Content-Type: application/json' \
-    // -d '{
-    // "model": "models/text-embedding-004",
-    // "content": { "parts":[{ "text": "What is the meaning of life?" }] }
-    // }'
-    // ```
-    public async Task<EmbedContentResponse> EmbedContentAsync(
-        string model,
-        EmbedContentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(model);
-        ArgumentNullException.ThrowIfNull(request);
-
-        var uri = new Uri($"/{Options.ApiVersion}/models/{model}:embedContent?key={Options.ApiKey}", UriKind.Relative);
-
-        var requestJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentRequest>();
-
-        var response =
-            await ExecuteAction(uri, request, requestJsonInfo, HttpCompletionOption.ResponseContentRead,
-                cancellationToken).ConfigureAwait(false);
-
-        var responseJsonInfo = JsonContext.Default.GetTypeInfo<EmbedContentResponse>();
-
-        var responseJson = await response.Content
-            .ReadFromJsonAsync(responseJsonInfo, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
-        return responseJson!;
-    }
-
-    private ValueTask<HttpResponseMessage> GenerateContentCore(
-        Uri uri,
-        GenerateContentRequest request,
-        HttpCompletionOption completion,
-        CancellationToken cancellationToken)
-    {
-        var requestJsonInfo = JsonContext.Default.GetTypeInfo<GenerateContentRequest>();
-        return ExecuteAction(uri, request, requestJsonInfo, completion, cancellationToken);
-    }
-
-    private async ValueTask<HttpResponseMessage> ExecuteAction<TRequest>(
-        Uri uri,
-        TRequest request,
-        JsonTypeInfo<TRequest> requestJsonInfo,
-        HttpCompletionOption completion,
-        CancellationToken cancellationToken)
-    {
-        Debug.Assert(uri is not null);
-        Debug.Assert(request is not null);
-
-        using var message = new HttpRequestMessage(HttpMethod.Post, uri);
-        message.Content = JsonContent.Create(request, requestJsonInfo);
-
-        var response = await _httpClient.SendAsync(message, completion, cancellationToken).ConfigureAwait(false);
-
-        if (response.IsSuccessStatusCode)
-        {
-            return response;
-        }
-
-        var errorResponseTypeInfo = JsonContext.Default.GetTypeInfo<ErrorResponse>();
-
-        try
-        {
-            var errorResponse = await response.Content.ReadFromJsonAsync(
-                errorResponseTypeInfo,
-                cancellationToken).ConfigureAwait(false);
-
-            GeminiClientException.Throw(errorResponse!.Error);
-            return null!; // unreachable
-        }
-        catch (JsonException)
-        {
-        }
-
-        // Fall back to throwing the HttpRequestException
-        response.EnsureSuccessStatusCode();
-        return null!; // unreachable
-    }
+    public IGeminiV1BetaClient V1Beta =>
+        field ??= new GeminiV1BetaClient(new GeminiRequester(_httpClient, V1BetaJsonContext.Default));
 }

@@ -1,9 +1,9 @@
-using GeminiDotnet.ContentGeneration;
-using GeminiDotnet.ContentGeneration.FunctionCalling;
-using GeminiDotnet.Embeddings;
 using GeminiDotnet.Extensions.AI.Contents;
+using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -13,45 +13,45 @@ internal static class GeminiToMEAIMapper
         GenerateContentResponse response,
         DateTimeOffset createdAt)
     {
-        var candidate = response.Candidates.Single();
+        var candidate = response.Candidates?.Single();
 
         return new ChatResponseUpdate
         {
             AuthorName = null,
-            Role = CreateMappedChatRole(candidate.Content.Role),
-            Contents = candidate.Content.Parts.Select(CreateMappedAIContent).ToList(),
+            Role = CreateMappedChatRole(candidate?.Content?.Role),
+            Contents = candidate?.Content?.Parts?.Select(CreateMappedAIContent).ToList(),
             RawRepresentation = response,
             AdditionalProperties = null,
             ResponseId = response.ResponseId,
             MessageId = response.ResponseId,
             ConversationId = null,
             CreatedAt = createdAt,
-            FinishReason = CreateMappedChatFinishReason(candidate.FinishReason),
+            FinishReason = CreateMappedChatFinishReason(candidate?.FinishReason),
             ModelId = response.ModelVersion
         };
     }
 
-    private static ChatFinishReason? CreateMappedChatFinishReason(FinishReason? finishReason)
+    private static ChatFinishReason? CreateMappedChatFinishReason(CandidateFinishReason? finishReason)
     {
         return finishReason switch
         {
-            FinishReason.Unspecified => throw new ArgumentOutOfRangeException(
+            CandidateFinishReason.Unspecified => throw new ArgumentOutOfRangeException(
                 nameof(finishReason),
                 finishReason,
                 "Unspecified is not a valid finish reason."),
-            FinishReason.Stop => ChatFinishReason.Stop,
-            FinishReason.MaxTokens => ChatFinishReason.Length,
-            FinishReason.Safety => ChatFinishReason.ContentFilter,
-            FinishReason.Recitation => ChatFinishReason.ContentFilter,
-            FinishReason.Language => ChatFinishReason.ContentFilter,
-            FinishReason.Other => ChatFinishReason.ContentFilter,
-            FinishReason.Blocklist => ChatFinishReason.ContentFilter,
-            FinishReason.ProhibitedContent => ChatFinishReason.ContentFilter,
-            FinishReason.SPII => ChatFinishReason.ContentFilter,
-            FinishReason.MalformedFunctionCall => null,
-            FinishReason.ImageSafety => ChatFinishReason.ContentFilter,
-            FinishReason.UnexpectedToolCall => null,
-            FinishReason.TooManyToolCalls => null,
+            CandidateFinishReason.Stop => ChatFinishReason.Stop,
+            CandidateFinishReason.MaxTokens => ChatFinishReason.Length,
+            CandidateFinishReason.Safety => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Recitation => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Language => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Other => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Blocklist => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.ProhibitedContent => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Spii => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.MalformedFunctionCall => null,
+            CandidateFinishReason.ImageSafety => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.UnexpectedToolCall => null,
+            CandidateFinishReason.TooManyToolCalls => null,
             _ => null
         };
     }
@@ -97,30 +97,27 @@ internal static class GeminiToMEAIMapper
 
         static DataContent CreateMappedDataContent(Blob inlineData)
         {
-            return new DataContent(inlineData.Data, inlineData.MimeType)
+            return new DataContent(inlineData.Data, inlineData.MimeType!) // Let M.E.AI throw.
             {
-                RawRepresentation = inlineData,
-                AdditionalProperties = null
+                RawRepresentation = inlineData, AdditionalProperties = null
             };
         }
 
         static DataContent CreateMappedFileDataContent(FileData fileData)
         {
-            return new DataContent(fileData.Uri, fileData.MimeType)
+            return new DataContent(fileData.FileUri, fileData.MimeType)
             {
-                RawRepresentation = fileData,
-                AdditionalProperties = null
+                RawRepresentation = fileData, AdditionalProperties = null
             };
         }
 
         static AIContent CreateMappedTextContent(Part part)
         {
-            if (part.IsThought)
+            if (part.Thought is true)
             {
                 return new TextReasoningContent(part.Text)
                 {
-                    RawRepresentation = part,
-                    ProtectedData = part.ThoughtSignature,
+                    RawRepresentation = part, ProtectedData = part.ThoughtSignature,
                 };
             }
 
@@ -131,10 +128,12 @@ internal static class GeminiToMEAIMapper
         {
             var callId = functionCall.Id ?? $"{functionCall.Name}/{Guid.NewGuid()}";
 
-            return new FunctionCallContent(callId, functionCall.Name, functionCall.Arguments)
+            var args = functionCall.Arguments.Deserialize(JsonContext.Default.IDictionaryStringObject)
+                ?? new Dictionary<string, object?>();
+
+            return new FunctionCallContent(callId, functionCall.Name, args)
             {
-                RawRepresentation = functionCall,
-                AdditionalProperties = null
+                RawRepresentation = functionCall, AdditionalProperties = null
             };
         }
 
@@ -142,10 +141,11 @@ internal static class GeminiToMEAIMapper
         {
             var responseId = functionResponse.Id ?? $"{functionResponse.Name}/{Guid.NewGuid()}";
 
-            return new FunctionResultContent(responseId, functionResponse.Response)
+            var result = functionResponse.Response.Deserialize(JsonContext.Default.Object);
+
+            return new FunctionResultContent(responseId, result)
             {
-                RawRepresentation = functionResponse,
-                AdditionalProperties = null
+                RawRepresentation = functionResponse, AdditionalProperties = null
             };
         }
 
@@ -160,19 +160,19 @@ internal static class GeminiToMEAIMapper
             };
         }
 
-        static CodeExecutionContent CreateMappedCodeExecutionResultContent(
-            CodeExecutionResult codeExecutionResult)
+        static CodeExecutionContent CreateMappedCodeExecutionResultContent(CodeExecutionResult codeExecutionResult)
         {
             return new CodeExecutionContent
             {
                 Output = codeExecutionResult.Output,
                 Status = codeExecutionResult.Outcome switch
                 {
-                    CodeExecutionOutcome.Unspecified => CodeExecutionStatus.None,
-                    CodeExecutionOutcome.Ok => CodeExecutionStatus.Success,
-                    CodeExecutionOutcome.Failed => CodeExecutionStatus.Error,
-                    CodeExecutionOutcome.DeadlineExceeded => CodeExecutionStatus.Timeout,
-                    _ => throw new ArgumentOutOfRangeException(nameof(codeExecutionResult.Outcome), codeExecutionResult.Outcome, null)
+                    CodeExecutionResultOutcome.Unspecified => CodeExecutionStatus.None,
+                    CodeExecutionResultOutcome.Ok => CodeExecutionStatus.Success,
+                    CodeExecutionResultOutcome.Failed => CodeExecutionStatus.Error,
+                    CodeExecutionResultOutcome.DeadlineExceeded => CodeExecutionStatus.Timeout,
+                    _ => throw new ArgumentOutOfRangeException(nameof(codeExecutionResult.Outcome),
+                        codeExecutionResult.Outcome, null)
                 },
                 RawRepresentation = codeExecutionResult,
                 AdditionalProperties = null
@@ -182,7 +182,7 @@ internal static class GeminiToMEAIMapper
 
     public static ChatResponse CreateMappedChatResponse(GenerateContentResponse response, DateTimeOffset createdAt)
     {
-        var choices = response.Candidates.Select(CreateMappedChatMessage).ToList();
+        var choices = response.Candidates?.Select(CreateMappedChatMessage).ToList();
 
         return new ChatResponse(choices)
         {
@@ -190,30 +190,31 @@ internal static class GeminiToMEAIMapper
             ConversationId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,
-            FinishReason = CreateMappedChatFinishReason(response.Candidates[0].FinishReason),
+            FinishReason = CreateMappedChatFinishReason(response.Candidates?[0].FinishReason),
             Usage = CreateMappedUsageDetails(response.UsageMetadata),
             RawRepresentation = response,
             AdditionalProperties = null
         };
 
-        static UsageDetails CreateMappedUsageDetails(UsageMetadata usage)
+        static UsageDetails? CreateMappedUsageDetails(UsageMetadata? usage) => usage switch
         {
-            return new UsageDetails
+            null => null,
+            _ => new UsageDetails
             {
                 InputTokenCount = usage.PromptTokenCount,
                 OutputTokenCount = usage.CandidatesTokenCount ?? 0,
                 TotalTokenCount = usage.TotalTokenCount,
                 AdditionalCounts = null,
-            };
-        }
+            }
+        };
 
         static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
         {
             return new ChatMessage
             {
                 AuthorName = null,
-                Role = CreateMappedChatRole(candidateResponse.Content.Role),
-                Contents = candidateResponse.Content.Parts.Select(CreateMappedAIContent).ToList(),
+                Role = CreateMappedChatRole(candidateResponse.Content?.Role),
+                Contents = candidateResponse.Content?.Parts?.Select(CreateMappedAIContent).ToList(),
                 RawRepresentation = candidateResponse,
                 AdditionalProperties = null
             };
@@ -253,7 +254,7 @@ internal static class GeminiToMEAIMapper
         // https://ai.google.dev/gemini-api/docs/models/gemini?#text-embedding
         const int geminiEmbeddingSize = 768;
         var embeddingSize = options?.Dimensions ?? geminiEmbeddingSize;
-        var vector = response.Embedding.Values;
+        var vector = response.Embedding!.Values;
 
         if (vector.Length % embeddingSize != 0)
         {
