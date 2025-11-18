@@ -4,7 +4,7 @@
         <IsAotCompatible>true</IsAotCompatible>
         <IsPackable>true</IsPackable>
         <PackageId>GeminiDotnet</PackageId>
-        <Version>0.16.0</Version>
+        <Version>0.17.0</Version>
         <Authors>Ryan Buckley</Authors>
         <Description>A lightweight, modern C# library for direct interaction with the Google Gemini API.</Description>
         <PackageTags>AI, Gemini, Google Gemini, Google AI</PackageTags>
