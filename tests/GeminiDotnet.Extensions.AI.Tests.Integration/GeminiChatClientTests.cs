@@ -106,7 +106,7 @@ public sealed class GeminiChatClientTests
         var messages = new List<ChatMessage>
         {
             new(ChatRole.User,
-                "Should I wear a rain coat in London tomorrow (1st Oct, 2000)? Get the current weather if needed.")
+                "Should I wear a rain coat in London tomorrow (1st Oct, 2000)? Get the current weather if needed using YYYY-MM-DD format.")
         };
 
         var options = new ChatOptions
@@ -126,8 +126,13 @@ public sealed class GeminiChatClientTests
         {
             foreach (var content in update.Contents)
             {
-                sb.Append(content);
-                _output.Write(content.ToString() ?? "<null>");
+                if (content is not TextContent tc)
+                {
+                    continue;
+                }
+
+                sb.Append(tc.Text);
+                _output.Write(tc.Text);
             }
         }
 

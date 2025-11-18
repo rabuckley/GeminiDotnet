@@ -16,5 +16,5 @@ public sealed record ErrorDetails
     public required string Status { get; init; }
 
     [JsonPropertyName("details")]
-    public JsonElement? Details { get; init; }
+    public JsonElement Details { get; init; }
 }

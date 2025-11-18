@@ -1,5 +1,5 @@
-using GeminiDotnet.ContentGeneration;
 using GeminiDotnet.Text.Json;
+using GeminiDotnet.V1Beta;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
@@ -14,7 +14,7 @@ public sealed class GenerateContentRequestTests
         // Act
         var request = JsonSerializer.Deserialize(
             example,
-            JsonContext.Default.GetTypeInfo<GenerateContentRequest>());
+            V1BetaJsonContext.Default.GetTypeInfo<GenerateContentRequest>());
 
         // Assert
         Assert.NotNull(request);
@@ -26,6 +26,7 @@ public sealed class GenerateContentRequestTests
     {
         var request = new GenerateContentRequest
         {
+            Model = "models/gemini-1.5-pro",
             Contents =
             [
                 new Content { Role = ChatRoles.User, Parts = new List<Part> { new() { Text = "Hello, world!" } } }
@@ -47,6 +48,7 @@ public sealed class GenerateContentRequestTests
     const string ChatExample1Json =
         """
         {
+          "model": "models/gemini-1.5-pro",
           "contents": [
             {
               "role": "user",

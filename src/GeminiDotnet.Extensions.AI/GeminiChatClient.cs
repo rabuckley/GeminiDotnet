@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.AI;
+﻿using GeminiDotnet.V1Beta;
+using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
@@ -9,9 +10,11 @@ namespace GeminiDotnet.Extensions.AI;
 /// </summary>
 public sealed class GeminiChatClient : IChatClient
 {
-    private readonly GeminiClient _client;
+    private readonly IGeminiClient _client;
     private readonly TimeProvider _timeProvider;
     private readonly ChatClientMetadata _metadata;
+    
+    private IModelsClient ModelsClient => _client.V1Beta.Models;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
@@ -25,16 +28,16 @@ public sealed class GeminiChatClient : IChatClient
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
     /// </summary>
     /// <param name="client">The <see cref="GeminiClient"/> to use.</param>
-    public GeminiChatClient(GeminiClient client) : this(client, TimeProvider.System)
+    public GeminiChatClient(IGeminiClient client) : this(client, TimeProvider.System)
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
     /// </summary>
-    /// <param name="client">The <see cref="GeminiClient"/> to use.</param>
+    /// <param name="client">The <see cref="IGeminiClient"/> to use.</param>
     /// <param name="timeProvider">The <see cref="TimeProvider"/> to use.</param>
-    internal GeminiChatClient(GeminiClient client, TimeProvider timeProvider)
+    internal GeminiChatClient(IGeminiClient client, TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(timeProvider);
@@ -42,7 +45,10 @@ public sealed class GeminiChatClient : IChatClient
         _client = client;
         _timeProvider = timeProvider;
 
-        _metadata = new ChatClientMetadata("Gemini", providerUri: client.Endpoint, defaultModelId: client.Options.ModelId);
+        _metadata = new ChatClientMetadata(
+            providerName: "Gemini", 
+            providerUri: client.Endpoint, 
+            defaultModelId: client.Options.ModelId);
     }
 
 
@@ -55,8 +61,8 @@ public sealed class GeminiChatClient : IChatClient
         ArgumentNullException.ThrowIfNull(messages);
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
-        var response = await _client.GenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(model, messages, options);
+        var response = await ModelsClient.GenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false);
         return GeminiToMEAIMapper.CreateMappedChatResponse(response, _timeProvider.GetUtcNow());
     }
 
@@ -69,9 +75,9 @@ public sealed class GeminiChatClient : IChatClient
         ArgumentNullException.ThrowIfNull(messages);
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(messages, options);
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(model, messages, options);
 
-        await foreach (var response in _client.GenerateContentStreamingAsync(model, request, cancellationToken).ConfigureAwait(false))
+        await foreach (var response in ModelsClient.StreamGenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false))
         {
             yield return GeminiToMEAIMapper.CreateMappedChatResponseUpdate(
                 response,
@@ -82,7 +88,7 @@ public sealed class GeminiChatClient : IChatClient
     /// <inheritdoc />
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
-        if (serviceType == typeof(GeminiClient))
+        if (serviceType == typeof(IGeminiClient))
         {
             return _client;
         }

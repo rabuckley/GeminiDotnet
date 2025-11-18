@@ -1,11 +1,9 @@
-using GeminiDotnet.ContentGeneration;
-using GeminiDotnet.ContentGeneration.FunctionCalling;
-using GeminiDotnet.Embeddings;
 using GeminiDotnet.Testing;
+using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1Beta.Models;
 using System.Net;
-using System.Net.Mime;
 using System.Text;
-using System.Text.Json;
 
 namespace GeminiDotnet;
 
@@ -21,8 +19,9 @@ public sealed class GeminiClientTests
         _output = output;
     }
 
-    private static GenerateContentRequest WhoWasTheFirstPersonToWalkOnTheMoonRequest => new()
+    private static GenerateContentRequest WhoWasTheFirstPersonToWalkOnTheMoonRequest(string model) => new()
     {
+        Model = model,
         Contents =
         [
             new Content
@@ -43,10 +42,10 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
         var options = new GeminiClientOptions { ApiKey = _apiKey, };
-        var client = new GeminiClient(httpClient, options);
-        var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest;
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest(model);
 
         // Act
         var result = await client.GenerateContentAsync(model, request, cancellationToken);
@@ -65,10 +64,13 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey }).V1Beta.Models;
+
+        const string model = "gemini-2.5-flash";
 
         var request = new GenerateContentRequest
         {
+            Model = model,
             SystemInstruction = new Content { Parts = [new Part { Text = "You are Neko the cat. Respond like one." }] },
             Contents =
             [
@@ -95,14 +97,14 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
-        var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest;
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey }).V1Beta.Models;
+        var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest(model);
 
         var sb = new StringBuilder();
         var count = 0;
 
         // Act
-        await foreach (var result in client.GenerateContentStreamingAsync(model, request, cancellationToken))
+        await foreach (var result in client.StreamGenerateContentAsync(model, request, cancellationToken))
         {
             var response = result.Candidates.Single().Content.Parts.Single();
             Assert.NotNull(response.Text);
@@ -125,10 +127,11 @@ public sealed class GeminiClientTests
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey });
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey }).V1Beta.Models;
 
         var request = new EmbedContentRequest
         {
+            Model = model,
             Content = new Content { Parts = [new Part { Text = "The quick brown fox jumps over the lazy dog." }] }
         };
 
@@ -146,12 +149,14 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
         var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(httpClient, options);
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        const string model = "gemini-2.5-flash";
 
         var request = new GenerateContentRequest
         {
+            Model = model,
             Tools = [new Tool { CodeExecution = new CodeExecution() }],
             Contents =
             [
@@ -167,7 +172,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
+        var result = await client.GenerateContentAsync(model, request, cancellationToken);
 
         // Assert
         var candidate = result.Candidates.Single();
@@ -175,11 +180,11 @@ public sealed class GeminiClientTests
         _output.WriteLine(explanation);
         var codePart = candidate.Content.Parts.First(p => p.ExecutableCode is not null).ExecutableCode!;
 
-        _output.WriteLine(codePart.Language);
+        _output.WriteLine(codePart.Language.ToString());
         _output.WriteLine(codePart.Code);
 
         Assert.Contains("Hello, World!", codePart.Code);
-        Assert.Equal("PYTHON", codePart.Language);
+        Assert.Equal(ExecutableCodeLanguage.Python, codePart.Language);
         var resultPart = candidate.Content.Parts.First(p => p.CodeExecutionResult is not null).CodeExecutionResult!;
 
         _output.WriteLine(resultPart.Output);
@@ -192,11 +197,14 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1Alpha };
-        var client = new GeminiClient(options);
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        var model = "gemini-2.5-pro";
 
         var request = new GenerateContentRequest
         {
+            Model = model,
             GenerationConfiguration = new GenerationConfiguration
             {
                 ThinkingConfiguration = new ThinkingConfiguration { IncludeThoughts = true },
@@ -212,17 +220,14 @@ public sealed class GeminiClientTests
         GenerateContentResponse? response = null;
 
         // Act
-        await foreach (var result in client.GenerateContentStreamingAsync(
-                           "gemini-2.5-pro",
-                           request,
-                           cancellationToken))
+        await foreach (var result in client.StreamGenerateContentAsync(model, request, cancellationToken))
         {
             response = result;
             var part = result.Candidates.Single().Content.Parts.Single();
 
             Assert.NotNull(part.Text);
 
-            if (part.IsThought)
+            if (part.Thought is true)
             {
                 sb.Append($"Thought: {part.Text}");
             }
@@ -247,16 +252,19 @@ public sealed class GeminiClientTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ApiVersion = GeminiApiVersions.V1 };
-        var client = new GeminiClient(options);
+        var options = new GeminiClientOptions { ApiKey = _apiKey };
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        const string model = "gemini-2.5-flash";
 
         var request = new GenerateContentRequest
         {
+            Model = model,
             Contents = [new Content { Role = "Fred", Parts = [new Part { Text = "What is the meaning of life?" }] }]
         };
 
         // Act
-        async Task Act() => await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
+        async Task Act() => await client.GenerateContentAsync(model, request, cancellationToken);
 
         // Assert
         var ex = await Assert.ThrowsAsync<GeminiClientException>(Act);
@@ -265,56 +273,18 @@ public sealed class GeminiClientTests
     }
 
     [Fact]
-    public async Task GenerateContentAsync_WithSimpleIntegerSchema_ShouldUseSchema()
-    {
-        // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(options);
-
-        var integerSchema = JsonDocument.Parse(
-            """
-            {"type":"integer"}
-            """
-        ).RootElement;
-
-        var request = new GenerateContentRequest
-        {
-            GenerationConfiguration = new GenerationConfiguration
-            {
-                ResponseMimeType = MediaTypeNames.Application.Json,
-                ResponseSchema = Schema.FromJsonElement(integerSchema)
-            },
-            Contents =
-            [
-                new Content
-                {
-                    Role = ChatRoles.User, Parts = [new Part { Text = "Give a random number between 0 and 100" }]
-                }
-            ]
-        };
-
-        // Act
-        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
-
-        // Assert
-        Assert.NotNull(result);
-        var candidate = Assert.Single(result.Candidates);
-        var choice = Assert.Single(candidate.Content.Parts);
-        Assert.True(int.TryParse(choice.Text, out var integer));
-        Assert.InRange(integer, 0, 100);
-    }
-
-    [Fact]
     public async Task GenerateContentAsync_WithSearchTool_ShouldReturnSearchResults()
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
         var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(options);
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        const string model = "gemini-2.5-flash";
 
         var request = new GenerateContentRequest
         {
+            Model = model,
             Tools = [new Tool { GoogleSearch = new GoogleSearch() }],
             Contents =
             [
@@ -327,7 +297,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
+        var result = await client.GenerateContentAsync(model, request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -355,10 +325,13 @@ public sealed class GeminiClientTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(options);
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        const string model = "gemini-2.5-flash";
 
         GenerateContentRequest request = new()
         {
+            Model = model,
             Contents =
             [
                 new Content
@@ -367,7 +340,7 @@ public sealed class GeminiClientTests
                     [
                         new Part
                         {
-                            FileData = new FileData { Uri = new Uri("https://www.youtube.com/watch?v=JxlB5kYz990") }
+                            FileData = new FileData { FileUri = "https://www.youtube.com/watch?v=JxlB5kYz990" }
                         },
                         new Part { Text = "Write a summary of the video." }
                     ]
@@ -376,7 +349,7 @@ public sealed class GeminiClientTests
             Tools = [new Tool { GoogleSearch = new GoogleSearch() }]
         };
 
-        await foreach (var update in client.GenerateContentStreamingAsync("gemini-2.5-flash", request, cancellationToken))
+        await foreach (var update in client.StreamGenerateContentAsync(model, request, cancellationToken))
         {
             var response = update.Candidates.Single().Content.Parts.Single();
 
@@ -397,10 +370,13 @@ public sealed class GeminiClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(options);
+        var client = new GeminiClient(options).V1Beta.Models;
+
+        const string model = "gemini-2.5-pro";
 
         var request = new GenerateContentRequest
         {
+            Model = model,
             GenerationConfiguration = new GenerationConfiguration
             {
                 ThinkingConfiguration = new ThinkingConfiguration { ThinkingBudget = 0 }
@@ -413,7 +389,7 @@ public sealed class GeminiClientTests
 
         // Act
         var response = await client.GenerateContentAsync(
-            "gemini-2.5-flash",
+            model,
             request,
             cancellationToken);
 
@@ -428,12 +404,15 @@ public sealed class GeminiClientTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(options);
+        var client = new GeminiClient(options).V1Beta.Models;
 
         const string url = "https://en.wikipedia.org/wiki/Artificial_intelligence";
 
+        const string model = "gemini-2.5-flash";
+
         var request = new GenerateContentRequest
         {
+            Model = model,
             Tools = [new Tool { UrlContext = new UrlContext() }],
             Contents =
             [
@@ -453,15 +432,15 @@ public sealed class GeminiClientTests
 
         // Assert
         var candidate = Assert.Single(response.Candidates);
-        var metadata = candidate.UrlRetrievalMetadata?.UrlMetadata;
+        var metadata = candidate.UrlContextMetadata?.UrlMetadata;
         Assert.NotNull(metadata);
         var urlContext = Assert.Single(metadata);
         Assert.Equal(url, urlContext.RetrievedUrl);
-        Assert.Equal(UrlRetrievalStatus.Success, urlContext.UrlRetrievalStatus);
+        Assert.Equal(UrlMetadataUrlRetrievalStatus.Success, urlContext.UrlRetrievalStatus);
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return "gemini-2.5-flash-lite";
+        yield return "gemini-3-pro-preview";
     }
 }

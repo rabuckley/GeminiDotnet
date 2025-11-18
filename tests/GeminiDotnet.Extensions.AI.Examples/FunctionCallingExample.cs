@@ -33,7 +33,7 @@ public sealed partial class FunctionCallingExample
         List<ChatMessage> messages =
         [
             new(ChatRole.User,
-                "Should I wear a rain coat in London tomorrow (1st Oct, 2000)? Get the current weather if needed.")
+                "Should I wear a rain coat in London tomorrow (1st Oct, 2000)? Get the current weather if needed with the date format YYYY-MM-DD.")
         ];
 
         var options = new ChatOptions

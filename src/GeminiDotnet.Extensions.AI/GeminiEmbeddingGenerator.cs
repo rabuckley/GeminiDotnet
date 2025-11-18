@@ -7,7 +7,7 @@ namespace GeminiDotnet.Extensions.AI;
 /// </summary>
 public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
-    private readonly GeminiClient _client;
+    private readonly IGeminiClient _client;
     private readonly EmbeddingGeneratorMetadata _metadata;
 
     /// <summary>
@@ -21,8 +21,8 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiEmbeddingGenerator"/> class.
     /// </summary>
-    /// <param name="client">The <see cref="GeminiClient"/> to use.</param>
-    public GeminiEmbeddingGenerator(GeminiClient client)
+    /// <param name="client">The <see cref="IGeminiClient"/> to use.</param>
+    public GeminiEmbeddingGenerator(IGeminiClient client)
     {
         ArgumentNullException.ThrowIfNull(client);
 
@@ -43,15 +43,15 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
         ArgumentNullException.ThrowIfNull(values);
 
         var modelId = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(values, options);
-        var response = await _client.EmbedContentAsync(modelId, request, cancellationToken).ConfigureAwait(false);
+        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(modelId, values, options);
+        var response = await _client.V1Beta.Models.EmbedContentAsync(modelId, request, cancellationToken).ConfigureAwait(false);
         return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(response, options);
     }
 
 
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
-        if (serviceType == typeof(GeminiClient))
+        if (serviceType == typeof(IGeminiClient))
         {
             return _client;
         }
