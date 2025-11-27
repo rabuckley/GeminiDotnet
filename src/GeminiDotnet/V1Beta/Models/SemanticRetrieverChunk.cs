@@ -3,13 +3,13 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta.Models;
 
 /// <summary>
-/// Identifier for a <see cref="V1Beta.Corpora.Chunk"/> retrieved via Semantic Retriever specified in the
+/// Identifier for a <c>Chunk</c> retrieved via Semantic Retriever specified in the
 /// <see cref="V1Beta.Models.GenerateAnswerRequest"/> using <see cref="V1Beta.Models.SemanticRetrieverConfig"/>.
 /// </summary>
 public sealed record SemanticRetrieverChunk
 {
     /// <summary>
-    /// Output only. Name of the <see cref="V1Beta.Corpora.Chunk"/> containing the attributed text.
+    /// Output only. Name of the <c>Chunk</c> containing the attributed text.
     /// Example: <c>corpora/123/documents/abc/chunks/xyz</c>
     /// </summary>
     [JsonPropertyName("chunk")]

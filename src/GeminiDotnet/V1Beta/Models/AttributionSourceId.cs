@@ -15,7 +15,7 @@ public sealed record AttributionSourceId
     public GroundingPassageId? GroundingPassage { get; init; }
 
     /// <summary>
-    /// Identifier for a <see cref="V1Beta.Corpora.Chunk"/> fetched via Semantic Retriever.
+    /// Identifier for a <c>Chunk</c> fetched via Semantic Retriever.
     /// </summary>
     [JsonPropertyName("semanticRetrieverChunk")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

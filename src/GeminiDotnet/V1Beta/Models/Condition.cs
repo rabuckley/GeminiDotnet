@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1Beta.Models;
 
 /// <summary>
 /// Filter condition applicable to a single key.

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta.Corpora;
 
 /// <summary>
-/// A <see cref="V1Beta.Corpora.Corpus"/> is a collection of <see cref="V1Beta.Document"/>s.
+/// A <see cref="V1Beta.Corpora.Corpus"/> is a collection of <see cref="V1Beta.FileSearchStores.Document"/>s.
 /// A project can create up to 10 corpora.
 /// </summary>
 public sealed record Corpus

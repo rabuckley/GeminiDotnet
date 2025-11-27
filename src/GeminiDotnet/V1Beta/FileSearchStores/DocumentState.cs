@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
 /// Output only. Current state of the `Document`.

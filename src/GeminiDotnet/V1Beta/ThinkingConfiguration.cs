@@ -23,7 +23,9 @@ public sealed record ThinkingConfiguration
     public int? ThinkingBudget { get; init; }
 
     /// <summary>
-    /// Optional. The level of thoughts tokens that the model should generate.
+    /// Optional. Controls the maximum depth of the model's internal reasoning process before
+    /// it produces a response. If not specified, the default is HIGH. Recommended
+    /// for Gemini 3 or later models. Use with earlier models results in an error.
     /// </summary>
     [JsonPropertyName("thinkingLevel")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
