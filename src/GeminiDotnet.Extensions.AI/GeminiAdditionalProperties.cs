@@ -5,4 +5,6 @@ public static class GeminiAdditionalProperties
     public const string ThinkingConfiguration = "thinkingConfig";
     
     public const string ResponseModalities = "responseModalities";
+
+    public const string ImageConfiguration = "imageConfig";
 }

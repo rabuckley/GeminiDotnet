@@ -129,12 +129,22 @@ internal static class MEAIToGeminiMapper
                     responseModalitiesObj as IReadOnlyList<ResponseModality> ?? responseModalitiesList.ToList();
             }
 
+            ImageConfiguration? imageConfiguration = null;
+
+            if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ImageConfiguration,
+                   out var imageConfigObj) is true
+               && imageConfigObj is ImageConfiguration imageConfig)
+            {
+                imageConfiguration = imageConfig;
+            }
+
             var configuration = new GenerationConfiguration
             {
                 StopSequences = options.StopSequences is null ? null : [.. options.StopSequences],
                 ResponseMimeType = CreateMappedResponseMimeType(options.ResponseFormat),
                 ResponseJsonSchema = CreateMappedResponseSchema(options.ResponseFormat),
                 ResponseModalities = responseModalities,
+                ImageConfiguration = imageConfiguration,
                 CandidateCount = null,
                 MaxOutputTokens = options.MaxOutputTokens,
                 Temperature = options.Temperature,
