@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1Beta.Models;
 
 /// <summary>
 /// Required. Operator applied to the given key-value pair to trigger the condition.

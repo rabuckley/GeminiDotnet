@@ -16,5 +16,13 @@ public sealed record ImageConfiguration
     [JsonPropertyName("aspectRatio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? AspectRatio { get; init; }
+
+    /// <summary>
+    /// Optional. Specifies the size of generated images. Supported values are <c>1K</c>, <c>2K</c>,
+    /// <c>4K</c>. If not specified, the model will use default value <c>1K</c>.
+    /// </summary>
+    [JsonPropertyName("imageSize")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? ImageSize { get; init; }
 }
 

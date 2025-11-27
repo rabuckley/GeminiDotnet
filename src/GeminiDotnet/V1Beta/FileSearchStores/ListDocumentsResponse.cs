@@ -3,13 +3,13 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
-/// Response from <c>ListDocuments</c> containing a paginated list of <see cref="V1Beta.Document"/>s.
-/// The <see cref="V1Beta.Document"/>s are sorted by ascending <c>document.create_time</c>.
+/// Response from <c>ListDocuments</c> containing a paginated list of <see cref="V1Beta.FileSearchStores.Document"/>s.
+/// The <see cref="V1Beta.FileSearchStores.Document"/>s are sorted by ascending <c>document.create_time</c>.
 /// </summary>
 public sealed record ListDocumentsResponse
 {
     /// <summary>
-    /// The returned <see cref="V1Beta.Document"/>s.
+    /// The returned <see cref="V1Beta.FileSearchStores.Document"/>s.
     /// </summary>
     [JsonPropertyName("documents")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

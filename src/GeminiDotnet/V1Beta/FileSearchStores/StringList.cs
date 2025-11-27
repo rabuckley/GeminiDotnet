@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
 /// User provided string values assigned to a single metadata key.

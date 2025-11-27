@@ -1,14 +1,14 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
-/// A <see cref="V1Beta.Document"/> is a collection of <see cref="V1Beta.Corpora.Chunk"/>s.
+/// A <see cref="V1Beta.FileSearchStores.Document"/> is a collection of <c>Chunk</c>s.
 /// </summary>
 public sealed record Document
 {
     /// <summary>
-    /// Output only. The Timestamp of when the <see cref="V1Beta.Document"/> was created.
+    /// Output only. The Timestamp of when the <see cref="V1Beta.FileSearchStores.Document"/> was created.
     /// </summary>
     [JsonPropertyName("createTime")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -16,14 +16,14 @@ public sealed record Document
 
     /// <summary>
     /// Optional. User provided custom metadata stored as key-value pairs used for querying.
-    /// A <see cref="V1Beta.Document"/> can have a maximum of 20 <see cref="V1Beta.CustomMetadata"/>.
+    /// A <see cref="V1Beta.FileSearchStores.Document"/> can have a maximum of 20 <see cref="V1Beta.FileSearchStores.CustomMetadata"/>.
     /// </summary>
     [JsonPropertyName("customMetadata")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public IReadOnlyList<CustomMetadata>? CustomMetadata { get; init; }
 
     /// <summary>
-    /// Optional. The human-readable display name for the <see cref="V1Beta.Document"/>. The display name must
+    /// Optional. The human-readable display name for the <see cref="V1Beta.FileSearchStores.Document"/>. The display name must
     /// be no more than 512 characters in length, including spaces.
     /// Example: "Semantic Retriever Documentation"
     /// </summary>
@@ -39,7 +39,7 @@ public sealed record Document
     public string? MimeType { get; init; }
 
     /// <summary>
-    /// Immutable. Identifier. The <see cref="V1Beta.Document"/> resource name. The ID (name excluding the
+    /// Immutable. Identifier. The <see cref="V1Beta.FileSearchStores.Document"/> resource name. The ID (name excluding the
     /// "fileSearchStores/*/documents/" prefix) can contain up to 40 characters
     /// that are lowercase alphanumeric or dashes (-). The ID cannot start or end
     /// with a dash. If the name is empty on create, a unique name will be derived
@@ -58,14 +58,14 @@ public sealed record Document
     public long? SizeBytes { get; init; }
 
     /// <summary>
-    /// Output only. Current state of the <see cref="V1Beta.Document"/>.
+    /// Output only. Current state of the <see cref="V1Beta.FileSearchStores.Document"/>.
     /// </summary>
     [JsonPropertyName("state")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public DocumentState? State { get; init; }
 
     /// <summary>
-    /// Output only. The Timestamp of when the <see cref="V1Beta.Document"/> was last updated.
+    /// Output only. The Timestamp of when the <see cref="V1Beta.FileSearchStores.Document"/> was last updated.
     /// </summary>
     [JsonPropertyName("updateTime")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

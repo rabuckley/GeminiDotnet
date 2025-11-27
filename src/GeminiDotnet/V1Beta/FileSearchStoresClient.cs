@@ -105,19 +105,6 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
-    public Task<QueryDocumentResponse> QueryDocumentAsync(
-        string fileSearchStore,
-        string document,
-        QueryDocumentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        ArgumentNullException.ThrowIfNull(document);
-        ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}/documents/{document}:query";
-        return _requester.ExecuteAsync<QueryDocumentRequest, QueryDocumentResponse>(HttpMethod.Post, path, request, cancellationToken);
-    }
-
     public Task<Operation> GetOperationByFileSearchStoreAndOperationAsync(
         string fileSearchStore,
         string operation,

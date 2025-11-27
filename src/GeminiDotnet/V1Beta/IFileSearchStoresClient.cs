@@ -55,10 +55,10 @@ public interface IFileSearchStoresClient
     /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
     /// </param>
     /// <param name="force">
-    /// Optional. If set to true, any <see cref="V1Beta.Document"/>s and objects related to this
+    /// Optional. If set to true, any <see cref="V1Beta.FileSearchStores.Document"/>s and objects related to this
     /// <see cref="V1Beta.FileSearchStores.FileSearchStore"/> will also be deleted.
     /// If false (the default), a <c>FAILED_PRECONDITION</c> error will be returned if
-    /// <see cref="V1Beta.FileSearchStores.FileSearchStore"/> contains any <see cref="V1Beta.Document"/>s.
+    /// <see cref="V1Beta.FileSearchStores.FileSearchStore"/> contains any <see cref="V1Beta.FileSearchStores.Document"/>s.
     /// </param>
     /// <param name="cancellationToken"></param>
     Task<Empty> DeleteFileSearchStoreAsync(
@@ -98,16 +98,16 @@ public interface IFileSearchStoresClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Lists all <see cref="V1Beta.Document"/>s in a <see cref="V1Beta.Corpora.Corpus"/>.
+    /// Lists all <see cref="V1Beta.FileSearchStores.Document"/>s in a <see cref="V1Beta.Corpora.Corpus"/>.
     /// </summary>
     /// <param name="fileSearchStore">
     /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
     /// </param>
     /// <param name="pageSize">
-    /// Optional. The maximum number of <see cref="V1Beta.Document"/>s to return (per page).
-    /// The service may return fewer <see cref="V1Beta.Document"/>s.
-    /// If unspecified, at most 10 <see cref="V1Beta.Document"/>s will be returned.
-    /// The maximum size limit is 20 <see cref="V1Beta.Document"/>s per page.
+    /// Optional. The maximum number of <see cref="V1Beta.FileSearchStores.Document"/>s to return (per page).
+    /// The service may return fewer <see cref="V1Beta.FileSearchStores.Document"/>s.
+    /// If unspecified, at most 10 <see cref="V1Beta.FileSearchStores.Document"/>s will be returned.
+    /// The maximum size limit is 20 <see cref="V1Beta.FileSearchStores.Document"/>s per page.
     /// </param>
     /// <param name="pageToken">
     /// Optional. A page token, received from a previous <c>ListDocuments</c> call.
@@ -124,7 +124,7 @@ public interface IFileSearchStoresClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets information about a specific <see cref="V1Beta.Document"/>.
+    /// Gets information about a specific <see cref="V1Beta.FileSearchStores.Document"/>.
     /// </summary>
     /// <param name="fileSearchStore">
     /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
@@ -139,7 +139,7 @@ public interface IFileSearchStoresClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes a <see cref="V1Beta.Document"/>.
+    /// Deletes a <see cref="V1Beta.FileSearchStores.Document"/>.
     /// </summary>
     /// <param name="fileSearchStore">
     /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
@@ -148,35 +148,16 @@ public interface IFileSearchStoresClient
     /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
     /// </param>
     /// <param name="force">
-    /// Optional. If set to true, any <see cref="V1Beta.Corpora.Chunk"/>s and objects related to this <see cref="V1Beta.Document"/> will
+    /// Optional. If set to true, any <c>Chunk</c>s and objects related to this <see cref="V1Beta.FileSearchStores.Document"/> will
     /// also be deleted.
     /// If false (the default), a <c>FAILED_PRECONDITION</c> error will be returned if
-    /// <see cref="V1Beta.Document"/> contains any <see cref="V1Beta.Corpora.Chunk"/>s.
+    /// <see cref="V1Beta.FileSearchStores.Document"/> contains any <c>Chunk</c>s.
     /// </param>
     /// <param name="cancellationToken"></param>
     Task<Empty> DeleteDocumentAsync(
         string fileSearchStore,
         string document,
         bool? force = null,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Performs semantic search over a <see cref="V1Beta.Document"/>.
-    /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="document">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
-    /// <param name="cancellationToken"></param>
-    Task<QueryDocumentResponse> QueryDocumentAsync(
-        string fileSearchStore,
-        string document,
-        QueryDocumentRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>

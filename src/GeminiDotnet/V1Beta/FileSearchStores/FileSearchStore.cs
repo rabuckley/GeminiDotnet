@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
-/// A <see cref="V1Beta.FileSearchStores.FileSearchStore"/> is a collection of <see cref="V1Beta.Document"/>s.
+/// A <see cref="V1Beta.FileSearchStores.FileSearchStore"/> is a collection of <see cref="V1Beta.FileSearchStores.Document"/>s.
 /// </summary>
 public sealed record FileSearchStore
 {
