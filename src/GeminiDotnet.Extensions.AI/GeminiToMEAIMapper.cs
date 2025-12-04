@@ -19,7 +19,7 @@ internal static class GeminiToMEAIMapper
         {
             AuthorName = null,
             Role = CreateMappedChatRole(candidate?.Content?.Role),
-            Contents = candidate?.Content?.Parts?.Select(CreateMappedAIContent).ToList(),
+            Contents = CreateMappedContents(candidate?.Content?.Parts),
             RawRepresentation = response,
             AdditionalProperties = null,
             ResponseId = response.ResponseId,
@@ -56,58 +56,85 @@ internal static class GeminiToMEAIMapper
         };
     }
 
-    private static AIContent CreateMappedAIContent(Part messagePart)
+    private static List<AIContent>? CreateMappedContents(IReadOnlyList<Part>? parts)
     {
-        if (messagePart.Text is not null)
+        if (parts is null)
         {
-            return CreateMappedTextContent(messagePart);
+            return null;
         }
 
-        if (messagePart.InlineData is not null)
+        List<AIContent> contents = new(parts.Count);
+
+        foreach (var part in parts)
         {
-            return CreateMappedDataContent(messagePart.InlineData);
+            AIContent? mapped = null;
+
+            if (part.Text is not null)
+            {
+                mapped = CreateMappedTextContent(part);
+            }
+
+            if (part.InlineData is not null)
+            {
+                mapped = CreateMappedDataContent(part);
+            }
+
+            if (part.FunctionCall is not null)
+            {
+                mapped = CreateMappedFunctionCallContent(part);
+            }
+
+            if (part.FunctionResponse is not null)
+            {
+                mapped = CreateMappedFunctionResultContent(part);
+            }
+
+            if (part.FileData is not null)
+            {
+                mapped = CreateMappedFileDataContent(part);
+            }
+
+            if (part.ExecutableCode is not null)
+            {
+                mapped = CreateMappedExecutableCodeContent(part);
+            }
+
+            if (part.CodeExecutionResult is not null)
+            {
+                mapped = CreateMappedCodeExecutionResultContent(part);
+            }
+
+            if (mapped is null)
+            {
+                throw new UnreachableException($"All properties of {nameof(Part)} are null.");
+            }
+
+            contents.Add(mapped);
         }
 
-        if (messagePart.FunctionCall is not null)
-        {
-            return CreateMappedFunctionCallContent(messagePart.FunctionCall);
-        }
+        return contents;
 
-        if (messagePart.FunctionResponse is not null)
+        static DataContent CreateMappedDataContent(Part part)
         {
-            return CreateMappedFunctionResultContent(messagePart.FunctionResponse);
-        }
+            Debug.Assert(part.InlineData is not null);
 
-        if (messagePart.FileData is not null)
-        {
-            return CreateMappedFileDataContent(messagePart.FileData);
-        }
+            var inlineData = part.InlineData!;
 
-        if (messagePart.ExecutableCode is not null)
-        {
-            return CreateMappedExecutableCodeContent(messagePart.ExecutableCode);
-        }
-
-        if (messagePart.CodeExecutionResult is not null)
-        {
-            return CreateMappedCodeExecutionResultContent(messagePart.CodeExecutionResult);
-        }
-
-        throw new UnreachableException($"All properties of {nameof(Part)} are null.");
-
-        static DataContent CreateMappedDataContent(Blob inlineData)
-        {
             return new DataContent(inlineData.Data, inlineData.MimeType!) // Let M.E.AI throw.
             {
-                RawRepresentation = inlineData, AdditionalProperties = null
+                RawRepresentation = part, AdditionalProperties = null
             };
         }
 
-        static DataContent CreateMappedFileDataContent(FileData fileData)
+        static DataContent CreateMappedFileDataContent(Part part)
         {
+            Debug.Assert(part.FileData is not null);
+            
+            var fileData = part.FileData!;
+            
             return new DataContent(fileData.FileUri, fileData.MimeType)
             {
-                RawRepresentation = fileData, AdditionalProperties = null
+                RawRepresentation = part, AdditionalProperties = null
             };
         }
 
@@ -117,15 +144,25 @@ internal static class GeminiToMEAIMapper
             {
                 return new TextReasoningContent(part.Text)
                 {
-                    RawRepresentation = part, ProtectedData = part.ThoughtSignature,
+                    Annotations = null,
+                    RawRepresentation = part,
+                    AdditionalProperties = null,
+                    ProtectedData = part.ThoughtSignature,
                 };
             }
 
-            return new TextContent(part.Text) { RawRepresentation = part };
+            return new TextContent(part.Text)
+            {
+                Annotations = null, RawRepresentation = part, AdditionalProperties = null
+            };
         }
 
-        static FunctionCallContent CreateMappedFunctionCallContent(FunctionCall functionCall)
+        static FunctionCallContent CreateMappedFunctionCallContent(Part part)
         {
+            Debug.Assert(part.FunctionCall is not null);
+            
+            var functionCall = part.FunctionCall!;
+            
             var callId = functionCall.Id ?? $"{functionCall.Name}/{Guid.NewGuid()}";
 
             var args = functionCall.Arguments.Deserialize(JsonContext.Default.IDictionaryStringObject)
@@ -133,37 +170,54 @@ internal static class GeminiToMEAIMapper
 
             return new FunctionCallContent(callId, functionCall.Name, args)
             {
-                RawRepresentation = functionCall, AdditionalProperties = null
+                Annotations = null, RawRepresentation = part, AdditionalProperties = null, Exception = null
             };
         }
 
-        static FunctionResultContent CreateMappedFunctionResultContent(FunctionResponse functionResponse)
+        static FunctionResultContent CreateMappedFunctionResultContent(Part part)
         {
+            Debug.Assert(part.FunctionResponse is not null);
+            
+            var functionResponse = part.FunctionResponse!;
+            
             var responseId = functionResponse.Id ?? $"{functionResponse.Name}/{Guid.NewGuid()}";
 
             var result = functionResponse.Response.Deserialize(JsonContext.Default.Object);
 
             return new FunctionResultContent(responseId, result)
             {
-                RawRepresentation = functionResponse, AdditionalProperties = null
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = null,
+                Exception = null
             };
         }
 
-        static ExecutableCodeContent CreateMappedExecutableCodeContent(ExecutableCode executableCode)
+        static ExecutableCodeContent CreateMappedExecutableCodeContent(Part part)
         {
+            Debug.Assert(part.ExecutableCode is not null);
+            
+            var executableCode = part.ExecutableCode!;
+            
             return new ExecutableCodeContent
             {
+                Annotations = null,
                 Language = executableCode.Language,
                 Code = executableCode.Code,
-                RawRepresentation = executableCode,
+                RawRepresentation = part,
                 AdditionalProperties = null
             };
         }
 
-        static CodeExecutionContent CreateMappedCodeExecutionResultContent(CodeExecutionResult codeExecutionResult)
+        static CodeExecutionContent CreateMappedCodeExecutionResultContent(Part part)
         {
+            Debug.Assert(part.CodeExecutionResult is not null);
+            
+            var codeExecutionResult = part.CodeExecutionResult!;
+            
             return new CodeExecutionContent
             {
+                Annotations = null,
                 Output = codeExecutionResult.Output,
                 Status = codeExecutionResult.Outcome switch
                 {
@@ -172,9 +226,10 @@ internal static class GeminiToMEAIMapper
                     CodeExecutionResultOutcome.Failed => CodeExecutionStatus.Error,
                     CodeExecutionResultOutcome.DeadlineExceeded => CodeExecutionStatus.Timeout,
                     _ => throw new ArgumentOutOfRangeException(nameof(codeExecutionResult.Outcome),
-                        codeExecutionResult.Outcome, null)
+                        codeExecutionResult.Outcome,
+                        null)
                 },
-                RawRepresentation = codeExecutionResult,
+                RawRepresentation = part,
                 AdditionalProperties = null
             };
         }
@@ -213,8 +268,10 @@ internal static class GeminiToMEAIMapper
             return new ChatMessage
             {
                 AuthorName = null,
+                CreatedAt = null,
                 Role = CreateMappedChatRole(candidateResponse.Content?.Role),
-                Contents = candidateResponse.Content?.Parts?.Select(CreateMappedAIContent).ToList(),
+                Contents = CreateMappedContents(candidateResponse.Content?.Parts),
+                MessageId = null,
                 RawRepresentation = candidateResponse,
                 AdditionalProperties = null
             };

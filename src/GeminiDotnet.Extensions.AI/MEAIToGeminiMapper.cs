@@ -178,8 +178,7 @@ internal static class MEAIToGeminiMapper
         {
             return new Content
             {
-                Role = CreateMappedRole(chatMessage.Role),
-                Parts = chatMessage.Contents.Select(CreateMappedPart).ToList(),
+                Role = CreateMappedRole(chatMessage.Role), Parts = CreateMappedParts(chatMessage.Contents),
             };
         }
 
@@ -208,18 +207,27 @@ internal static class MEAIToGeminiMapper
             return null!; // unreachable
         }
 
-        static Part CreateMappedPart(MEAI.AIContent content)
+        static IReadOnlyList<Part> CreateMappedParts(IList<MEAI.AIContent> contents)
         {
-            return content switch
+            List<Part> parts = new(contents.Count);
+
+            foreach (var content in contents)
             {
-                MEAI.TextContent textContent => CreateTextPart(textContent),
-                MEAI.TextReasoningContent textReasoningContent => CreateTextReasoningPart(textReasoningContent),
-                MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
-                MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
-                MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
-                MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
-                _ => ThrowUnsupportedContentException(content),
-            };
+                var mapped = content switch
+                {
+                    MEAI.TextContent textContent => CreateTextPart(textContent),
+                    MEAI.TextReasoningContent textReasoningContent => CreateTextReasoningPart(textReasoningContent),
+                    MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
+                    MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
+                    MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
+                    MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
+                    _ => ThrowUnsupportedContentException(content),
+                };
+
+                parts.Add(mapped);
+            }
+
+            return parts;
 
             [DoesNotReturn]
             static Part ThrowUnsupportedContentException(MEAI.AIContent content)
@@ -250,7 +258,8 @@ internal static class MEAIToGeminiMapper
 
                 return new Part
                 {
-                    InlineData = new Blob { Data = dataContent.Data, MimeType = dataContent.MediaType }
+                    InlineData = new Blob { Data = dataContent.Data, MimeType = dataContent.MediaType },
+                    ThoughtSignature = GetThoughtSignature(dataContent),
                 };
             }
 
@@ -259,7 +268,11 @@ internal static class MEAIToGeminiMapper
             {
                 return new Part
                 {
-                    FileData = new FileData { FileUri = uriContent.Uri.ToString(), MimeType = uriContent.MediaType }
+                    FileData = new FileData
+                    {
+                        FileUri = uriContent.Uri.ToString(), MimeType = uriContent.MediaType,
+                    },
+                    ThoughtSignature = GetThoughtSignature(uriContent),
                 };
             }
 
@@ -273,17 +286,16 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionCall = new FunctionCall
                     {
-                        Id = functionCall.CallId,
-                        Name = functionCall.Name,
-                        Arguments = arguments
-                    }
+                        Id = functionCall.CallId, Name = functionCall.Name, Arguments = arguments
+                    },
+                    ThoughtSignature = GetThoughtSignature(functionCall)
                 };
             }
 
             static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
             {
-                var response = functionResult.Exception is null 
-                    ? new Dictionary<string, object?> { { "result", functionResult.Result } } 
+                var response = functionResult.Exception is null
+                    ? new Dictionary<string, object?> { { "result", functionResult.Result } }
                     : new Dictionary<string, object?> { { "error", functionResult.Result }, };
 
                 return new Part
@@ -292,8 +304,10 @@ internal static class MEAIToGeminiMapper
                     {
                         Id = functionResult.CallId,
                         Name = functionResult.CallId,
-                        Response = JsonSerializer.SerializeToElement(response, JsonContext.Default.IDictionaryStringObject)
-                    }
+                        Response = JsonSerializer.SerializeToElement(response,
+                            JsonContext.Default.IDictionaryStringObject)
+                    },
+                    ThoughtSignature = GetThoughtSignature(functionResult)
                 };
             }
         }
@@ -304,14 +318,14 @@ internal static class MEAIToGeminiMapper
         }
     }
 
+    private static string? GetThoughtSignature(MEAI.AIContent content)
+    {
+        return (content.RawRepresentation as Part)?.ThoughtSignature;
+    }
+
     private static Part CreateTextReasoningPart(MEAI.TextReasoningContent content)
     {
-        return new Part
-        {
-            Thought = true,
-            Text = content.Text,
-            ThoughtSignature = content.ProtectedData,
-        };
+        return new Part { Thought = true, Text = content.Text, ThoughtSignature = content.ProtectedData };
     }
 
     private static void AppendSystemInstructionParts(
