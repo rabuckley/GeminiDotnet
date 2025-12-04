@@ -110,33 +110,20 @@ internal static class MEAIToGeminiMapper
                 return null;
             }
 
-            ThinkingConfiguration? thinkingConfiguration = null;
+            var thinkingConfiguration = options.AdditionalProperties?.GetValueOrDefault<ThinkingConfiguration>(
+                GeminiAdditionalProperties.ThinkingConfiguration);
 
-            if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ThinkingConfiguration,
-                    out var thinkingConfigObj) is true
-                && thinkingConfigObj is ThinkingConfiguration thinkingConfig)
-            {
-                thinkingConfiguration = thinkingConfig;
-            }
+            var responseModalities = options.AdditionalProperties?
+                    .GetValueOrDefault<IEnumerable<ResponseModality>>(GeminiAdditionalProperties.ResponseModalities)
+                switch
+                {
+                    IReadOnlyList<ResponseModality> list => list,
+                    IEnumerable<ResponseModality> enumerable => enumerable.ToList(),
+                    _ => null
+                };
 
-            IReadOnlyList<ResponseModality>? responseModalities = null;
-
-            if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ResponseModalities,
-                    out var responseModalitiesObj) is true
-                && responseModalitiesObj is IEnumerable<ResponseModality> responseModalitiesList)
-            {
-                responseModalities =
-                    responseModalitiesObj as IReadOnlyList<ResponseModality> ?? responseModalitiesList.ToList();
-            }
-
-            ImageConfiguration? imageConfiguration = null;
-
-            if (options.AdditionalProperties?.TryGetValue(GeminiAdditionalProperties.ImageConfiguration,
-                   out var imageConfigObj) is true
-               && imageConfigObj is ImageConfiguration imageConfig)
-            {
-                imageConfiguration = imageConfig;
-            }
+            var imageConfiguration = options.AdditionalProperties?.GetValueOrDefault<ImageConfiguration>(
+                GeminiAdditionalProperties.ImageConfiguration);
 
             var configuration = new GenerationConfiguration
             {
