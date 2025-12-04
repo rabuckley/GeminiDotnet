@@ -8,7 +8,7 @@ var key = Environment.GetEnvironmentVariable("GEMINI_DOTNET_API_KEY")
 var options = new GeminiClientOptions
 {
     ApiKey = key,
-    ModelId = "gemini-2.5-flash",
+    ModelId = "gemini-3-pro-preview",
 };
 
 var chatClient = new GeminiChatClient(options);
