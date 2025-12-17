@@ -60,6 +60,13 @@ public sealed record Part
     public Blob? InlineData { get; init; }
 
     /// <summary>
+    /// Optional. Media resolution for the input media.
+    /// </summary>
+    [JsonPropertyName("mediaResolution")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public MediaResolution? MediaResolution { get; init; }
+
+    /// <summary>
     /// Custom metadata associated with the Part.
     /// Agents using genai.Part as content representation may need to keep track
     /// of the additional information. For example it can be name of a file/source

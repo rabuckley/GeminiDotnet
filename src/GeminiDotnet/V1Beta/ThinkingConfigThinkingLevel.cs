@@ -17,10 +17,22 @@ public enum ThinkingConfigThinkingLevel
     Unspecified,
 
     /// <summary>
+    /// Little to no thinking.
+    /// </summary>
+    [JsonStringEnumMemberName("MINIMAL")]
+    Minimal,
+
+    /// <summary>
     /// Low thinking level.
     /// </summary>
     [JsonStringEnumMemberName("LOW")]
     Low,
+
+    /// <summary>
+    /// Medium thinking level.
+    /// </summary>
+    [JsonStringEnumMemberName("MEDIUM")]
+    Medium,
 
     /// <summary>
     /// High thinking level.
