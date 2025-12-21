@@ -76,6 +76,13 @@ public sealed record Tool
     public GoogleSearchRetrieval? GoogleSearchRetrieval { get; init; }
 
     /// <summary>
+    /// Optional. MCP Servers to connect to.
+    /// </summary>
+    [JsonPropertyName("mcpServers")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<McpServer>? McpServers { get; init; }
+
+    /// <summary>
     /// Optional. Tool to support URL context retrieval.
     /// </summary>
     [JsonPropertyName("urlContext")]
