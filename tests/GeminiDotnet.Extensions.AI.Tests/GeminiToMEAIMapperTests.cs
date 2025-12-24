@@ -83,7 +83,8 @@ public sealed class GeminiToMEAIMapperTests
 
         var details = usageContent.Details;
         Assert.Equal(100, details.InputTokenCount);
-        Assert.Equal(50, details.OutputTokenCount);
+        // OutputTokenCount = candidatesTokenCount (50) + thoughtsTokenCount (30) per M.E.AI convention
+        Assert.Equal(80, details.OutputTokenCount);
         Assert.Equal(150, details.TotalTokenCount);
         Assert.Equal(25, details.CachedInputTokenCount);
         Assert.Equal(30, details.ReasoningTokenCount);
@@ -119,7 +120,8 @@ public sealed class GeminiToMEAIMapperTests
         // Assert
         Assert.NotNull(result.Usage);
         Assert.Equal(100, result.Usage.InputTokenCount);
-        Assert.Equal(50, result.Usage.OutputTokenCount);
+        // OutputTokenCount = candidatesTokenCount (50) + thoughtsTokenCount (30) per M.E.AI convention
+        Assert.Equal(80, result.Usage.OutputTokenCount);
         Assert.Equal(150, result.Usage.TotalTokenCount);
         Assert.Equal(25, result.Usage.CachedInputTokenCount);
         Assert.Equal(30, result.Usage.ReasoningTokenCount);
