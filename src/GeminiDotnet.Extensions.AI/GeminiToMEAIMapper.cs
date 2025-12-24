@@ -15,11 +15,20 @@ internal static class GeminiToMEAIMapper
     {
         var candidate = response.Candidates?.Single();
 
+        // Map content parts
+        var contents = CreateMappedContents(candidate?.Content?.Parts) ?? [];
+
+        // Add UsageContent for streaming aggregation (consumed by ToChatResponse())
+        if (CreateMappedUsageDetails(response.UsageMetadata) is { } usageDetails)
+        {
+            contents.Add(new UsageContent(usageDetails));
+        }
+
         return new ChatResponseUpdate
         {
             AuthorName = null,
             Role = CreateMappedChatRole(candidate?.Content?.Role),
-            Contents = CreateMappedContents(candidate?.Content?.Parts),
+            Contents = contents,
             RawRepresentation = response,
             AdditionalProperties = null,
             ResponseId = response.ResponseId,
@@ -251,18 +260,6 @@ internal static class GeminiToMEAIMapper
             AdditionalProperties = null
         };
 
-        static UsageDetails? CreateMappedUsageDetails(UsageMetadata? usage) => usage switch
-        {
-            null => null,
-            _ => new UsageDetails
-            {
-                InputTokenCount = usage.PromptTokenCount,
-                OutputTokenCount = usage.CandidatesTokenCount ?? 0,
-                TotalTokenCount = usage.TotalTokenCount,
-                AdditionalCounts = null,
-            }
-        };
-
         static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
         {
             return new ChatMessage
@@ -301,6 +298,26 @@ internal static class GeminiToMEAIMapper
             reason: $"Unsupported role: {role}");
 
         return default; // Unreachable
+    }
+
+    private static UsageDetails? CreateMappedUsageDetails(UsageMetadata? usage)
+    {
+        if (usage is null)
+        {
+            return null;
+        }
+
+        return new UsageDetails
+        {
+            InputTokenCount = usage.PromptTokenCount,
+            OutputTokenCount = usage.CandidatesTokenCount ?? 0,
+            TotalTokenCount = usage.TotalTokenCount,
+            CachedInputTokenCount = usage.CachedContentTokenCount,
+            ReasoningTokenCount = usage.ThoughtsTokenCount,
+            AdditionalCounts = usage.ToolUsePromptTokenCount is { } toolTokens
+                ? new() { ["ToolUsePromptTokens"] = toolTokens }
+                : null,
+        };
     }
 
     public static GeneratedEmbeddings<Embedding<float>> CreateMappedGeneratedEmbeddings(
