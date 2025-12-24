@@ -35,6 +35,104 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(actualContent.Parts[3].Text, text2.Text);
     }
 
+    #region UsageMetadata Mapping Tests
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithUsageMetadata_AddsUsageContent()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(StreamingResponseWithUsage)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var usageContent = result.Contents.OfType<UsageContent>().SingleOrDefault();
+        Assert.NotNull(usageContent);
+        Assert.Equal(100, usageContent.Details.InputTokenCount);
+        Assert.Equal(50, usageContent.Details.OutputTokenCount);
+        Assert.Equal(150, usageContent.Details.TotalTokenCount);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithoutUsageMetadata_NoUsageContent()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(StreamingResponseWithoutUsage)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var usageContent = result.Contents.OfType<UsageContent>().SingleOrDefault();
+        Assert.Null(usageContent);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithFullUsageMetadata_MapsAllFields()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(StreamingResponseWithFullUsage)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var usageContent = result.Contents.OfType<UsageContent>().SingleOrDefault();
+        Assert.NotNull(usageContent);
+
+        var details = usageContent.Details;
+        Assert.Equal(100, details.InputTokenCount);
+        // OutputTokenCount = candidatesTokenCount (50) + thoughtsTokenCount (30) per M.E.AI convention
+        Assert.Equal(80, details.OutputTokenCount);
+        Assert.Equal(150, details.TotalTokenCount);
+        Assert.Equal(25, details.CachedInputTokenCount);
+        Assert.Equal(30, details.ReasoningTokenCount);
+        Assert.NotNull(details.AdditionalCounts);
+        Assert.Equal(10, details.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithUsageMetadata_MapsToUsageProperty()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(NonStreamingResponseWithUsage)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.NotNull(result.Usage);
+        Assert.Equal(100, result.Usage.InputTokenCount);
+        Assert.Equal(50, result.Usage.OutputTokenCount);
+        Assert.Equal(150, result.Usage.TotalTokenCount);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithFullUsageMetadata_MapsAllFields()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(NonStreamingResponseWithFullUsage)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.NotNull(result.Usage);
+        Assert.Equal(100, result.Usage.InputTokenCount);
+        // OutputTokenCount = candidatesTokenCount (50) + thoughtsTokenCount (30) per M.E.AI convention
+        Assert.Equal(80, result.Usage.OutputTokenCount);
+        Assert.Equal(150, result.Usage.TotalTokenCount);
+        Assert.Equal(25, result.Usage.CachedInputTokenCount);
+        Assert.Equal(30, result.Usage.ReasoningTokenCount);
+        Assert.NotNull(result.Usage.AdditionalCounts);
+        Assert.Equal(10, result.Usage.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
+    }
+
+    #endregion
+
+    #region Test Data
+
     [StringSyntax(StringSyntaxAttribute.Json)]
     private const string PythonCodeExecutionExampleResponse =
         """
@@ -77,4 +175,121 @@ public sealed class GeminiToMEAIMapperTests
           "responseId": "bvq7aInSLPn9nsEP3MKX6A4"
         }
         """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string StreamingResponseWithUsage =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [{ "text": "Hello" }],
+                "role": "model"
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 100,
+            "candidatesTokenCount": 50,
+            "totalTokenCount": 150
+          },
+          "modelVersion": "gemini-2.0-flash",
+          "responseId": "test-response-1"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string StreamingResponseWithoutUsage =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [{ "text": "Hello" }],
+                "role": "model"
+              }
+            }
+          ],
+          "modelVersion": "gemini-2.0-flash",
+          "responseId": "test-response-2"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string StreamingResponseWithFullUsage =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [{ "text": "Hello" }],
+                "role": "model"
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 100,
+            "candidatesTokenCount": 50,
+            "totalTokenCount": 150,
+            "cachedContentTokenCount": 25,
+            "thoughtsTokenCount": 30,
+            "toolUsePromptTokenCount": 10
+          },
+          "modelVersion": "gemini-2.0-flash",
+          "responseId": "test-response-3"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string NonStreamingResponseWithUsage =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [{ "text": "Hello, I'm an AI assistant." }],
+                "role": "model"
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 100,
+            "candidatesTokenCount": 50,
+            "totalTokenCount": 150
+          },
+          "modelVersion": "gemini-2.0-flash",
+          "responseId": "test-response-4"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string NonStreamingResponseWithFullUsage =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [{ "text": "Hello, I'm an AI assistant." }],
+                "role": "model"
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 100,
+            "candidatesTokenCount": 50,
+            "totalTokenCount": 150,
+            "cachedContentTokenCount": 25,
+            "thoughtsTokenCount": 30,
+            "toolUsePromptTokenCount": 10
+          },
+          "modelVersion": "gemini-2.0-flash",
+          "responseId": "test-response-5"
+        }
+        """;
+
+    #endregion
 }
