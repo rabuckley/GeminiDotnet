@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GeminiDotnet.Extensions.AI/GeminiDotnet.Extensions.AI.csproj" />
+    <Project Path="src/GeminiDotnet.Testing/GeminiDotnet.Testing.csproj" />
+    <Project Path="src/GeminiDotnet/GeminiDotnet.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="tests/GeminiDotnet.Extensions.AI.Examples/GeminiDotnet.Extensions.AI.Examples.csproj" />
+    <Project Path="tests/GeminiDotnet.Extensions.AI.Tests.Integration/GeminiDotnet.Extensions.AI.Tests.Integration.csproj" />
+    <Project Path="tests/GeminiDotnet.Extensions.AI.Tests/GeminiDotnet.Extensions.AI.Tests.csproj" />
+    <Project Path="tests/GeminiDotnet.Integration.SemanticKernel.Tests/GeminiDotnet.Integration.SemanticKernel.Tests.csproj" />
+    <Project Path="tests/GeminiDotnet.Tests/GeminiDotnet.Tests.csproj" />
+  </Folder>
+</Solution>
