@@ -26,11 +26,12 @@ public sealed class GeminiClient : IGeminiClient
     /// The provided <see cref="HttpClient"/> must be pre-configured with the appropriate base address and headers.
     /// </remarks>
     /// <param name="httpClient">The preconfigured HttpClient</param>
-    public GeminiClient(HttpClient httpClient)
+    /// <param name="modelId">Optional default model ID to use when not specified per-request</param>
+    public GeminiClient(HttpClient httpClient, string? modelId = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         _httpClient = httpClient;
-        Options = new GeminiClientOptions { Endpoint = httpClient.BaseAddress, ApiKey = null! };
+        Options = new GeminiClientOptions { Endpoint = httpClient.BaseAddress, ApiKey = null!, ModelId = modelId };
     }
 
     /// <summary>

@@ -195,6 +195,43 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void CreateMappedGenerateContentRequest_WithThinkingConfigurationAsJsonElement_ShouldMapThinkingConfig()
+    {
+        // Arrange - This test simulates what happens when Semantic Kernel's
+        // PromptExecutionSettings.ToChatOptions() roundtrips settings through JSON serialization,
+        // causing typed objects to become JsonElements in AdditionalProperties.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
+        };
+
+        var thinkingConfig = new ThinkingConfiguration
+        {
+            IncludeThoughts = true,
+            ThinkingBudget = 1000
+        };
+
+        // Serialize to JsonElement to simulate SK's JSON roundtrip behavior
+        var thinkingConfigJson = JsonSerializer.SerializeToElement(thinkingConfig);
+
+        var options = new ChatOptions
+        {
+            AdditionalProperties = new AdditionalPropertiesDictionary
+            {
+                ["thinkingConfig"] = thinkingConfigJson // JsonElement instead of ThinkingConfiguration
+            }
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.NotNull(request.GenerationConfiguration?.ThinkingConfiguration);
+        Assert.True(request.GenerationConfiguration?.ThinkingConfiguration?.IncludeThoughts);
+        Assert.Equal(1000, request.GenerationConfiguration?.ThinkingConfiguration?.ThinkingBudget);
+    }
+
+    [Fact]
     public void HostedWebSearchTool_ShouldMapToGoogleSearchTool()
     {
         // Arrange
