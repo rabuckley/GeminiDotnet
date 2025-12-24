@@ -319,7 +319,7 @@ internal static class GeminiToMEAIMapper
             CachedInputTokenCount = usage.CachedContentTokenCount,
             ReasoningTokenCount = usage.ThoughtsTokenCount,
             AdditionalCounts = usage.ToolUsePromptTokenCount is { } toolTokens
-                ? new() { ["ToolUsePromptTokens"] = toolTokens }
+                ? new() { [GeminiAdditionalCounts.ToolUsePromptTokenCount] = toolTokens }
                 : null,
         };
     }

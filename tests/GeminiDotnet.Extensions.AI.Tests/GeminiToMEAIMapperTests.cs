@@ -89,7 +89,7 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(25, details.CachedInputTokenCount);
         Assert.Equal(30, details.ReasoningTokenCount);
         Assert.NotNull(details.AdditionalCounts);
-        Assert.Equal(10, details.AdditionalCounts["ToolUsePromptTokens"]);
+        Assert.Equal(10, details.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(25, result.Usage.CachedInputTokenCount);
         Assert.Equal(30, result.Usage.ReasoningTokenCount);
         Assert.NotNull(result.Usage.AdditionalCounts);
-        Assert.Equal(10, result.Usage.AdditionalCounts["ToolUsePromptTokens"]);
+        Assert.Equal(10, result.Usage.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
     }
 
     #endregion
