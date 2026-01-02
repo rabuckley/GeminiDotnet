@@ -7,9 +7,11 @@
     <AnalysisLevel>preview</AnalysisLevel>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="MinVer" PrivateAssets="all"/>
   </ItemGroup>
 </Project>
