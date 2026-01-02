@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      MicrosoftExtensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+      DotNet:
+        patterns:
+          - "System.*"
+      xunit:
+        patterns:
+          - "xunit*"
