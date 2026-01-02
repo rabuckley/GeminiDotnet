@@ -13,7 +13,7 @@ public sealed class GeminiChatClient : IChatClient
     private readonly IGeminiClient _client;
     private readonly TimeProvider _timeProvider;
     private readonly ChatClientMetadata _metadata;
-    
+
     private IModelsClient ModelsClient => _client.V1Beta.Models;
 
     /// <summary>
@@ -46,8 +46,8 @@ public sealed class GeminiChatClient : IChatClient
         _timeProvider = timeProvider;
 
         _metadata = new ChatClientMetadata(
-            providerName: "Gemini", 
-            providerUri: client.Endpoint, 
+            providerName: "Gemini",
+            providerUri: client.Endpoint,
             defaultModelId: client.Options.ModelId);
     }
 
@@ -61,9 +61,18 @@ public sealed class GeminiChatClient : IChatClient
         ArgumentNullException.ThrowIfNull(messages);
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(model, messages, options);
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            model,
+            messages,
+            options,
+            options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
+
         var response = await ModelsClient.GenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false);
-        return GeminiToMEAIMapper.CreateMappedChatResponse(response, _timeProvider.GetUtcNow());
+
+        return GeminiToMEAIMapper.CreateMappedChatResponse(
+            response,
+            createdAt: _timeProvider.GetUtcNow());
     }
 
     /// <inheritdoc />
@@ -75,9 +84,16 @@ public sealed class GeminiChatClient : IChatClient
         ArgumentNullException.ThrowIfNull(messages);
 
         var model = ModelIdHelper.GetModelId(options, _metadata);
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(model, messages, options);
 
-        await foreach (var response in ModelsClient.StreamGenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false))
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            model,
+            messages,
+            options,
+            options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
+
+        var results = ModelsClient.StreamGenerateContentAsync(model, request, cancellationToken);
+
+        await foreach (var response in results.ConfigureAwait(false))
         {
             yield return GeminiToMEAIMapper.CreateMappedChatResponseUpdate(
                 response,
