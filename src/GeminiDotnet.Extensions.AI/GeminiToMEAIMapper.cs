@@ -326,28 +326,21 @@ internal static class GeminiToMEAIMapper
 
     public static GeneratedEmbeddings<Embedding<float>> CreateMappedGeneratedEmbeddings(
         EmbedContentResponse response,
-        EmbeddingGenerationOptions? options)
+        string modelId,
+        DateTimeOffset createdAt)
     {
-        // Currently all models return 768-dimensional embeddings.
-        // https://ai.google.dev/gemini-api/docs/models/gemini?#text-embedding
-        const int geminiEmbeddingSize = 768;
-        var embeddingSize = options?.Dimensions ?? geminiEmbeddingSize;
-        var vector = response.Embedding!.Values;
+        GeneratedEmbeddings<Embedding<float>> result = [];
 
-        if (vector.Length % embeddingSize != 0)
+        if (response.Embedding?.Values is { } embeddingValues)
         {
-            throw new InvalidOperationException(
-                $"The returned embedding vector's size is not a multiple of the expected dimensions '{embeddingSize}'.");
+            var embedding = new Embedding<float>(embeddingValues)
+            {
+                CreatedAt = createdAt, ModelId = modelId, AdditionalProperties = null,
+            };
+
+            result.Add(embedding);
         }
 
-        var generatedEmbeddings = new GeneratedEmbeddings<Embedding<float>>(vector.Length / embeddingSize);
-
-        for (int i = 0; i < vector.Length; i += embeddingSize)
-        {
-            var embedding = new Embedding<float>(vector.Slice(i, embeddingSize));
-            generatedEmbeddings.Add(embedding);
-        }
-
-        return generatedEmbeddings;
+        return result;
     }
 }

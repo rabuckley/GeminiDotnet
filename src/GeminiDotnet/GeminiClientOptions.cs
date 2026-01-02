@@ -10,4 +10,6 @@ public sealed record GeminiClientOptions : IGeminiClientOptions
     public string? ModelId { get; set; }
 
     public Uri? Endpoint { get; set; } = new Uri("https://generativelanguage.googleapis.com", UriKind.Absolute);
+    
+    public int? DefaultEmbeddingDimensions { get; set; }
 }

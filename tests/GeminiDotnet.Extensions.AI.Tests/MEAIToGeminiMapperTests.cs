@@ -1,4 +1,6 @@
 ﻿using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Net.Mime;
 using System.Text.Json;
@@ -53,10 +55,7 @@ public sealed class MEAIToGeminiMapperTests
     public void CreateMappedGenerateContentRequest_WithChatOptions_ShouldMapOptions()
     {
         // Arrange
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
         var options = new ChatOptions
         {
@@ -93,21 +92,14 @@ public sealed class MEAIToGeminiMapperTests
     public void CreateMappedGenerateContentRequest_WithJsonSchema_ShouldMapSchema()
     {
         // Arrange
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
         var schema = AIJsonUtilities.CreateJsonSchema(typeof(TestObject),
             inferenceOptions: new AIJsonSchemaCreateOptions
             {
                 TransformSchemaNode = null,
                 IncludeSchemaKeyword = false,
-                TransformOptions = new()
-                {
-                    DisallowAdditionalProperties = true,
-                    RequireAllProperties = false,
-                },
+                TransformOptions = new() { DisallowAdditionalProperties = true, RequireAllProperties = false, },
             });
 
         var options = new ChatOptions { ResponseFormat = ChatResponseFormat.ForJsonSchema(schema) };
@@ -124,10 +116,7 @@ public sealed class MEAIToGeminiMapperTests
     public void CreateMappedGenerateContentRequest_WithCodeInterpreterTool_ShouldIncludeCodeExecutionTool()
     {
         // Arrange
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
         var options = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
 
@@ -143,10 +132,7 @@ public sealed class MEAIToGeminiMapperTests
     public void CreateMappedGenerateContentRequest_WithAIFunction_ShouldIncludeFunctionDeclaration()
     {
         // Arrange
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
         var expectedFunction = new TestFunction();
         var options = new ChatOptions { Tools = [expectedFunction] };
@@ -168,23 +154,13 @@ public sealed class MEAIToGeminiMapperTests
     public void CreateMappedGenerateContentRequest_WithThinkingConfiguration_ShouldMapThinkingConfig()
     {
         // Arrange
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
-        var thinkingConfig = new ThinkingConfiguration
-        {
-            IncludeThoughts = true,
-            ThinkingBudget = 1000
-        };
+        var thinkingConfig = new ThinkingConfiguration { IncludeThoughts = true, ThinkingBudget = 1000 };
 
         var options = new ChatOptions
         {
-            AdditionalProperties = new AdditionalPropertiesDictionary
-            {
-                ["thinkingConfig"] = thinkingConfig
-            }
+            AdditionalProperties = new AdditionalPropertiesDictionary { ["thinkingConfig"] = thinkingConfig }
         };
 
         // Act
@@ -200,16 +176,9 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange - This test simulates what happens when Semantic Kernel's
         // PromptExecutionSettings.ToChatOptions() roundtrips settings through JSON serialization,
         // causing typed objects to become JsonElements in AdditionalProperties.
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
-        var thinkingConfig = new ThinkingConfiguration
-        {
-            IncludeThoughts = true,
-            ThinkingBudget = 1000
-        };
+        var thinkingConfig = new ThinkingConfiguration { IncludeThoughts = true, ThinkingBudget = 1000 };
 
         // Serialize to JsonElement to simulate SK's JSON roundtrip behavior
         var thinkingConfigJson = JsonSerializer.SerializeToElement(thinkingConfig);
@@ -235,10 +204,7 @@ public sealed class MEAIToGeminiMapperTests
     public void HostedWebSearchTool_ShouldMapToGoogleSearchTool()
     {
         // Arrange
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.User, "Who was the first person to walk on the moon?")
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Who was the first person to walk on the moon?") };
 
         var options = new ChatOptions { Tools = [new HostedWebSearchTool()] };
 
@@ -360,5 +326,60 @@ public sealed class MEAIToGeminiMapperTests
     {
         [JsonPropertyName("name")]
         public required string Name { get; init; }
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithRawRepresentation_ShouldUse()
+    {
+        // Arrange
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, "Goodbye!"),
+        ];
+
+        const string rawCachedContent = "cached content name";
+
+        var rawGenerationConfig = new GenerationConfiguration { MaxOutputTokens = 1000, Temperature = 0.5f, };
+
+        List<Content> rawContents =
+        [
+            new() { Role = ChatRoles.User, Parts = [new Part { Text = "Hello!" }] }
+        ];
+
+        List<SafetySetting> rawSafetySettings = [];
+
+        var rawSystemInstruction = new Content { Parts = [new Part { Text = "You are a helpful assistant." }] };
+
+        var rawToolConfiguration = new ToolConfiguration { };
+
+        List<Tool> rawTools = [];
+
+        var rawRepresentation = new GenerateContentRequest
+        {
+            CachedContent = rawCachedContent,
+            GenerationConfiguration = rawGenerationConfig,
+            Contents = rawContents,
+            Model = "",
+            SafetySettings = rawSafetySettings,
+            SystemInstruction = rawSystemInstruction,
+            ToolConfiguration = rawToolConfiguration,
+            Tools = rawTools,
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            model: "model",
+            messages,
+            options: new ChatOptions(),
+            rawRepresentation);
+
+        // Assert
+        Assert.Same(rawCachedContent, request.CachedContent);
+        Assert.Same(rawGenerationConfig, request.GenerationConfiguration);
+        Assert.Same(rawContents, request.Contents);
+        Assert.Same(rawSafetySettings, request.SafetySettings);
+        Assert.Same(rawSystemInstruction, request.SystemInstruction);
+        Assert.Same(rawToolConfiguration, request.ToolConfiguration);
+        Assert.Same(rawTools, request.Tools);
     }
 }

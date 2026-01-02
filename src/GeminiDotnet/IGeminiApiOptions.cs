@@ -14,4 +14,9 @@ public interface IGeminiClientOptions
     /// The endpoint to use for the Gemini API.
     /// </summary>
     public Uri? Endpoint { get; }
+
+    /// <summary>
+    /// The embedding dimensions to use unless overridden by the caller.
+    /// </summary>
+    int? DefaultEmbeddingDimensions { get; set; }
 }

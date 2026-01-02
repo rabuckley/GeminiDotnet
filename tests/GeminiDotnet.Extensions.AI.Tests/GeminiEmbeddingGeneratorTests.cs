@@ -20,7 +20,12 @@ public sealed class GeminiEmbeddingGeneratorTests
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new GeminiClientOptions { ApiKey = TestConfiguration.GetApiKey() };
+
+        var options = new GeminiClientOptions
+        {
+            ApiKey = TestConfiguration.GetApiKey(), DefaultEmbeddingDimensions = 768
+        };
+
         var client = new GeminiEmbeddingGenerator(options);
 
         var embeddingOptions = new EmbeddingGenerationOptions { ModelId = model };
@@ -31,6 +36,26 @@ public sealed class GeminiEmbeddingGeneratorTests
         // Assert
         Assert.NotNull(embeddings);
         Assert.NotEmpty(embeddings);
-        Assert.Equal(768, embeddings.First().Vector.Span.Length);
+        Assert.Equal(options.DefaultEmbeddingDimensions, embeddings.First().Vector.Span.Length);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WithoutDimensions_ShouldReturnEmbeddings()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var options = new GeminiClientOptions { ApiKey = TestConfiguration.GetApiKey() };
+
+        var client = new GeminiEmbeddingGenerator(options);
+        var embeddingOptions = new EmbeddingGenerationOptions { ModelId = "gemini-embedding-001" };
+
+        // Act
+        var embeddings = await client.GenerateAsync(["Hello, world!"], embeddingOptions, cancellationToken);
+
+        // Assert
+        Assert.NotNull(embeddings);
+        Assert.NotEmpty(embeddings);
+        Assert.Equal(3072, embeddings.First().Vector.Span.Length);
     }
 }

@@ -13,41 +13,49 @@ internal static class MEAIToGeminiMapper
     public static GenerateContentRequest CreateMappedGenerateContentRequest(
         string model,
         IEnumerable<MEAI.ChatMessage> chatMessages,
-        MEAI.ChatOptions? options)
+        MEAI.ChatOptions? options,
+        GenerateContentRequest? rawRepresentation = null)
     {
-        List<Content> contents = chatMessages.TryGetNonEnumeratedCount(out var count)
-            ? new List<Content>(count)
-            : [];
+        Content? systemInstruction = null;
+        List<Content>? contents = null;
 
-        List<Part> systemInstructionParts = options?.Instructions is { } instructions
-            ? [new Part { Text = instructions }]
-            : [];
-
-        foreach (var message in chatMessages)
+        if (rawRepresentation?.Contents is null)
         {
-            if (message.Role == MEAI.ChatRole.System)
+            contents = chatMessages.TryGetNonEnumeratedCount(out var count)
+                ? new List<Content>(count)
+                : [];
+
+            List<Part> systemInstructionParts = options?.Instructions is { } instructions
+                ? [new Part { Text = instructions }]
+                : [];
+
+            foreach (var message in chatMessages)
             {
-                AppendSystemInstructionParts(message, systemInstructionParts);
-                continue;
+                if (message.Role == MEAI.ChatRole.System)
+                {
+                    AppendSystemInstructionParts(message, systemInstructionParts);
+                    continue;
+                }
+
+                contents.Add(CreateMappedContent(message));
             }
 
-            contents.Add(CreateMappedContent(message));
+            systemInstruction = systemInstructionParts.Count > 0
+                ? new Content { Role = null, Parts = systemInstructionParts }
+                : null;
         }
-
-        var systemInstruction = systemInstructionParts.Count > 0
-            ? new Content { Role = null, Parts = systemInstructionParts }
-            : null;
 
         return new GenerateContentRequest
         {
-            Model = model,
-            SystemInstruction = systemInstruction,
-            GenerationConfiguration = CreateMappedGenerationConfiguration(options),
-            CachedContent = null,
-            Contents = contents,
-            Tools = CreateMappedTools(options?.Tools),
-            ToolConfiguration = null,
-            SafetySettings = null,
+            Model = rawRepresentation?.Model ?? model,
+            SystemInstruction = rawRepresentation?.SystemInstruction ?? systemInstruction,
+            GenerationConfiguration =
+                rawRepresentation?.GenerationConfiguration ?? CreateMappedGenerationConfiguration(options),
+            CachedContent = rawRepresentation?.CachedContent,
+            Contents = rawRepresentation?.Contents ?? contents!,
+            Tools = rawRepresentation?.Tools ?? CreateMappedTools(options?.Tools),
+            ToolConfiguration = rawRepresentation?.ToolConfiguration,
+            SafetySettings = rawRepresentation?.SafetySettings,
         };
 
         static IReadOnlyList<Tool>? CreateMappedTools(IList<MEAI.AITool>? tools)
@@ -62,37 +70,33 @@ internal static class MEAIToGeminiMapper
 
             foreach (var tool in tools)
             {
-                if (tool is MEAI.HostedCodeInterpreterTool)
+                switch (tool)
                 {
-                    mappedTools.Add(new Tool { CodeExecution = new CodeExecution() });
-                    continue;
+                    case MEAI.AIFunctionDeclaration declaration:
+                        functionDeclarations ??= [];
+
+                        functionDeclarations.Add(new FunctionDeclaration
+                        {
+                            Name = declaration.Name,
+                            Description = declaration.Description,
+                            ParametersJsonSchema = declaration.JsonSchema,
+                            ResponseJsonSchema = declaration.ReturnJsonSchema ?? default,
+                        });
+
+                        break;
+                    case MEAI.HostedCodeInterpreterTool:
+                        mappedTools.Add(new Tool { CodeExecution = new CodeExecution() });
+                        break;
+                    case MEAI.HostedWebSearchTool:
+                        mappedTools.Add(new Tool { GoogleSearch = new GoogleSearch() });
+                        break;
+                    default:
+                        GeminiMappingException.Throw(
+                            fromPropertyName: $"{typeof(MEAI.AITool)}",
+                            toPropertyName: $"{typeof(Tool)}",
+                            reason: $"Unsupported tool type: {tool.GetType()}");
+                        break;
                 }
-
-                if (tool is MEAI.HostedWebSearchTool)
-                {
-                    mappedTools.Add(new Tool { GoogleSearch = new GoogleSearch() });
-                    continue;
-                }
-
-                if (tool is MEAI.AIFunction function)
-                {
-                    functionDeclarations ??= [];
-
-                    functionDeclarations.Add(new FunctionDeclaration
-                    {
-                        Name = function.Name,
-                        Description = function.Description,
-                        ParametersJsonSchema = function.JsonSchema,
-                        ResponseJsonSchema = function.ReturnJsonSchema ?? default,
-                    });
-
-                    continue;
-                }
-
-                GeminiMappingException.Throw(
-                    fromPropertyName: $"{typeof(MEAI.AITool)}",
-                    toPropertyName: $"{typeof(Tool)}",
-                    reason: $"Unsupported tool type: {tool.GetType()}");
             }
 
             if (functionDeclarations is not null)
@@ -350,13 +354,17 @@ internal static class MEAIToGeminiMapper
     public static EmbedContentRequest CreateMappedEmbeddingRequest(
         string model,
         IEnumerable<string> values,
-        MEAI.EmbeddingGenerationOptions? options)
+        MEAI.EmbeddingGenerationOptions? options,
+        EmbedContentRequest? rawRepresentation = null)
     {
         return new EmbedContentRequest
         {
-            Model = model,
-            Content = new Content { Parts = [.. values.Select(v => new Part { Text = v })] },
-            OutputDimensionality = options?.Dimensions,
+            Model = rawRepresentation?.Model ?? model,
+            Content =
+                rawRepresentation?.Content ?? new Content { Parts = [.. values.Select(v => new Part { Text = v })] },
+            OutputDimensionality = rawRepresentation?.OutputDimensionality ?? options?.Dimensions,
+            TaskType = rawRepresentation?.TaskType,
+            Title = rawRepresentation?.Title,
         };
     }
 }
