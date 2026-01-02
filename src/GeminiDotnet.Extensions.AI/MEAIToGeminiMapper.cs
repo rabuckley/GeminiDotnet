@@ -54,7 +54,7 @@ internal static class MEAIToGeminiMapper
             CachedContent = rawRepresentation?.CachedContent,
             Contents = rawRepresentation?.Contents ?? contents!,
             Tools = rawRepresentation?.Tools ?? CreateMappedTools(options?.Tools),
-            ToolConfiguration = rawRepresentation?.ToolConfiguration,
+            ToolConfiguration = rawRepresentation?.ToolConfiguration ?? CreateMappedToolConfiguration(options),
             SafetySettings = rawRepresentation?.SafetySettings,
         };
 
@@ -95,6 +95,7 @@ internal static class MEAIToGeminiMapper
                             fromPropertyName: $"{typeof(MEAI.AITool)}",
                             toPropertyName: $"{typeof(Tool)}",
                             reason: $"Unsupported tool type: {tool.GetType()}");
+
                         break;
                 }
             }
@@ -317,6 +318,32 @@ internal static class MEAIToGeminiMapper
         {
             return responseFormat is MEAI.ChatResponseFormatJson ? MediaTypeNames.Application.Json : null;
         }
+    }
+
+    private static ToolConfiguration? CreateMappedToolConfiguration(MEAI.ChatOptions? options)
+    {
+        if (options?.ToolMode is null)
+        {
+            return null;
+        }
+
+        if (options.Tools?.Count is null or 0)
+        {
+            return null;
+        }
+
+        return new ToolConfiguration
+        {
+            FunctionCallingConfiguration = new FunctionCallingConfiguration
+            {
+                Mode = options.ToolMode switch
+                {
+                    MEAI.AutoChatToolMode => FunctionCallingConfigMode.Auto,
+                    MEAI.NoneChatToolMode => FunctionCallingConfigMode.None,
+                    _ => null
+                },
+            },
+        };
     }
 
     private static string? GetThoughtSignature(MEAI.AIContent content)
