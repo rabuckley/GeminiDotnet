@@ -1,17 +1,18 @@
-name: Build and Test
+name: Build, Test, and Publish
 
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    tags: ["v*"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # avoid shallow clone for nbgv to access history.
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -21,11 +22,26 @@ jobs:
             9.0.x
             8.0.x
 
+      - uses: dotnet/nbgv@master
+        with:
+          setCommonVars: true
+          setAllVars: true
+
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore
+        run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test --no-build -- --filter-query "/[Category!=Integration]" --ignore-exit-code 8
+        run: dotnet test --no-build --configuration Release -- --filter-query "/[Category!=Integration]" --ignore-exit-code 8
+
+      - name: Pack
+        run: dotnet pack --no-build --configuration Release
+
+      - name: Publish Packages
+        env:
+          NUGET_SOURCE: https://api.nuget.org/v3/index.json
+        run: |
+          dotnet nuget push src/GeminiDotnet/bin/Release/*.nupkg --source $NUGET_SOURCE --api-key ${{ secrets.NUGET_API_KEY }}
+          dotnet nuget push src/GeminiDotnet.Extensions.AI/bin/Release/*.nupkg --source $NUGET_SOURCE --api-key ${{ secrets.NUGET_API_KEY }}
