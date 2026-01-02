@@ -23,8 +23,7 @@ jobs:
             8.0.x
 
       - uses: dotnet/nbgv@master
-        with:
-          setCommonVars: true
+        id: nbgv
 
       - name: Restore dependencies
         run: dotnet restore
