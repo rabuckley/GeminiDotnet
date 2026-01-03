@@ -4,7 +4,7 @@ using Microsoft.Extensions.AI;
 namespace GeminiDotnet.Extensions.AI;
 
 /// <summary>
-/// An <see cref="IChatClient"/> implementation for the Gemini AI service.
+/// An <see cref="IEmbeddingGenerator{TInput, TEmbedding}"/> implementation for the Gemini AI service.
 /// </summary>
 public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
