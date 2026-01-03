@@ -52,6 +52,13 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
 
         var modelId = ModelIdHelper.GetModelId(options, _metadata);
 
+        // Apply default dimensions if not explicitly set (create a copy to avoid mutating caller's options)
+        if (options?.Dimensions is null && _client.Options.DefaultEmbeddingDimensions is not null)
+        {
+            options = options?.Clone() ?? new EmbeddingGenerationOptions();
+            options.Dimensions = _client.Options.DefaultEmbeddingDimensions;
+        }
+
         var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(
             modelId,
             values,
