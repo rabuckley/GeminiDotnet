@@ -382,4 +382,30 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Same(rawToolConfiguration, request.ToolConfiguration);
         Assert.Same(rawTools, request.Tools);
     }
+
+    [Fact]
+    public void CreateMappedBatchEmbeddingRequest_CreatesOneRequestPerInputValue()
+    {
+        // Arrange
+        var inputValues = new[] { "First text", "Second text", "Third text" };
+        var options = new EmbeddingGenerationOptions { Dimensions = 768 };
+
+        // Act
+        var result = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest("text-embedding-004", inputValues, options);
+
+        // Assert
+        Assert.Equal(3, result.Requests.Count);
+
+        for (int i = 0; i < inputValues.Length; i++)
+        {
+            var request = result.Requests[i];
+            // Model should be prefixed with "models/" for BatchEmbedContents API
+            Assert.Equal("models/text-embedding-004", request.Model);
+            Assert.Equal(768, request.OutputDimensionality);
+            Assert.NotNull(request.Content);
+
+            var part = Assert.Single(request.Content.Parts);
+            Assert.Equal(inputValues[i], part.Text);
+        }
+    }
 }

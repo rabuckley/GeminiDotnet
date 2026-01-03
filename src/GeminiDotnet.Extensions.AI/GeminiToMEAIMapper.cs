@@ -343,4 +343,40 @@ internal static class GeminiToMEAIMapper
 
         return result;
     }
+
+    /// <summary>
+    /// Maps a <see cref="BatchEmbedContentsResponse"/> to <see cref="GeneratedEmbeddings{TEmbedding}"/>,
+    /// preserving one embedding per input string in the original order.
+    /// </summary>
+    /// <param name="response">The batch embedding response from the Gemini API.</param>
+    /// <param name="modelId">The model identifier.</param>
+    /// <param name="createdAt">The timestamp for the embeddings.</param>
+    /// <returns>A collection of embeddings matching the input order.</returns>
+    public static GeneratedEmbeddings<Embedding<float>> CreateMappedGeneratedEmbeddings(
+        BatchEmbedContentsResponse response,
+        string modelId,
+        DateTimeOffset createdAt)
+    {
+        GeneratedEmbeddings<Embedding<float>> result = [];
+
+        if (response.Embeddings is { } embeddings)
+        {
+            foreach (var contentEmbedding in embeddings)
+            {
+                if (contentEmbedding.Values is { Length: > 0 } values)
+                {
+                    var embedding = new Embedding<float>(values)
+                    {
+                        CreatedAt = createdAt,
+                        ModelId = modelId,
+                        AdditionalProperties = null,
+                    };
+
+                    result.Add(embedding);
+                }
+            }
+        }
+
+        return result;
+    }
 }
