@@ -16,7 +16,7 @@ public sealed class GeminiEmbeddingGeneratorTests
     [Theory]
     [InlineData("text-embedding-004")]
     [InlineData("gemini-embedding-001")]
-    public async Task GenerateAsync_ShouldDoReturnEmbeddings(string model)
+    public async Task GenerateAsync_ShouldReturnEmbeddings(string model)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -40,7 +40,7 @@ public sealed class GeminiEmbeddingGeneratorTests
     }
 
     [Fact]
-    public async Task GenerateAsync_WithoutDimensions_ShouldReturnEmbeddings()
+    public async Task GenerateAsync_WithoutDimensions_ShouldReturnEmbeddingsOfDefaultSize()
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -56,6 +56,35 @@ public sealed class GeminiEmbeddingGeneratorTests
         // Assert
         Assert.NotNull(embeddings);
         Assert.NotEmpty(embeddings);
-        Assert.Equal(3072, embeddings.First().Vector.Span.Length);
+        Assert.Equal(3072, embeddings.First().Vector.Span.Length); // Default size for gemini-embedding-001
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WithMultipleInputs_ShouldReturnEmbeddings()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var options = new GeminiClientOptions { ApiKey = TestConfiguration.GetApiKey() };
+        var client = new GeminiEmbeddingGenerator(options);
+        const int dimensions = 2048;
+
+        var embeddingOptions = new EmbeddingGenerationOptions
+        {
+            ModelId = "gemini-embedding-001", Dimensions = dimensions
+        };
+
+        var inputs = new[] { "Input one", "Input two", "Input three" };
+
+        // Act
+        var embeddings = await client.GenerateAsync(inputs, embeddingOptions, cancellationToken);
+
+        // Assert
+        Assert.NotNull(embeddings);
+        Assert.Equal(inputs.Length, embeddings.Count);
+
+        Assert.All(embeddings, embedding =>
+        {
+            Assert.Equal(dimensions, embedding.Vector.Span.Length);
+        });
     }
 }

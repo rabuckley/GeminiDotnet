@@ -389,9 +389,14 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange
         var inputValues = new[] { "First text", "Second text", "Third text" };
         var options = new EmbeddingGenerationOptions { Dimensions = 768 };
+        var clientOptions = new GeminiClientOptions { DefaultEmbeddingDimensions = 512, ApiKey = "not needed" };
 
         // Act
-        var result = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest("text-embedding-004", inputValues, options);
+        var result = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest(
+            "text-embedding-004",
+            inputValues,
+            options,
+            clientOptions);
 
         // Assert
         Assert.Equal(3, result.Requests.Count);
@@ -404,8 +409,52 @@ public sealed class MEAIToGeminiMapperTests
             Assert.Equal(768, request.OutputDimensionality);
             Assert.NotNull(request.Content);
 
+            Assert.NotNull(request.Content.Parts);
             var part = Assert.Single(request.Content.Parts);
             Assert.Equal(inputValues[i], part.Text);
         }
+    }
+
+    [Fact]
+    public void CreateMappedBatchEmbeddingRequest_UsesDefaultDimensionsWhenNotSpecified()
+    {
+        // Arrange
+        var inputValues = new[] { "Sample text" };
+        var options = new EmbeddingGenerationOptions { };
+        var clientOptions = new GeminiClientOptions { DefaultEmbeddingDimensions = 1024, ApiKey = "not needed" };
+
+        // Act
+        var result = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest(
+            "gemini-embedding-001",
+            inputValues,
+            options,
+            clientOptions);
+
+        // Assert
+        Assert.Single(result.Requests);
+        var request = result.Requests[0];
+        Assert.Equal(clientOptions.DefaultEmbeddingDimensions, request.OutputDimensionality);
+    }
+
+    [Fact]
+    public void CreateMappedBatchEmbeddingRequest_WithRawRepresentation_ShouldUse()
+    {
+        // Arrange
+        var inputValues = new[] { "Sample text" };
+        var options = new EmbeddingGenerationOptions { Dimensions = 256 };
+        var clientOptions = new GeminiClientOptions { ApiKey = "not needed" };
+
+        var rawRepresentation = new BatchEmbedContentsRequest { Requests = [] };
+
+        // Act
+        var result = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest(
+            "gemini-embedding-001",
+            inputValues,
+            options,
+            clientOptions,
+            rawRepresentation);
+
+        // Assert
+        Assert.Same(rawRepresentation, result);
     }
 }
