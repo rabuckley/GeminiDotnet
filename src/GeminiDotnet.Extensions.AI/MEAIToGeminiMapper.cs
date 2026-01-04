@@ -378,23 +378,6 @@ internal static class MEAIToGeminiMapper
         }
     }
 
-    public static EmbedContentRequest CreateMappedEmbeddingRequest(
-        string model,
-        IEnumerable<string> values,
-        MEAI.EmbeddingGenerationOptions? options,
-        EmbedContentRequest? rawRepresentation = null)
-    {
-        return new EmbedContentRequest
-        {
-            Model = rawRepresentation?.Model ?? model,
-            Content =
-                rawRepresentation?.Content ?? new Content { Parts = [.. values.Select(v => new Part { Text = v })] },
-            OutputDimensionality = rawRepresentation?.OutputDimensionality ?? options?.Dimensions,
-            TaskType = rawRepresentation?.TaskType,
-            Title = rawRepresentation?.Title,
-        };
-    }
-
     /// <summary>
     /// Creates a batch embedding request where each input string becomes a separate
     /// <see cref="EmbedContentRequest"/>, ensuring one embedding per input value.
