@@ -402,6 +402,8 @@ internal static class MEAIToGeminiMapper
     /// <param name="model">The model identifier (e.g., "text-embedding-004").</param>
     /// <param name="values">The input strings to embed.</param>
     /// <param name="options">Optional embedding generation options.</param>
+    /// <param name="clientOptions">The Gemini client options.</param>
+    /// <param name="rawRepresentation">Optional raw representation to merge with the mapped request.</param>
     /// <returns>A <see cref="BatchEmbedContentsRequest"/> containing one request per input string.</returns>
     /// <remarks>
     /// The model name in each request is prefixed with "models/" as required by the
@@ -410,8 +412,16 @@ internal static class MEAIToGeminiMapper
     public static BatchEmbedContentsRequest CreateMappedBatchEmbeddingRequest(
         string model,
         IEnumerable<string> values,
-        MEAI.EmbeddingGenerationOptions? options)
+        MEAI.EmbeddingGenerationOptions? options,
+        IGeminiClientOptions clientOptions,
+        BatchEmbedContentsRequest? rawRepresentation = null)
     {
+        if (rawRepresentation is not null)
+        {
+            // Only one property to merge so, if provided, we return it directly.
+            return rawRepresentation;
+        }
+
         // The BatchEmbedContents API requires the full model path in each request
         var modelPath = model.StartsWith("models/", StringComparison.Ordinal) ? model : $"models/{model}";
 
@@ -419,12 +429,9 @@ internal static class MEAIToGeminiMapper
         {
             Model = modelPath,
             Content = new Content { Parts = [new Part { Text = value }] },
-            OutputDimensionality = options?.Dimensions,
+            OutputDimensionality = options?.Dimensions ?? clientOptions.DefaultEmbeddingDimensions,
         }).ToList();
 
-        return new BatchEmbedContentsRequest
-        {
-            Requests = requests,
-        };
+        return new BatchEmbedContentsRequest { Requests = requests, };
     }
 }
