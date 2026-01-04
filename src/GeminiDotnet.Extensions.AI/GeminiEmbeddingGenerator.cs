@@ -78,7 +78,7 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
             return _client;
         }
 
-        if (serviceType == typeof(ChatClientMetadata))
+        if (serviceType == typeof(EmbeddingGeneratorMetadata))
         {
             return _metadata;
         }
