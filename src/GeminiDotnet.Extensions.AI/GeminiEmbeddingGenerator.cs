@@ -52,14 +52,13 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
 
         var modelId = ModelIdHelper.GetModelId(options, _metadata);
 
-        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(
+        var request = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest(
             modelId,
             values,
-            options,
-            options?.RawRepresentationFactory?.Invoke(this) as EmbedContentRequest);
+            options);
 
         var response = await _client.V1Beta.Models
-            .EmbedContentAsync(modelId, request, cancellationToken)
+            .BatchEmbedContentsAsync(modelId, request, cancellationToken)
             .ConfigureAwait(false);
 
         return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(
