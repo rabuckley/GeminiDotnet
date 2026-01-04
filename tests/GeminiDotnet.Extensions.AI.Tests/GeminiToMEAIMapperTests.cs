@@ -1,5 +1,6 @@
 using GeminiDotnet.Extensions.AI.Contents;
 using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -127,6 +128,44 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(30, result.Usage.ReasoningTokenCount);
         Assert.NotNull(result.Usage.AdditionalCounts);
         Assert.Equal(10, result.Usage.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
+    }
+
+    #endregion
+
+    #region BatchEmbedContents Mapping Tests
+
+    [Fact]
+    public void CreateMappedGeneratedEmbeddings_BatchResponse_ReturnsCorrectCount()
+    {
+        // Arrange
+        var response = new BatchEmbedContentsResponse
+        {
+            Embeddings =
+            [
+                new ContentEmbedding { Values = new float[] { 0.1f, 0.2f, 0.3f } },
+                new ContentEmbedding { Values = new float[] { 0.4f, 0.5f, 0.6f } },
+                new ContentEmbedding { Values = new float[] { 0.7f, 0.8f, 0.9f } },
+            ]
+        };
+        var createdAt = DateTimeOffset.UtcNow;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(response, "test-model", createdAt);
+
+        // Assert
+        Assert.Equal(3, result.Count);
+
+        for (int i = 0; i < result.Count; i++)
+        {
+            Assert.Equal("test-model", result[i].ModelId);
+            Assert.Equal(createdAt, result[i].CreatedAt);
+            Assert.Equal(3, result[i].Vector.Length);
+        }
+
+        // Verify order is preserved
+        Assert.Equal(0.1f, result[0].Vector.Span[0]);
+        Assert.Equal(0.4f, result[1].Vector.Span[0]);
+        Assert.Equal(0.7f, result[2].Vector.Span[0]);
     }
 
     #endregion

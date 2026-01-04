@@ -4,7 +4,7 @@ using Microsoft.Extensions.AI;
 namespace GeminiDotnet.Extensions.AI;
 
 /// <summary>
-/// An <see cref="IChatClient"/> implementation for the Gemini AI service.
+/// An <see cref="IEmbeddingGenerator{TInput, TEmbedding}"/> implementation for the Gemini AI service.
 /// </summary>
 public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
@@ -52,14 +52,15 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
 
         var modelId = ModelIdHelper.GetModelId(options, _metadata);
 
-        var request = MEAIToGeminiMapper.CreateMappedEmbeddingRequest(
+        var request = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest(
             modelId,
             values,
             options,
-            options?.RawRepresentationFactory?.Invoke(this) as EmbedContentRequest);
+            _client.Options,
+            options?.RawRepresentationFactory?.Invoke(this) as BatchEmbedContentsRequest);
 
         var response = await _client.V1Beta.Models
-            .EmbedContentAsync(modelId, request, cancellationToken)
+            .BatchEmbedContentsAsync(modelId, request, cancellationToken)
             .ConfigureAwait(false);
 
         return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(
@@ -78,7 +79,7 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
             return _client;
         }
 
-        if (serviceType == typeof(ChatClientMetadata))
+        if (serviceType == typeof(EmbeddingGeneratorMetadata))
         {
             return _metadata;
         }
