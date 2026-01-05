@@ -3,6 +3,7 @@ using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
+using System.Net.Mime;
 using System.Text.Json;
 
 namespace GeminiDotnet.Extensions.AI;
@@ -115,7 +116,10 @@ internal static class GeminiToMEAIMapper
 
             if (mapped is null)
             {
-                throw new UnreachableException($"All properties of {nameof(Part)} are null.");
+                GeminiMappingException.Throw(
+                    fromPropertyName: nameof(Part),
+                    toPropertyName: nameof(AIContent),
+                    reason: $"Unable to map {nameof(Part)} to {nameof(AIContent)}: all content properties are null or unrecognized.");
             }
 
             contents.Add(mapped);
@@ -135,13 +139,13 @@ internal static class GeminiToMEAIMapper
             };
         }
 
-        static DataContent CreateMappedFileDataContent(Part part)
+        static UriContent CreateMappedFileDataContent(Part part)
         {
             Debug.Assert(part.FileData is not null);
-            
+
             var fileData = part.FileData!;
-            
-            return new DataContent(fileData.FileUri, fileData.MimeType)
+
+            return new UriContent(new Uri(fileData.FileUri), fileData.MimeType ??  MediaTypeNames.Application.Octet)
             {
                 RawRepresentation = part, AdditionalProperties = null
             };

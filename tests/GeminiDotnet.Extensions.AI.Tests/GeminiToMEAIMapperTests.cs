@@ -170,6 +170,127 @@ public sealed class GeminiToMEAIMapperTests
 
     #endregion
 
+    #region FileData and UriContent Mapping Tests
+
+    [Fact]
+    public void CreateMappedChatResponse_WithFileData_MapsToUriContent()
+    {
+        // Arrange
+        const string fileUri = "https://example.com/files/document.pdf";
+        const string mimeType = "application/pdf";
+
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Parts =
+                        [
+                            new Part
+                            {
+                                FileData = new FileData
+                                {
+                                    FileUri = fileUri,
+                                    MimeType = mimeType,
+                                }
+                            }
+                        ],
+                        Role = "model"
+                    },
+                    FinishReason = CandidateFinishReason.Stop
+                }
+            ]
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var uriContent = Assert.IsType<UriContent>(Assert.Single(contents));
+        Assert.Equal(new Uri(fileUri), uriContent.Uri);
+        Assert.Equal(mimeType, uriContent.MediaType);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithInlineData_MapsToDataContent()
+    {
+        // Arrange
+        var imageData = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+        const string mimeType = "image/png";
+
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Parts =
+                        [
+                            new Part
+                            {
+                                InlineData = new Blob
+                                {
+                                    Data = imageData,
+                                    MimeType = mimeType,
+                                }
+                            }
+                        ],
+                        Role = "model"
+                    },
+                    FinishReason = CandidateFinishReason.Stop
+                }
+            ]
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var dataContent = Assert.IsType<DataContent>(Assert.Single(contents));
+        Assert.Equal(imageData, dataContent.Data.ToArray());
+        Assert.Equal(mimeType, dataContent.MediaType);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithNullPart_ThrowsGeminiMappingException()
+    {
+        // Arrange
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Parts =
+                        [
+                            new Part()  // All properties are null
+                        ],
+                        Role = "model"
+                    },
+                    FinishReason = CandidateFinishReason.Stop
+                }
+            ]
+        };
+
+        // Act & Assert
+        var ex = Assert.Throws<GeminiMappingException>(
+            () => GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow));
+
+        Assert.Contains("Unable to map", ex.Message);
+        Assert.Contains("AIContent", ex.Message);
+    }
+
+    #endregion
+
     #region Test Data
 
     [StringSyntax(StringSyntaxAttribute.Json)]
