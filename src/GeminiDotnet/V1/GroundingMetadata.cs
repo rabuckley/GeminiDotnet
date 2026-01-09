@@ -18,6 +18,8 @@ public sealed record GroundingMetadata
 
     /// <summary>
     /// List of supporting references retrieved from specified grounding source.
+    /// When streaming, this only contains the grounding chunks that have not been
+    /// included in the grounding metadata of previous responses.
     /// </summary>
     [JsonPropertyName("groundingChunks")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

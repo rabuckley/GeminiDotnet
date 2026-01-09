@@ -24,6 +24,13 @@ public sealed record GenerateContentResponse
     public IReadOnlyList<Candidate>? Candidates { get; init; }
 
     /// <summary>
+    /// Output only. The current model status of this model.
+    /// </summary>
+    [JsonPropertyName("modelStatus")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ModelStatus? ModelStatus { get; init; }
+
+    /// <summary>
     /// Output only. The model version used to generate the response.
     /// </summary>
     [JsonPropertyName("modelVersion")]
