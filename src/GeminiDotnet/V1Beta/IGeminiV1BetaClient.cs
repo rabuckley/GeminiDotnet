@@ -33,6 +33,11 @@ public interface IGeminiV1BetaClient
     IFileSearchStoresClient FileSearchStores { get; }
 
     /// <summary>
+    /// Provides access to the FilesRegister API operations.
+    /// </summary>
+    IFilesRegisterClient FilesRegister { get; }
+
+    /// <summary>
     /// Provides access to the GeneratedFiles API operations.
     /// </summary>
     IGeneratedFilesClient GeneratedFiles { get; }
