@@ -22,6 +22,8 @@ public sealed partial class GeminiV1BetaClient : IGeminiV1BetaClient
 
     public IFileSearchStoresClient FileSearchStores => field ??= new FileSearchStoresClient(_requester);
 
+    public IFilesRegisterClient FilesRegister => field ??= new FilesRegisterClient(_requester);
+
     public IGeneratedFilesClient GeneratedFiles => field ??= new GeneratedFilesClient(_requester);
 
     public IModelsClient Models => field ??= new ModelsClient(_requester);
