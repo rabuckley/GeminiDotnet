@@ -40,6 +40,10 @@ internal static class MEAIToGeminiMapper
                 contents.Add(CreateMappedContent(message));
             }
 
+            // Inject file inputs from HostedCodeInterpreterTool into message content.
+            // Gemini expects files as Part objects in contents, not as tool configuration.
+            InjectCodeInterpreterInputs(contents, options?.Tools);
+
             systemInstruction = systemInstructionParts.Count > 0
                 ? new Content { Role = null, Parts = systemInstructionParts }
                 : null;
@@ -221,6 +225,7 @@ internal static class MEAIToGeminiMapper
                     MEAI.TextReasoningContent textReasoningContent => CreateTextReasoningPart(textReasoningContent),
                     MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
                     MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
+                    MEAI.HostedFileContent hostedFile => CreateHostedFilePart(hostedFile),
                     MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
                     MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
                     _ => ThrowUnsupportedContentException(content),
@@ -278,6 +283,19 @@ internal static class MEAIToGeminiMapper
                 };
             }
 
+            static Part CreateHostedFilePart(MEAI.HostedFileContent hostedFile)
+            {
+                return new Part
+                {
+                    FileData = new FileData
+                    {
+                        FileUri = hostedFile.FileId,
+                        MimeType = hostedFile.MediaType,
+                    },
+                    ThoughtSignature = GetThoughtSignature(hostedFile),
+                };
+            }
+
             static Part CreateFunctionCallPart(MEAI.FunctionCallContent functionCall)
             {
                 JsonElement arguments = JsonSerializer.SerializeToElement(
@@ -311,6 +329,49 @@ internal static class MEAIToGeminiMapper
                     },
                     ThoughtSignature = GetThoughtSignature(functionResult)
                 };
+            }
+        }
+
+        static void InjectCodeInterpreterInputs(List<Content> contents, IList<MEAI.AITool>? tools)
+        {
+            if (tools is null)
+            {
+                return;
+            }
+
+            List<Part>? inputParts = null;
+
+            foreach (var tool in tools)
+            {
+                if (tool is MEAI.HostedCodeInterpreterTool { Inputs: { } inputs })
+                {
+                    inputParts ??= [];
+                    foreach (var part in CreateMappedParts(inputs))
+                    {
+                        inputParts.Add(part);
+                    }
+                }
+            }
+
+            if (inputParts is null || inputParts.Count == 0)
+            {
+                return;
+            }
+
+            // Find the last user message and prepend file parts to it
+            var lastUserIndex = contents.FindLastIndex(c => c.Role == ChatRoles.User);
+            if (lastUserIndex >= 0)
+            {
+                var existingUser = contents[lastUserIndex];
+                contents[lastUserIndex] = existingUser with
+                {
+                    Parts = [.. inputParts, .. (existingUser.Parts ?? [])]
+                };
+            }
+            else
+            {
+                // No user message exists - create one with the file parts
+                contents.Add(new Content { Role = ChatRoles.User, Parts = inputParts });
             }
         }
 
