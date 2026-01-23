@@ -8,8 +8,8 @@ namespace GeminiDotnet.V1Beta;
 public sealed record ImageConfiguration
 {
     /// <summary>
-    /// Optional. The aspect ratio of the image to generate. Supported aspect ratios: 1:1,
-    /// 2:3, 3:2, 3:4, 4:3, 9:16, 16:9, 21:9.
+    /// Optional. The aspect ratio of the image to generate. Supported aspect ratios: <c>1:1</c>,
+    /// <c>2:3</c>, <c>3:2</c>, <c>3:4</c>, <c>4:3</c>, <c>4:5</c>, <c>5:4</c>, <c>9:16</c>, <c>16:9</c>, or <c>21:9</c>.
     /// If not specified, the model will choose a default aspect ratio based on any
     /// reference images provided.
     /// </summary>

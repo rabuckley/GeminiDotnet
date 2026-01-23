@@ -7,7 +7,7 @@ namespace GeminiDotnet.V1Beta.CachedContents;
 /// A <see cref="V1Beta.CachedContents.Tool"/> is a piece of code that enables the system to interact with
 /// external systems to perform an action, or set of actions, outside of
 /// knowledge and scope of the model.
-/// Next ID: 14
+/// Next ID: 15
 /// </summary>
 public sealed record Tool
 {
