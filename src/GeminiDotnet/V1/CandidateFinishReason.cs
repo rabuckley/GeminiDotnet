@@ -127,5 +127,11 @@ public enum CandidateFinishReason
     /// </summary>
     [JsonStringEnumMemberName("MISSING_THOUGHT_SIGNATURE")]
     MissingThoughtSignature,
+
+    /// <summary>
+    /// Finished due to malformed response.
+    /// </summary>
+    [JsonStringEnumMemberName("MALFORMED_RESPONSE")]
+    MalformedResponse,
 }
 
