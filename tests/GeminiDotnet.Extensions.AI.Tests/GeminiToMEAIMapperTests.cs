@@ -201,6 +201,33 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(0.7f, result[2].Vector.Span[0]);
     }
 
+    [Fact]
+    public void CreateMappedGeneratedEmbeddings_BatchResponse_WithEmptyValues_PreservesIndexCorrelation()
+    {
+        // Arrange — the middle entry has default (empty) Values, simulating a
+        // missing embedding. The mapper must still produce 3 embeddings so that
+        // result[i] maps to input[i].
+        var response = new BatchEmbedContentsResponse
+        {
+            Embeddings =
+            [
+                new ContentEmbedding { Values = new float[] { 0.1f, 0.2f } },
+                new ContentEmbedding(), // Values defaults to ReadOnlyMemory<float>.Empty
+                new ContentEmbedding { Values = new float[] { 0.7f, 0.8f } },
+            ]
+        };
+        var createdAt = DateTimeOffset.UtcNow;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(response, "test-model", createdAt);
+
+        // Assert — all 3 entries present, middle one has zero-length vector
+        Assert.Equal(3, result.Count);
+        Assert.Equal(2, result[0].Vector.Length);
+        Assert.Equal(0, result[1].Vector.Length);
+        Assert.Equal(2, result[2].Vector.Length);
+    }
+
     #endregion
 
     #region Test Data

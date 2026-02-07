@@ -363,17 +363,18 @@ internal static class GeminiToMEAIMapper
         {
             foreach (var contentEmbedding in embeddings)
             {
-                if (contentEmbedding.Values is { Length: > 0 } values)
+                // Always add an embedding per batch entry to preserve 1:1 correspondence
+                // with input strings. When Values is default (empty), this produces a
+                // zero-length embedding rather than skipping the entry, so that result[i]
+                // always maps to input[i].
+                var embedding = new Embedding<float>(contentEmbedding.Values)
                 {
-                    var embedding = new Embedding<float>(values)
-                    {
-                        CreatedAt = createdAt,
-                        ModelId = modelId,
-                        AdditionalProperties = null,
-                    };
+                    CreatedAt = createdAt,
+                    ModelId = modelId,
+                    AdditionalProperties = null,
+                };
 
-                    result.Add(embedding);
-                }
+                result.Add(embedding);
             }
         }
 
