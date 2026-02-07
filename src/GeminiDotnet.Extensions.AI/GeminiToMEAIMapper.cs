@@ -76,44 +76,40 @@ internal static class GeminiToMEAIMapper
 
         foreach (var part in parts)
         {
-            AIContent? mapped = null;
+            // Each Part should have exactly one property set. Using else-if makes
+            // the mutual exclusivity explicit and prevents silent overwrites if a Part
+            // ever has multiple properties populated.
+            AIContent mapped;
 
             if (part.Text is not null)
             {
                 mapped = CreateMappedTextContent(part);
             }
-
-            if (part.InlineData is not null)
+            else if (part.InlineData is not null)
             {
                 mapped = CreateMappedDataContent(part);
             }
-
-            if (part.FunctionCall is not null)
+            else if (part.FunctionCall is not null)
             {
                 mapped = CreateMappedFunctionCallContent(part);
             }
-
-            if (part.FunctionResponse is not null)
+            else if (part.FunctionResponse is not null)
             {
                 mapped = CreateMappedFunctionResultContent(part);
             }
-
-            if (part.FileData is not null)
+            else if (part.FileData is not null)
             {
                 mapped = CreateMappedFileDataContent(part);
             }
-
-            if (part.ExecutableCode is not null)
+            else if (part.ExecutableCode is not null)
             {
                 mapped = CreateMappedExecutableCodeContent(part);
             }
-
-            if (part.CodeExecutionResult is not null)
+            else if (part.CodeExecutionResult is not null)
             {
                 mapped = CreateMappedCodeExecutionResultContent(part);
             }
-
-            if (mapped is null)
+            else
             {
                 throw new UnreachableException($"All properties of {nameof(Part)} are null.");
             }
