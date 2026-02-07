@@ -27,7 +27,12 @@ internal static class GeminiToMEAIMapper
         return new ChatResponseUpdate
         {
             AuthorName = null,
-            Role = CreateMappedChatRole(candidate?.Content?.Role),
+            // Streaming responses always come from the model, so default to
+            // Assistant when the role is absent rather than falling through to
+            // CreateMappedChatRole's default of System.
+            Role = candidate?.Content?.Role is { } role
+                ? CreateMappedChatRole(role)
+                : ChatRole.Assistant,
             Contents = contents,
             RawRepresentation = response,
             AdditionalProperties = null,
