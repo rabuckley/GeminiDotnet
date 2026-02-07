@@ -163,6 +163,38 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(10, result.Usage.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
     }
 
+    [Fact]
+    public void CreateMappedUsageDetails_WithNullOutputCounts_ShouldReturnNullOutputTokenCount()
+    {
+        // Arrange — usage has promptTokenCount but no candidatesTokenCount or
+        // thoughtsTokenCount. OutputTokenCount should be null, not 0.
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(
+            """
+            {
+              "candidates": [
+                {
+                  "content": { "parts": [{ "text": "Hi" }], "role": "model" },
+                  "finishReason": "STOP"
+                }
+              ],
+              "usageMetadata": {
+                "promptTokenCount": 10,
+                "totalTokenCount": 10
+              },
+              "modelVersion": "gemini-2.0-flash",
+              "responseId": "test-null-output"
+            }
+            """)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.NotNull(result.Usage);
+        Assert.Equal(10, result.Usage.InputTokenCount);
+        Assert.Null(result.Usage.OutputTokenCount);
+    }
+
     #endregion
 
     #region BatchEmbedContents Mapping Tests

@@ -310,7 +310,9 @@ internal static class GeminiToMEAIMapper
         return new UsageDetails
         {
             InputTokenCount = usage.PromptTokenCount,
-            OutputTokenCount = (usage.CandidatesTokenCount ?? 0) + (usage.ThoughtsTokenCount ?? 0),
+            OutputTokenCount = usage.CandidatesTokenCount is not null || usage.ThoughtsTokenCount is not null
+                ? (usage.CandidatesTokenCount ?? 0) + (usage.ThoughtsTokenCount ?? 0)
+                : null,
             TotalTokenCount = usage.TotalTokenCount,
             CachedInputTokenCount = usage.CachedContentTokenCount,
             ReasoningTokenCount = usage.ThoughtsTokenCount,
