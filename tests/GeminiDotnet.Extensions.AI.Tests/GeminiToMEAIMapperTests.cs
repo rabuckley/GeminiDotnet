@@ -37,6 +37,25 @@ public sealed class GeminiToMEAIMapperTests
     }
 
     [Fact]
+    public void CreateMappedChatResponse_WithEmptyCandidates_ShouldNotThrow()
+    {
+        // Arrange — empty candidates list should not cause IndexOutOfRangeException
+        var response = new GenerateContentResponse
+        {
+            Candidates = [],
+            ModelVersion = "gemini-2.0-flash",
+            ResponseId = "test-empty-candidates"
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Empty(result.Messages);
+        Assert.Null(result.FinishReason);
+    }
+
+    [Fact]
     public void CreateMappedChatResponse_WithNullParts_ShouldReturnEmptyContents()
     {
         // Arrange

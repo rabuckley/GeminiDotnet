@@ -250,7 +250,8 @@ internal static class GeminiToMEAIMapper
             ConversationId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,
-            FinishReason = CreateMappedChatFinishReason(response.Candidates?[0].FinishReason),
+            FinishReason = CreateMappedChatFinishReason(
+                response.Candidates is { Count: > 0 } candidates ? candidates[0].FinishReason : null),
             Usage = CreateMappedUsageDetails(response.UsageMetadata),
             RawRepresentation = response,
             AdditionalProperties = null
