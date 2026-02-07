@@ -250,7 +250,7 @@ internal static class GeminiToMEAIMapper
 
         return new ChatResponse(choices)
         {
-            ResponseId = null,
+            ResponseId = response.ResponseId,
             ConversationId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,

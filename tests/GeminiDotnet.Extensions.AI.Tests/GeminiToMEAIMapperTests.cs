@@ -36,6 +36,19 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(actualContent.Parts[3].Text, text2.Text);
     }
 
+    [Fact]
+    public void CreateMappedChatResponse_ShouldSetResponseId()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(NonStreamingResponseWithUsage)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(response.ResponseId, result.ResponseId);
+    }
+
     #region UsageMetadata Mapping Tests
 
     [Fact]
