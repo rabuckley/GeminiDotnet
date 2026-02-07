@@ -459,6 +459,48 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void CreateMappedGenerateContentRequest_WithRequiredToolMode_ShouldMapToAny()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Call a function") };
+        var options = new ChatOptions
+        {
+            ToolMode = ChatToolMode.RequireAny,
+            Tools = [new TestFunction()],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert
+        Assert.NotNull(request.ToolConfiguration);
+        Assert.Equal(FunctionCallingConfigMode.Any, request.ToolConfiguration.FunctionCallingConfiguration?.Mode);
+        Assert.Null(request.ToolConfiguration.FunctionCallingConfiguration?.AllowedFunctionNames);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithRequiredSpecificFunction_ShouldSetAllowedFunctionNames()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Call a function") };
+        var options = new ChatOptions
+        {
+            ToolMode = ChatToolMode.RequireSpecific("get_weather"),
+            Tools = [new TestFunction()],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert
+        Assert.NotNull(request.ToolConfiguration);
+        var config = request.ToolConfiguration.FunctionCallingConfiguration;
+        Assert.Equal(FunctionCallingConfigMode.Any, config?.Mode);
+        var allowedName = Assert.Single(config!.AllowedFunctionNames!);
+        Assert.Equal("get_weather", allowedName);
+    }
+
+    [Fact]
     public void CreateMappedGenerateContentRequest_WithFunctionResult_ShouldResolveFunctionName()
     {
         // Arrange — the assistant message contains a FunctionCallContent with a known

@@ -338,18 +338,19 @@ internal static class MEAIToGeminiMapper
             return null;
         }
 
-        return new ToolConfiguration
+        var functionCallingConfig = options.ToolMode switch
         {
-            FunctionCallingConfiguration = new FunctionCallingConfiguration
+            MEAI.AutoChatToolMode => new FunctionCallingConfiguration { Mode = FunctionCallingConfigMode.Auto },
+            MEAI.NoneChatToolMode => new FunctionCallingConfiguration { Mode = FunctionCallingConfigMode.None },
+            MEAI.RequiredChatToolMode required => new FunctionCallingConfiguration
             {
-                Mode = options.ToolMode switch
-                {
-                    MEAI.AutoChatToolMode => FunctionCallingConfigMode.Auto,
-                    MEAI.NoneChatToolMode => FunctionCallingConfigMode.None,
-                    _ => null
-                },
+                Mode = FunctionCallingConfigMode.Any,
+                AllowedFunctionNames = required.RequiredFunctionName is { } name ? [name] : null,
             },
+            _ => new FunctionCallingConfiguration(),
         };
+
+        return new ToolConfiguration { FunctionCallingConfiguration = functionCallingConfig };
     }
 
     /// <summary>
