@@ -37,6 +37,26 @@ public sealed class GeminiToMEAIMapperTests
     }
 
     [Fact]
+    public void CreateMappedChatResponse_WithNullParts_ShouldReturnEmptyContents()
+    {
+        // Arrange
+        var response = new GenerateContentResponse
+        {
+            Candidates = [new Candidate { Content = new Content { Role = "model", Parts = null! } }],
+            ModelVersion = "gemini-2.0-flash",
+            ResponseId = "test"
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var message = Assert.Single(result.Messages);
+        Assert.NotNull(message.Contents);
+        Assert.Empty(message.Contents);
+    }
+
+    [Fact]
     public void CreateMappedChatResponse_ShouldSetResponseId()
     {
         // Arrange

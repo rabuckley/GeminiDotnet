@@ -267,7 +267,7 @@ internal static class GeminiToMEAIMapper
                 AuthorName = null,
                 CreatedAt = null,
                 Role = CreateMappedChatRole(candidateResponse.Content?.Role),
-                Contents = CreateMappedContents(candidateResponse.Content?.Parts),
+                Contents = CreateMappedContents(candidateResponse.Content?.Parts) ?? [],
                 MessageId = null,
                 RawRepresentation = candidateResponse,
                 AdditionalProperties = null
