@@ -104,6 +104,8 @@ public sealed class GeminiChatClient : IChatClient
     /// <inheritdoc />
     public object? GetService(Type serviceType, object? serviceKey = null)
     {
+        ArgumentNullException.ThrowIfNull(serviceType);
+
         if (serviceType == typeof(IGeminiClient))
         {
             return _client;
