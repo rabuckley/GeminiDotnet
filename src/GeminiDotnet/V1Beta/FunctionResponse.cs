@@ -13,8 +13,8 @@ namespace GeminiDotnet.V1Beta;
 public sealed record FunctionResponse
 {
     /// <summary>
-    /// Optional. The id of the function call this response is for. Populated by the client
-    /// to match the corresponding function call <see cref="Id"/>.
+    /// Optional. The identifier of the function call this response is for. Populated by the
+    /// client to match the corresponding function call <see cref="Id"/>.
     /// </summary>
     [JsonPropertyName("id")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
