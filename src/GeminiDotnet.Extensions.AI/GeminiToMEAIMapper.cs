@@ -13,7 +13,7 @@ internal static class GeminiToMEAIMapper
         GenerateContentResponse response,
         DateTimeOffset createdAt)
     {
-        var candidate = response.Candidates?.Single();
+        var candidate = response.Candidates is { Count: > 0 } c ? c[0] : null;
 
         // Map content parts
         var contents = CreateMappedContents(candidate?.Content?.Parts) ?? [];
