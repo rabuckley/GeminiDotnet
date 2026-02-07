@@ -457,4 +457,63 @@ public sealed class MEAIToGeminiMapperTests
         // Assert
         Assert.Same(rawRepresentation, result);
     }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithFunctionResult_ShouldResolveFunctionName()
+    {
+        // Arrange — the assistant message contains a FunctionCallContent with a known
+        // name, and the tool message contains a FunctionResultContent referencing it by
+        // CallId. The mapper should resolve the function name from the call.
+        const string callId = "call-123";
+        const string functionName = "get_weather";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, "What's the weather?"),
+            new(ChatRole.Assistant,
+            [
+                new FunctionCallContent(callId, functionName, new Dictionary<string, object?> { ["city"] = "London" }),
+            ]),
+            new(ChatRole.Tool,
+            [
+                new FunctionResultContent(callId, "Sunny, 22°C"),
+            ]),
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert — the last content (tool message) should have a FunctionResponse
+        // with the resolved function name, not the call ID.
+        var toolContent = request.Contents.Last();
+        var functionResponse = toolContent.Parts.Single().FunctionResponse;
+
+        Assert.NotNull(functionResponse);
+        Assert.Equal(functionName, functionResponse.Name);
+        Assert.Equal(callId, functionResponse.Id);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithFunctionResult_NoMatchingCall_FallsBackToCallId()
+    {
+        // Arrange — no matching FunctionCallContent exists in the conversation.
+        const string callId = "orphan-call-456";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.Tool,
+            [
+                new FunctionResultContent(callId, "some result"),
+            ]),
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert — falls back to CallId when no matching FunctionCallContent is found.
+        var functionResponse = request.Contents.Single().Parts.Single().FunctionResponse;
+
+        Assert.NotNull(functionResponse);
+        Assert.Equal(callId, functionResponse.Name);
+    }
 }

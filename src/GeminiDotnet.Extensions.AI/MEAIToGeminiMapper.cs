@@ -176,7 +176,7 @@ internal static class MEAIToGeminiMapper
             return default; // unreachable
         }
 
-        static Content CreateMappedContent(MEAI.ChatMessage chatMessage)
+        Content CreateMappedContent(MEAI.ChatMessage chatMessage)
         {
             return new Content
             {
@@ -209,7 +209,7 @@ internal static class MEAIToGeminiMapper
             return null!; // unreachable
         }
 
-        static IReadOnlyList<Part> CreateMappedParts(IList<MEAI.AIContent> contents)
+        IReadOnlyList<Part> CreateMappedParts(IList<MEAI.AIContent> contents)
         {
             List<Part> parts = new(contents.Count);
 
@@ -294,18 +294,24 @@ internal static class MEAIToGeminiMapper
                 };
             }
 
-            static Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
+            Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
             {
                 var response = functionResult.Exception is null
                     ? new Dictionary<string, object?> { { "result", functionResult.Result } }
                     : new Dictionary<string, object?> { { "error", functionResult.Result }, };
+
+                // Gemini's FunctionResponse.Name requires the function name, but
+                // FunctionResultContent only carries CallId. Resolve the name by
+                // finding the matching FunctionCallContent in the conversation.
+                var functionName = ResolveFunctionName(chatMessages, functionResult.CallId)
+                    ?? functionResult.CallId;
 
                 return new Part
                 {
                     FunctionResponse = new FunctionResponse
                     {
                         Id = functionResult.CallId,
-                        Name = functionResult.CallId,
+                        Name = functionName,
                         Response = JsonSerializer.SerializeToElement(response,
                             JsonContext.Default.IDictionaryStringObject)
                     },
@@ -344,6 +350,30 @@ internal static class MEAIToGeminiMapper
                 },
             },
         };
+    }
+
+    /// <summary>
+    /// Searches the conversation history for a <see cref="MEAI.FunctionCallContent"/> whose
+    /// <see cref="MEAI.FunctionCallContent.CallId"/> matches <paramref name="callId"/> and
+    /// returns its <see cref="MEAI.FunctionCallContent.Name"/>.
+    /// </summary>
+    /// <returns>
+    /// The function name, or <c>null</c> if no matching call was found.
+    /// </returns>
+    private static string? ResolveFunctionName(IEnumerable<MEAI.ChatMessage> chatMessages, string callId)
+    {
+        foreach (var message in chatMessages)
+        {
+            foreach (var content in message.Contents)
+            {
+                if (content is MEAI.FunctionCallContent functionCall && functionCall.CallId == callId)
+                {
+                    return functionCall.Name;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static string? GetThoughtSignature(MEAI.AIContent content)
