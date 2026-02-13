@@ -88,6 +88,93 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(response.ResponseId, result.ResponseId);
     }
 
+    [Fact]
+    public void CreateMappedChatResponse_WithThoughtFunctionCall_ShouldSetInformationalOnly()
+    {
+        // Arrange — a function call part with Thought=true represents the model
+        // reasoning about calling a function, not requesting it.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part
+                            {
+                                Thought = true,
+                                FunctionCall = new FunctionCall
+                                {
+                                    Id = "thought-call-1",
+                                    Name = "get_weather",
+                                    Arguments = JsonSerializer.SerializeToElement(
+                                        new Dictionary<string, object> { ["city"] = "London" }),
+                                },
+                            },
+                        ],
+                    },
+                    FinishReason = CandidateFinishReason.Stop,
+                },
+            ],
+            ModelVersion = "gemini-2.5-flash",
+            ResponseId = "test-thought-fc",
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var functionCall = Assert.IsType<FunctionCallContent>(Assert.Single(result.Messages).Contents[0]);
+        Assert.True(functionCall.InformationalOnly);
+        Assert.Equal("get_weather", functionCall.Name);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithRegularFunctionCall_ShouldNotSetInformationalOnly()
+    {
+        // Arrange — a regular function call (no Thought flag) should have InformationalOnly=false.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part
+                            {
+                                FunctionCall = new FunctionCall
+                                {
+                                    Id = "call-1",
+                                    Name = "get_weather",
+                                    Arguments = JsonSerializer.SerializeToElement(
+                                        new Dictionary<string, object> { ["city"] = "Paris" }),
+                                },
+                            },
+                        ],
+                    },
+                    FinishReason = CandidateFinishReason.Stop,
+                },
+            ],
+            ModelVersion = "gemini-2.5-flash",
+            ResponseId = "test-regular-fc",
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var functionCall = Assert.IsType<FunctionCallContent>(Assert.Single(result.Messages).Contents[0]);
+        Assert.False(functionCall.InformationalOnly);
+    }
+
     #region UsageMetadata Mapping Tests
 
     [Fact]

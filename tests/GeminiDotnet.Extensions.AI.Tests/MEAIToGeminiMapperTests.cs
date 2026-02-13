@@ -170,6 +170,76 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equal(thinkingConfig, request.GenerationConfiguration?.ThinkingConfiguration);
     }
 
+    [Theory]
+    [InlineData(ReasoningEffort.None, ThinkingConfigThinkingLevel.Minimal)]
+    [InlineData(ReasoningEffort.Low, ThinkingConfigThinkingLevel.Low)]
+    [InlineData(ReasoningEffort.Medium, ThinkingConfigThinkingLevel.Medium)]
+    [InlineData(ReasoningEffort.High, ThinkingConfigThinkingLevel.High)]
+    [InlineData(ReasoningEffort.ExtraHigh, ThinkingConfigThinkingLevel.High)]
+    public void CreateMappedGenerateContentRequest_WithReasoningEffort_ShouldMapToThinkingLevel(
+        ReasoningEffort effort,
+        ThinkingConfigThinkingLevel expectedLevel)
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Think about this.") };
+
+        var options = new ChatOptions
+        {
+            Reasoning = new ReasoningOptions { Effort = effort },
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Equal(expectedLevel, request.GenerationConfiguration?.ThinkingConfiguration?.ThinkingLevel);
+    }
+
+    [Theory]
+    [InlineData(ReasoningOutput.None, false)]
+    [InlineData(ReasoningOutput.Summary, true)]
+    [InlineData(ReasoningOutput.Full, true)]
+    public void CreateMappedGenerateContentRequest_WithReasoningOutput_ShouldMapToIncludeThoughts(
+        ReasoningOutput output,
+        bool expectedIncludeThoughts)
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Think about this.") };
+
+        var options = new ChatOptions
+        {
+            Reasoning = new ReasoningOptions { Output = output },
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Equal(expectedIncludeThoughts, request.GenerationConfiguration?.ThinkingConfiguration?.IncludeThoughts);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithExplicitThinkingConfig_ShouldOverrideReasoning()
+    {
+        // Arrange — when both ChatOptions.Reasoning and AdditionalProperties["thinkingConfig"]
+        // are set, the explicit ThinkingConfiguration takes precedence as a provider-specific override.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Think about this.") };
+
+        var explicitConfig = new ThinkingConfiguration { IncludeThoughts = true, ThinkingBudget = 2000 };
+
+        var options = new ChatOptions
+        {
+            Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Low, Output = ReasoningOutput.None },
+            AdditionalProperties = new AdditionalPropertiesDictionary { ["thinkingConfig"] = explicitConfig },
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert — the explicit config wins, not the Reasoning-derived one
+        Assert.Equal(explicitConfig, request.GenerationConfiguration?.ThinkingConfiguration);
+    }
+
     [Fact]
     public void CreateMappedGenerateContentRequest_WithThinkingConfigurationAsJsonElement_ShouldMapThinkingConfig()
     {

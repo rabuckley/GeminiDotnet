@@ -115,8 +115,11 @@ internal static class MEAIToGeminiMapper
                 return null;
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var thinkingConfiguration = options.AdditionalProperties?.GetValueOrDefault<ThinkingConfiguration>(
-                GeminiAdditionalProperties.ThinkingConfiguration);
+                GeminiAdditionalProperties.ThinkingConfiguration)
+#pragma warning restore CS0618 // Type or member is obsolete
+                ?? CreateMappedThinkingConfiguration(options.Reasoning);
 
             var responseModalities = options.AdditionalProperties?
                     .GetValueOrDefault<IEnumerable<ResponseModality>>(GeminiAdditionalProperties.ResponseModalities)
@@ -375,6 +378,44 @@ internal static class MEAIToGeminiMapper
         }
 
         return null;
+    }
+
+    private static ThinkingConfiguration? CreateMappedThinkingConfiguration(MEAI.ReasoningOptions? reasoning)
+    {
+        if (reasoning is null)
+        {
+            return null;
+        }
+
+        ThinkingConfigThinkingLevel? thinkingLevel = reasoning.Effort switch
+        {
+            MEAI.ReasoningEffort.None => ThinkingConfigThinkingLevel.Minimal,
+            MEAI.ReasoningEffort.Low => ThinkingConfigThinkingLevel.Low,
+            MEAI.ReasoningEffort.Medium => ThinkingConfigThinkingLevel.Medium,
+            // Gemini caps at High; ExtraHigh maps to the same level.
+            MEAI.ReasoningEffort.High or MEAI.ReasoningEffort.ExtraHigh => ThinkingConfigThinkingLevel.High,
+            _ => null,
+        };
+
+        // Gemini doesn't distinguish between summary and full thought output;
+        // any non-None value enables thought inclusion.
+        bool? includeThoughts = reasoning.Output switch
+        {
+            MEAI.ReasoningOutput.None => false,
+            MEAI.ReasoningOutput.Summary or MEAI.ReasoningOutput.Full => true,
+            _ => null,
+        };
+
+        if (thinkingLevel is null && includeThoughts is null)
+        {
+            return null;
+        }
+
+        return new ThinkingConfiguration
+        {
+            ThinkingLevel = thinkingLevel,
+            IncludeThoughts = includeThoughts,
+        };
     }
 
     private static string? GetThoughtSignature(MEAI.AIContent content)
