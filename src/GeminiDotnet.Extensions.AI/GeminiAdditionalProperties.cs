@@ -10,6 +10,7 @@ public static class GeminiAdditionalProperties
     /// <summary>
     /// Key for the <see cref="ThinkingConfiguration"/> property that configures thinking/reasoning behavior.
     /// </summary>
+    [Obsolete("Use Microsoft.Extensions.AI.ReasoningEffort")]
     public const string ThinkingConfiguration = "thinkingConfig";
 
     /// <summary>

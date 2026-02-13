@@ -132,19 +132,21 @@ internal static class GeminiToMEAIMapper
 
             return new DataContent(inlineData.Data, inlineData.MimeType!) // Let M.E.AI throw.
             {
-                RawRepresentation = part, AdditionalProperties = null
+                RawRepresentation = part,
+                AdditionalProperties = null
             };
         }
 
         static DataContent CreateMappedFileDataContent(Part part)
         {
             Debug.Assert(part.FileData is not null);
-            
+
             var fileData = part.FileData!;
-            
+
             return new DataContent(fileData.FileUri, fileData.MimeType)
             {
-                RawRepresentation = part, AdditionalProperties = null
+                RawRepresentation = part,
+                AdditionalProperties = null
             };
         }
 
@@ -163,16 +165,18 @@ internal static class GeminiToMEAIMapper
 
             return new TextContent(part.Text)
             {
-                Annotations = null, RawRepresentation = part, AdditionalProperties = null
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = null
             };
         }
 
         static FunctionCallContent CreateMappedFunctionCallContent(Part part)
         {
             Debug.Assert(part.FunctionCall is not null);
-            
+
             var functionCall = part.FunctionCall!;
-            
+
             var callId = functionCall.Id ?? $"{functionCall.Name}/{Guid.NewGuid()}";
 
             var args = functionCall.Arguments.Deserialize(JsonContext.Default.IDictionaryStringObject)
@@ -180,16 +184,22 @@ internal static class GeminiToMEAIMapper
 
             return new FunctionCallContent(callId, functionCall.Name, args)
             {
-                Annotations = null, RawRepresentation = part, AdditionalProperties = null, Exception = null
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = null,
+                Exception = null,
+                // When the part is a thought, the model is reasoning about calling a
+                // function rather than requesting it. Mark it as informational only.
+                InformationalOnly = part.Thought is true,
             };
         }
 
         static FunctionResultContent CreateMappedFunctionResultContent(Part part)
         {
             Debug.Assert(part.FunctionResponse is not null);
-            
+
             var functionResponse = part.FunctionResponse!;
-            
+
             var responseId = functionResponse.Id ?? $"{functionResponse.Name}/{Guid.NewGuid()}";
 
             var result = functionResponse.Response.Deserialize(JsonContext.Default.Object);
@@ -206,9 +216,9 @@ internal static class GeminiToMEAIMapper
         static ExecutableCodeContent CreateMappedExecutableCodeContent(Part part)
         {
             Debug.Assert(part.ExecutableCode is not null);
-            
+
             var executableCode = part.ExecutableCode!;
-            
+
             return new ExecutableCodeContent
             {
                 Annotations = null,
@@ -222,9 +232,9 @@ internal static class GeminiToMEAIMapper
         static CodeExecutionContent CreateMappedCodeExecutionResultContent(Part part)
         {
             Debug.Assert(part.CodeExecutionResult is not null);
-            
+
             var codeExecutionResult = part.CodeExecutionResult!;
-            
+
             return new CodeExecutionContent
             {
                 Annotations = null,
@@ -339,7 +349,9 @@ internal static class GeminiToMEAIMapper
         {
             var embedding = new Embedding<float>(embeddingValues)
             {
-                CreatedAt = createdAt, ModelId = modelId, AdditionalProperties = null,
+                CreatedAt = createdAt,
+                ModelId = modelId,
+                AdditionalProperties = null,
             };
 
             result.Add(embedding);
