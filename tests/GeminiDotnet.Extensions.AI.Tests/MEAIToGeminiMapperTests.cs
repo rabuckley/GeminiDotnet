@@ -454,6 +454,30 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void CreateMappedGenerateContentRequest_WithCodeInterpreterInputs_ShouldInjectFileDataIntoUserMessage()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Analyze this data") };
+        var options = new ChatOptions
+        {
+            Tools = [new HostedCodeInterpreterTool
+            {
+                Inputs = [new HostedFileContent("https://generativelanguage.googleapis.com/v1beta/files/abc123") { MediaType = "text/csv" }]
+            }]
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Single(request.Tools!, t => t.CodeExecution is not null); // Tool still declared
+        var userContent = Assert.Single(request.Contents!, c => c.Role == ChatRoles.User);
+        Assert.Equal(2, userContent.Parts!.Count); // File part + text part
+        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/files/abc123", userContent.Parts[0].FileData?.FileUri);
+        Assert.Equal("text/csv", userContent.Parts[0].FileData?.MimeType);
+    }
+ 
+    [Fact]
     public void CreateMappedBatchEmbeddingRequest_CreatesOneRequestPerInputValue()
     {
         // Arrange
