@@ -12,6 +12,7 @@ public sealed record FileSearchStore
     /// for retrieval.
     /// </summary>
     [JsonPropertyName("activeDocumentsCount")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? ActiveDocumentsCount { get; init; }
 
@@ -36,6 +37,7 @@ public sealed record FileSearchStore
     /// processing.
     /// </summary>
     [JsonPropertyName("failedDocumentsCount")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? FailedDocumentsCount { get; init; }
 
@@ -56,6 +58,7 @@ public sealed record FileSearchStore
     /// Output only. The number of documents in the <see cref="V1Beta.FileSearchStores.FileSearchStore"/> that are being processed.
     /// </summary>
     [JsonPropertyName("pendingDocumentsCount")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? PendingDocumentsCount { get; init; }
 
@@ -64,6 +67,7 @@ public sealed record FileSearchStore
     /// total size of all the documents in the <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
     /// </summary>
     [JsonPropertyName("sizeBytes")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? SizeBytes { get; init; }
 

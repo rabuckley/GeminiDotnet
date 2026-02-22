@@ -175,6 +175,41 @@ public sealed class GeminiToMEAIMapperTests
         Assert.False(functionCall.InformationalOnly);
     }
 
+    [Fact]
+    public void CreateMappedChatResponse_WithFileData_ShouldMapToHostedFileContent()
+    {
+        // Arrange
+        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/abc123";
+        const string mimeType = "text/csv";
+
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts = [new Part { FileData = new FileData { FileUri = fileUri, MimeType = mimeType } }],
+                    },
+                    FinishReason = CandidateFinishReason.Stop,
+                },
+            ],
+            ModelVersion = "gemini-2.0-flash",
+            ResponseId = "test-filedata",
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var content = Assert.Single(Assert.Single(result.Messages).Contents);
+        var fileContent = Assert.IsType<HostedFileContent>(content);
+        Assert.Equal(fileUri, fileContent.FileId);
+        Assert.Equal(mimeType, fileContent.MediaType);
+    }
+
     #region UsageMetadata Mapping Tests
 
     [Fact]

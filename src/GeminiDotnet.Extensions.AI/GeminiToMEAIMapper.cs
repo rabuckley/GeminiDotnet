@@ -137,16 +137,17 @@ internal static class GeminiToMEAIMapper
             };
         }
 
-        static DataContent CreateMappedFileDataContent(Part part)
+        static HostedFileContent CreateMappedFileDataContent(Part part)
         {
             Debug.Assert(part.FileData is not null);
 
             var fileData = part.FileData!;
 
-            return new DataContent(fileData.FileUri, fileData.MimeType)
+            return new HostedFileContent(fileData.FileUri)
             {
+                MediaType = fileData.MimeType,
                 RawRepresentation = part,
-                AdditionalProperties = null
+                AdditionalProperties = null,
             };
         }
 

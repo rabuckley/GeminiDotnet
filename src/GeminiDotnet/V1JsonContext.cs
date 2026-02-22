@@ -2,7 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace GeminiDotnet;
 
-[JsonSourceGenerationOptions(WriteIndented = false)]
+// Proto3 JSON encoding represents 64-bit integer values (int64, uint64, etc.) as
+// strings to avoid precision loss in IEEE 754 floats. 32-bit integers are unaffected
+// but AllowReadingFromString is harmless for them and doesn't change write behavior.
+[JsonSourceGenerationOptions(WriteIndented = false, NumberHandling = JsonNumberHandling.AllowReadingFromString)]
 [JsonSerializable(typeof(Dictionary<string, object>))]
 [JsonSerializable(typeof(ErrorResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1.ListOperationsResponse))]

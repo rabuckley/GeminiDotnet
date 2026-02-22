@@ -43,6 +43,15 @@ internal static class MEAIToGeminiMapper
             systemInstruction = systemInstructionParts.Count > 0
                 ? new Content { Role = null, Parts = systemInstructionParts }
                 : null;
+
+            // In Gemini's API, files for code execution are passed as Parts in
+            // the user Content — not in the tool configuration. When
+            // HostedCodeInterpreterTool.Inputs has items, inject those as
+            // additional Parts into the last user Content.
+            //
+            // This is intentionally skipped when rawRepresentation provides its
+            // own Contents, as the caller has full control in that case.
+            InjectToolInputParts(options, contents);
         }
 
         return new GenerateContentRequest
@@ -224,6 +233,7 @@ internal static class MEAIToGeminiMapper
                     MEAI.TextReasoningContent textReasoningContent => CreateTextReasoningPart(textReasoningContent),
                     MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
                     MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
+                    MEAI.HostedFileContent fileContent => CreateHostedFileDataPart(fileContent),
                     MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
                     MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
                     _ => ThrowUnsupportedContentException(content),
@@ -426,6 +436,87 @@ internal static class MEAIToGeminiMapper
     private static Part CreateTextReasoningPart(MEAI.TextReasoningContent content)
     {
         return new Part { Thought = true, Text = content.Text, ThoughtSignature = content.ProtectedData };
+    }
+
+    private static Part CreateHostedFileDataPart(MEAI.HostedFileContent fileContent)
+    {
+        return new Part
+        {
+            FileData = new FileData
+            {
+                FileUri = fileContent.FileId,
+                MimeType = fileContent.MediaType,
+            },
+            ThoughtSignature = GetThoughtSignature(fileContent),
+        };
+    }
+
+    /// <summary>
+    /// Collects file references from <see cref="MEAI.HostedCodeInterpreterTool.Inputs"/>
+    /// and prepends them to the last user <see cref="Content"/>. Gemini expects files
+    /// for code execution to be passed as <see cref="Part"/> entries in the conversation,
+    /// not in the tool configuration.
+    /// </summary>
+    private static void InjectToolInputParts(MEAI.ChatOptions? options, List<Content> contents)
+    {
+        if (options?.Tools is null)
+        {
+            return;
+        }
+
+        List<Part>? toolInputParts = null;
+
+        foreach (var tool in options.Tools)
+        {
+            if (tool is MEAI.HostedCodeInterpreterTool { Inputs: { Count: > 0 } inputs })
+            {
+                toolInputParts ??= [];
+                foreach (var input in inputs)
+                {
+                    toolInputParts.Add(input switch
+                    {
+                        MEAI.HostedFileContent fc => CreateHostedFileDataPart(fc),
+                        _ => ThrowUnsupportedToolInput(input),
+                    });
+                }
+            }
+        }
+
+        if (toolInputParts is not { Count: > 0 })
+        {
+            return;
+        }
+
+        // Prepend the file parts to the last user content so the model sees
+        // the files in context when executing code against them.
+        for (var i = contents.Count - 1; i >= 0; i--)
+        {
+            if (contents[i].Role is ChatRoles.User)
+            {
+                var existing = contents[i].Parts ?? [];
+                var combined = new List<Part>(toolInputParts.Count + existing.Count);
+                combined.AddRange(toolInputParts);
+                combined.AddRange(existing);
+                contents[i] = contents[i] with { Parts = combined };
+                return;
+            }
+        }
+
+        // Tool input files were collected but there is no user content to
+        // attach them to — fail loudly rather than silently dropping them.
+        throw new InvalidOperationException(
+            "Cannot inject tool input file parts: no user content was found in the conversation.");
+
+        [DoesNotReturn]
+        static Part ThrowUnsupportedToolInput(MEAI.AIContent content)
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{typeof(MEAI.HostedCodeInterpreterTool)}.{nameof(MEAI.HostedCodeInterpreterTool.Inputs)}",
+                toPropertyName: $"{typeof(Part)}",
+                reason: $"Unsupported tool input type: {content.GetType()}");
+
+            return null!; // unreachable
+        }
     }
 
     private static void AppendSystemInstructionParts(

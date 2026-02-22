@@ -54,6 +54,7 @@ public sealed record Document
     /// Output only. The size of raw bytes ingested into the Document.
     /// </summary>
     [JsonPropertyName("sizeBytes")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? SizeBytes { get; init; }
 

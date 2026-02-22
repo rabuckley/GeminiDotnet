@@ -34,6 +34,7 @@ public sealed record UploadToFileSearchStoreResponse
     /// Size of the file in bytes.
     /// </summary>
     [JsonPropertyName("sizeBytes")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? SizeBytes { get; init; }
 }

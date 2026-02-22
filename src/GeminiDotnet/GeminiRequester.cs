@@ -103,6 +103,22 @@ internal sealed class GeminiRequester : IGeminiRequester
             => JsonSerializer.Deserialize(data, _jsonSerializerContext.GetTypeInfo<TResponse>())!;
     }
 
+    public async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage message,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await EnsureSuccessOrThrow(response, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
+
     private async Task<HttpResponseMessage> EnsureSuccessOrThrow(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)

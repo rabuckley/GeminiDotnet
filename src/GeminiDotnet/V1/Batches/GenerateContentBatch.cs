@@ -69,6 +69,7 @@ public sealed record GenerateContentBatch
     /// allowed. Default is 0.
     /// </summary>
     [JsonPropertyName("priority")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? Priority { get; init; }
 

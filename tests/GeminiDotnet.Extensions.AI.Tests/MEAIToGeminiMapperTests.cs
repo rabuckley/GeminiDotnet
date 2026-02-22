@@ -628,4 +628,202 @@ public sealed class MEAIToGeminiMapperTests
         Assert.NotNull(functionResponse);
         Assert.Equal(callId, functionResponse.Name);
     }
+
+    [Fact]
+    public void HostedFileContent_ShouldMapToFileDataPart()
+    {
+        // Arrange
+        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/abc123";
+        const string mimeType = "text/csv";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, [new HostedFileContent(fileUri) { MediaType = mimeType }]),
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert
+        var part = Assert.Single(request.Contents.Single().Parts!);
+        Assert.NotNull(part.FileData);
+        Assert.Equal(fileUri, part.FileData.FileUri);
+        Assert.Equal(mimeType, part.FileData.MimeType);
+    }
+
+    [Fact]
+    public void HostedCodeInterpreterTool_WithInputs_ShouldInjectFilePartsIntoLastUserContent()
+    {
+        // Arrange
+        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/sales-data";
+        const string mimeType = "text/csv";
+        const string userPrompt = "Analyze this data and find the top sellers.";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, userPrompt),
+        ];
+
+        var codeInterpreter = new HostedCodeInterpreterTool
+        {
+            Inputs = [new HostedFileContent(fileUri) { MediaType = mimeType }],
+        };
+
+        var options = new ChatOptions { Tools = [codeInterpreter] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert — the file part should be prepended before the text part
+        var userContent = Assert.Single(request.Contents);
+        Assert.Equal(2, userContent.Parts!.Count);
+
+        var filePart = userContent.Parts[0];
+        Assert.NotNull(filePart.FileData);
+        Assert.Equal(fileUri, filePart.FileData.FileUri);
+        Assert.Equal(mimeType, filePart.FileData.MimeType);
+
+        var textPart = userContent.Parts[1];
+        Assert.Equal(userPrompt, textPart.Text);
+    }
+
+    [Fact]
+    public void HostedCodeInterpreterTool_WithNoInputs_ShouldNotModifyContent()
+    {
+        // Arrange
+        const string userPrompt = "Write a hello world program.";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, userPrompt),
+        ];
+
+        var options = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert — content should be unchanged
+        var userContent = Assert.Single(request.Contents);
+        var part = Assert.Single(userContent.Parts!);
+        Assert.Equal(userPrompt, part.Text);
+    }
+
+    [Fact]
+    public void HostedCodeInterpreterTool_WithMultipleInputs_ShouldInjectAllFilePartsIntoLastUserContent()
+    {
+        // Arrange
+        const string csvUri = "https://generativelanguage.googleapis.com/v1beta/files/data-csv";
+        const string pdfUri = "https://generativelanguage.googleapis.com/v1beta/files/report-pdf";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.Assistant, "Sure, send me the files."),
+            new(ChatRole.User, "Here are the files to analyze."),
+        ];
+
+        var codeInterpreter = new HostedCodeInterpreterTool
+        {
+            Inputs =
+            [
+                new HostedFileContent(csvUri) { MediaType = "text/csv" },
+                new HostedFileContent(pdfUri) { MediaType = "application/pdf" },
+            ],
+        };
+
+        var options = new ChatOptions { Tools = [codeInterpreter] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert — file parts should be prepended to the last user content (index 1)
+        var lastUserContent = request.Contents.Last();
+        Assert.Equal(3, lastUserContent.Parts!.Count);
+
+        Assert.Equal(csvUri, lastUserContent.Parts[0].FileData!.FileUri);
+        Assert.Equal(pdfUri, lastUserContent.Parts[1].FileData!.FileUri);
+        Assert.Equal("Here are the files to analyze.", lastUserContent.Parts[2].Text);
+    }
+
+    [Fact]
+    public void HostedFileContent_WithNullMediaType_ShouldMapToFileDataWithNullMimeType()
+    {
+        // Arrange — HostedFileContent with no MediaType set
+        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/unknown-type";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, [new HostedFileContent(fileUri)]),
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert
+        var part = Assert.Single(request.Contents.Single().Parts!);
+        Assert.NotNull(part.FileData);
+        Assert.Equal(fileUri, part.FileData.FileUri);
+        Assert.Null(part.FileData.MimeType);
+    }
+
+    [Fact]
+    public void HostedCodeInterpreterTool_WithInputs_AndInlineHostedFileContent_ShouldCombineParts()
+    {
+        // Arrange — a user message already contains an inline HostedFileContent part,
+        // and the tool also provides files via Inputs. The tool-input files should be
+        // prepended before the inline parts.
+        const string inlineFileUri = "https://generativelanguage.googleapis.com/v1beta/files/inline-file";
+        const string toolInputFileUri = "https://generativelanguage.googleapis.com/v1beta/files/tool-input-file";
+        const string userPrompt = "Analyze both files.";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User,
+            [
+                new HostedFileContent(inlineFileUri) { MediaType = "text/csv" },
+                new TextContent(userPrompt),
+            ]),
+        ];
+
+        var codeInterpreter = new HostedCodeInterpreterTool
+        {
+            Inputs = [new HostedFileContent(toolInputFileUri) { MediaType = "application/pdf" }],
+        };
+
+        var options = new ChatOptions { Tools = [codeInterpreter] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert — tool-input file prepended, then inline file, then text
+        var userContent = Assert.Single(request.Contents);
+        Assert.Equal(3, userContent.Parts!.Count);
+
+        Assert.Equal(toolInputFileUri, userContent.Parts[0].FileData!.FileUri);
+        Assert.Equal(inlineFileUri, userContent.Parts[1].FileData!.FileUri);
+        Assert.Equal(userPrompt, userContent.Parts[2].Text);
+    }
+
+    [Fact]
+    public void HostedCodeInterpreterTool_WithInputs_NoUserContent_ShouldThrow()
+    {
+        // Arrange — only assistant messages, no user content to attach files to
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.Assistant, "I can help analyze data."),
+        ];
+
+        var codeInterpreter = new HostedCodeInterpreterTool
+        {
+            Inputs = [new HostedFileContent("https://generativelanguage.googleapis.com/v1beta/files/orphan") { MediaType = "text/csv" }],
+        };
+
+        var options = new ChatOptions { Tools = [codeInterpreter] };
+
+        // Act
+        Action act = () => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+
+        // Assert
+        Assert.Throws<InvalidOperationException>(act);
+    }
 }

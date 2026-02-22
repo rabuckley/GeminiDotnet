@@ -3,7 +3,7 @@ using File = GeminiDotnet.V1Beta.Files.File;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IFilesClient
+public partial interface IFilesClient
 {
     /// <summary>
     /// Lists the metadata for <see cref="V1Beta.Files.File"/>s owned by the requesting project.
