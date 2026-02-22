@@ -79,6 +79,7 @@ public sealed record Schema
     /// Optional. Maximum number of the elements for Type.ARRAY.
     /// </summary>
     [JsonPropertyName("maxItems")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? MaxItems { get; init; }
 
@@ -86,6 +87,7 @@ public sealed record Schema
     /// Optional. Maximum length of the Type.STRING
     /// </summary>
     [JsonPropertyName("maxLength")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? MaxLength { get; init; }
 
@@ -93,6 +95,7 @@ public sealed record Schema
     /// Optional. Maximum number of the properties for Type.OBJECT.
     /// </summary>
     [JsonPropertyName("maxProperties")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? MaxProperties { get; init; }
 
@@ -108,6 +111,7 @@ public sealed record Schema
     /// Optional. Minimum number of the elements for Type.ARRAY.
     /// </summary>
     [JsonPropertyName("minItems")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? MinItems { get; init; }
 
@@ -116,6 +120,7 @@ public sealed record Schema
     /// Minimum length of the Type.STRING
     /// </summary>
     [JsonPropertyName("minLength")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? MinLength { get; init; }
 
@@ -123,6 +128,7 @@ public sealed record Schema
     /// Optional. Minimum number of the properties for Type.OBJECT.
     /// </summary>
     [JsonPropertyName("minProperties")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long? MinProperties { get; init; }
 

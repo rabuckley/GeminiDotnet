@@ -23,6 +23,7 @@ Dictionary<int, Func<GeminiChatClient, CancellationToken, Task>> examples = new(
     { 3, StreamingExample.ExecuteAsync },
     { 4, YouTubeExample.ExecuteAsync },
     { 5, ImageGenerationExample.ExecuteAsync },
+    { 6, FileUploadExample.ExecuteAsync },
 };
 
 Console.WriteLine("Enter the number of the example you'd like to run:\n");

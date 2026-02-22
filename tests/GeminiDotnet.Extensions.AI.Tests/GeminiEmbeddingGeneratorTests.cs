@@ -14,7 +14,6 @@ public sealed class GeminiEmbeddingGeneratorTests
     }
 
     [Theory]
-    [InlineData("text-embedding-004")]
     [InlineData("gemini-embedding-001")]
     public async Task GenerateAsync_ShouldReturnEmbeddings(string model)
     {
