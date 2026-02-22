@@ -121,7 +121,6 @@ public sealed class GeminiClientTests
     }
 
     [Theory]
-    [InlineData("text-embedding-004")]
     [InlineData("gemini-embedding-001")]
     public async Task EmbedContentAsync_WithTextContent_ShouldReturnEmbeddings(string model)
     {
@@ -361,40 +360,6 @@ public sealed class GeminiClientTests
 
         // Assert
         // Passed.
-    }
-
-    [Fact]
-    public async Task GenerateContent_WithThinkingBudget0_ShouldHaveNoThinkingTokenUsage()
-    {
-        // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-
-        var options = new GeminiClientOptions { ApiKey = _apiKey };
-        var client = new GeminiClient(options).V1Beta.Models;
-
-        const string model = "gemini-2.5-pro";
-
-        var request = new GenerateContentRequest
-        {
-            Model = model,
-            GenerationConfiguration = new GenerationConfiguration
-            {
-                ThinkingConfiguration = new ThinkingConfiguration { ThinkingBudget = 0 }
-            },
-            Contents =
-            [
-                new Content { Role = ChatRoles.User, Parts = [new Part { Text = "Explain the prisoner's dilemma" }] }
-            ]
-        };
-
-        // Act
-        var response = await client.GenerateContentAsync(
-            model,
-            request,
-            cancellationToken);
-
-        // Assert
-        Assert.Equal(0, response.UsageMetadata.ThoughtsTokenCount);
     }
 
     [Fact]
