@@ -21,7 +21,7 @@ public enum CodeExecutionResultOutcome
     Ok,
 
     /// <summary>
-    /// Code execution finished but with a failure. `stderr` should contain the
+    /// Code execution finished but with a failure. <c>stderr</c> should contain the
     /// reason.
     /// </summary>
     [JsonStringEnumMemberName("OUTCOME_FAILED")]

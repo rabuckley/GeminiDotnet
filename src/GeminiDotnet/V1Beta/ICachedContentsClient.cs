@@ -29,9 +29,7 @@ public interface ICachedContentsClient
     /// <summary>
     /// Creates CachedContent resource.
     /// </summary>
-    /// <param name="request">
-    /// Required. The cached content to create.
-    /// </param>
+    /// <param name="request">Required. The cached content to create.</param>
     /// <param name="cancellationToken"></param>
     Task<CachedContent> CreateCachedContentAsync(
         CachedContent request,
@@ -40,9 +38,7 @@ public interface ICachedContentsClient
     /// <summary>
     /// Reads CachedContent resource.
     /// </summary>
-    /// <param name="id">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="id">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<CachedContent> GetCachedContentAsync(
         string id,
@@ -51,9 +47,7 @@ public interface ICachedContentsClient
     /// <summary>
     /// Deletes CachedContent resource.
     /// </summary>
-    /// <param name="id">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="id">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Empty> DeleteCachedContentAsync(
         string id,
@@ -62,15 +56,9 @@ public interface ICachedContentsClient
     /// <summary>
     /// Updates CachedContent resource (only expiration is updatable).
     /// </summary>
-    /// <param name="id">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// Required. The content cache entry to update
-    /// </param>
-    /// <param name="updateMask">
-    /// The list of fields to update.
-    /// </param>
+    /// <param name="id">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">Required. The content cache entry to update</param>
+    /// <param name="updateMask">The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
     Task<CachedContent> UpdateCachedContentAsync(
         string id,

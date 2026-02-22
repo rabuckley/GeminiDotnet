@@ -376,3 +376,5 @@ dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator = 
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+# Obsolete code - needs to be allowed for API deprecations.
+dotnet_diagnostic.CS0612.severity = suggestion

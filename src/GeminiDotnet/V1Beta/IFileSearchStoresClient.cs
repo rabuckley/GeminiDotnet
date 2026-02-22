@@ -29,9 +29,7 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Creates an empty <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
     /// </summary>
-    /// <param name="request">
-    /// Required. The <see cref="V1Beta.FileSearchStores.FileSearchStore"/> to create.
-    /// </param>
+    /// <param name="request">Required. The <see cref="V1Beta.FileSearchStores.FileSearchStore"/> to create.</param>
     /// <param name="cancellationToken"></param>
     Task<FileSearchStore> CreateFileSearchStoreAsync(
         FileSearchStore request,
@@ -40,9 +38,7 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Gets information about a specific <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<FileSearchStore> GetFileSearchStoreAsync(
         string fileSearchStore,
@@ -51,9 +47,7 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Deletes a <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="force">
     /// Optional. If set to true, any <see cref="V1Beta.FileSearchStores.Document"/>s and objects related to this
     /// <see cref="V1Beta.FileSearchStores.FileSearchStore"/> will also be deleted.
@@ -69,12 +63,8 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Imports a <see cref="V1Beta.Files.File"/> from File Service to a <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<ImportFileOperation> ImportFileAsync(
         string fileSearchStore,
@@ -85,12 +75,8 @@ public interface IFileSearchStoresClient
     /// Uploads data to a FileSearchStore, preprocesses and chunks before storing
     /// it in a FileSearchStore Document.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<UploadToFileSearchStoreOperation> UploadToFileSearchStoreAsync(
         string fileSearchStore,
@@ -100,9 +86,7 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Lists all <see cref="V1Beta.FileSearchStores.Document"/>s in a <see cref="V1Beta.Corpora.Corpus"/>.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="pageSize">
     /// Optional. The maximum number of <see cref="V1Beta.FileSearchStores.Document"/>s to return (per page).
     /// The service may return fewer <see cref="V1Beta.FileSearchStores.Document"/>s.
@@ -126,12 +110,8 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Gets information about a specific <see cref="V1Beta.FileSearchStores.Document"/>.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="document">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="document">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Document> GetDocumentAsync(
         string fileSearchStore,
@@ -141,12 +121,8 @@ public interface IFileSearchStoresClient
     /// <summary>
     /// Deletes a <see cref="V1Beta.FileSearchStores.Document"/>.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="document">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="document">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="force">
     /// Optional. If set to true, any <c>Chunk</c>s and objects related to this <see cref="V1Beta.FileSearchStores.Document"/> will
     /// also be deleted.
@@ -165,12 +141,8 @@ public interface IFileSearchStoresClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="fileSearchStore">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="operation">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Operation> GetOperationByFileSearchStoreAndOperationAsync(
         string fileSearchStore,
@@ -182,12 +154,8 @@ public interface IFileSearchStoresClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="fileSearchStoresId">
-    /// Part of <c>name</c>. The name of the operation resource.
-    /// </param>
-    /// <param name="operationsId">
-    /// Part of <c>name</c>. See documentation of <c>fileSearchStoresId</c>.
-    /// </param>
+    /// <param name="fileSearchStoresId">Part of <c>name</c>. The name of the operation resource.</param>
+    /// <param name="operationsId">Part of <c>name</c>. See documentation of <c>fileSearchStoresId</c>.</param>
     /// <param name="cancellationToken"></param>
     Task<Operation> GetOperationByFileSearchStoresIdAndOperationsIdAsync(
         string fileSearchStoresId,

@@ -69,7 +69,7 @@ public sealed record File
     /// </summary>
     [JsonPropertyName("sha256Hash")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? Sha256Hash { get; init; }
+    public ReadOnlyMemory<byte> Sha256Hash { get; init; }
 
     /// <summary>
     /// Output only. Size of the file in bytes.

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
-/// Output only. Current state of the `Document`.
+/// Output only. Current state of the <c>Document</c>.
 /// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<DocumentState>))]
 public enum DocumentState
@@ -15,20 +15,20 @@ public enum DocumentState
     Unspecified,
 
     /// <summary>
-    /// Some `Chunks` of the `Document` are being processed (embedding and vector
+    /// Some <c>Chunks</c> of the <c>Document</c> are being processed (embedding and vector
     /// storage).
     /// </summary>
     [JsonStringEnumMemberName("STATE_PENDING")]
     Pending,
 
     /// <summary>
-    /// All `Chunks` of the `Document` is processed and available for querying.
+    /// All <c>Chunks</c> of the <c>Document</c> is processed and available for querying.
     /// </summary>
     [JsonStringEnumMemberName("STATE_ACTIVE")]
     Active,
 
     /// <summary>
-    /// Some `Chunks` of the `Document` failed processing.
+    /// Some <c>Chunks</c> of the <c>Document</c> failed processing.
     /// </summary>
     [JsonStringEnumMemberName("STATE_FAILED")]
     Failed,

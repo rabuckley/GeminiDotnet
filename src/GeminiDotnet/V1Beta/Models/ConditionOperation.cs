@@ -51,15 +51,15 @@ public enum ConditionOperation
     NotEqual,
 
     /// <summary>
-    /// Supported by string only when `CustomMetadata` value type for the given
-    /// key has a `string_list_value`.
+    /// Supported by string only when <c>CustomMetadata</c> value type for the given
+    /// key has a <c>string_list_value</c>.
     /// </summary>
     [JsonStringEnumMemberName("INCLUDES")]
     Includes,
 
     /// <summary>
-    /// Supported by string only when `CustomMetadata` value type for the given
-    /// key has a `string_list_value`.
+    /// Supported by string only when <c>CustomMetadata</c> value type for the given
+    /// key has a <c>string_list_value</c>.
     /// </summary>
     [JsonStringEnumMemberName("EXCLUDES")]
     Excludes,

@@ -19,6 +19,6 @@ public sealed record SearchEntryPoint
     /// </summary>
     [JsonPropertyName("sdkBlob")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? SdkBlob { get; init; }
+    public ReadOnlyMemory<byte> SdkBlob { get; init; }
 }
 

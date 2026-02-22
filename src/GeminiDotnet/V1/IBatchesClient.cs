@@ -8,15 +8,9 @@ public interface IBatchesClient
     /// Lists operations that match the specified filter in the request. If the
     /// server doesn't support this method, it returns <c>UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="filter">
-    /// The standard list filter.
-    /// </param>
-    /// <param name="pageSize">
-    /// The standard list page size.
-    /// </param>
-    /// <param name="pageToken">
-    /// The standard list page token.
-    /// </param>
+    /// <param name="filter">The standard list filter.</param>
+    /// <param name="pageSize">The standard list page size.</param>
+    /// <param name="pageToken">The standard list page token.</param>
     /// <param name="returnPartialSuccess">
     /// When set to <c>true</c>, operations that are reachable are returned as normal,
     /// and those that are unreachable are returned in the
@@ -41,9 +35,7 @@ public interface IBatchesClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="generateContentBatch">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Operation> GetOperationByGenerateContentBatchAsync(
         string generateContentBatch,
@@ -55,9 +47,7 @@ public interface IBatchesClient
     /// operation. If the server doesn't support this method, it returns
     /// <c>google.rpc.Code.UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="generateContentBatch">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Empty> DeleteOperationAsync(
         string generateContentBatch,
@@ -75,9 +65,7 @@ public interface IBatchesClient
     /// an Operation.error value with a google.rpc.Status.code of <c>1</c>,
     /// corresponding to <c>Code.CANCELLED</c>.
     /// </summary>
-    /// <param name="generateContentBatch">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Empty> CancelOperationByGenerateContentBatchAsync(
         string generateContentBatch,
@@ -86,15 +74,9 @@ public interface IBatchesClient
     /// <summary>
     /// Updates a batch of EmbedContent requests for batch processing.
     /// </summary>
-    /// <param name="generateContentBatch">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// Required. The batch to update.
-    /// </param>
-    /// <param name="updateMask">
-    /// Optional. The list of fields to update.
-    /// </param>
+    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">Required. The batch to update.</param>
+    /// <param name="updateMask">Optional. The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
     Task<EmbedContentBatch> UpdateEmbedContentBatchAsync(
         string generateContentBatch,
@@ -105,15 +87,9 @@ public interface IBatchesClient
     /// <summary>
     /// Updates a batch of GenerateContent requests for batch processing.
     /// </summary>
-    /// <param name="generateContentBatch">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// Required. The batch to update.
-    /// </param>
-    /// <param name="updateMask">
-    /// Optional. The list of fields to update.
-    /// </param>
+    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">Required. The batch to update.</param>
+    /// <param name="updateMask">Optional. The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
     Task<GenerateContentBatch> UpdateGenerateContentBatchAsync(
         string generateContentBatch,

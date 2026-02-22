@@ -9,12 +9,8 @@ public interface ITunedModelsClient
     /// We have a <c>BatchEmbedContents</c> handler in <c>GenerativeService</c>, but it was
     /// synchronized. So we name this one to be <c>Async</c> to avoid confusion.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<AsyncBatchEmbedContentOperation> AsyncBatchEmbedContentByTunedModelAsync(
         string tunedModel,
@@ -24,12 +20,8 @@ public interface ITunedModelsClient
     /// <summary>
     /// Enqueues a batch of <c>GenerateContent</c> requests for batch processing.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<BatchGenerateContentOperation> BatchGenerateContentByTunedModelAsync(
         string tunedModel,
@@ -45,12 +37,8 @@ public interface ITunedModelsClient
     /// guide](https://ai.google.dev/gemini-api/docs/models/gemini) and [tuning
     /// guide](https://ai.google.dev/gemini-api/docs/model-tuning) for details.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<GenerateContentResponse> GenerateContentByTunedModelAsync(
         string tunedModel,
@@ -62,12 +50,8 @@ public interface ITunedModelsClient
     /// response](https://ai.google.dev/gemini-api/docs/text-generation?lang=python#generate-a-text-stream)
     /// from the model given an input <see cref="V1.GenerateContentRequest"/>.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentByTunedModelAsync(
         string tunedModel,
@@ -78,18 +62,10 @@ public interface ITunedModelsClient
     /// Lists operations that match the specified filter in the request. If the
     /// server doesn't support this method, it returns <c>UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="filter">
-    /// The standard list filter.
-    /// </param>
-    /// <param name="pageSize">
-    /// The standard list page size.
-    /// </param>
-    /// <param name="pageToken">
-    /// The standard list page token.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="filter">The standard list filter.</param>
+    /// <param name="pageSize">The standard list page size.</param>
+    /// <param name="pageToken">The standard list page token.</param>
     /// <param name="returnPartialSuccess">
     /// When set to <c>true</c>, operations that are reachable are returned as normal,
     /// and those that are unreachable are returned in the
@@ -115,12 +91,8 @@ public interface ITunedModelsClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="operation">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Operation> GetOperationAsync(
         string tunedModel,
@@ -139,15 +111,9 @@ public interface ITunedModelsClient
     /// an Operation.error value with a google.rpc.Status.code of <c>1</c>,
     /// corresponding to <c>Code.CANCELLED</c>.
     /// </summary>
-    /// <param name="tunedModel">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="operation">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<Empty> CancelOperationAsync(
         string tunedModel,

@@ -6,15 +6,9 @@ public interface IOperationsClient
     /// Lists operations that match the specified filter in the request. If the
     /// server doesn't support this method, it returns <c>UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="filter">
-    /// The standard list filter.
-    /// </param>
-    /// <param name="pageSize">
-    /// The standard list page size.
-    /// </param>
-    /// <param name="pageToken">
-    /// The standard list page token.
-    /// </param>
+    /// <param name="filter">The standard list filter.</param>
+    /// <param name="pageSize">The standard list page size.</param>
+    /// <param name="pageToken">The standard list page token.</param>
     /// <param name="returnPartialSuccess">
     /// When set to <c>true</c>, operations that are reachable are returned as normal,
     /// and those that are unreachable are returned in the
@@ -40,9 +34,7 @@ public interface IOperationsClient
     /// operation. If the server doesn't support this method, it returns
     /// <c>google.rpc.Code.UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="operationsId">
-    /// Part of <c>name</c>. The name of the operation resource to be deleted.
-    /// </param>
+    /// <param name="operationsId">Part of <c>name</c>. The name of the operation resource to be deleted.</param>
     /// <param name="cancellationToken"></param>
     Task<Empty> DeleteOperationByOperationsIdAsync(
         string operationsId,

@@ -11,6 +11,7 @@
         <RepositoryUrl>https://github.com/rabuckley/GeminiDotnet</RepositoryUrl>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageLicenseFile>LICENCE</PackageLicenseFile>
+        <NoWarn>$(NoWarn);CA1041</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

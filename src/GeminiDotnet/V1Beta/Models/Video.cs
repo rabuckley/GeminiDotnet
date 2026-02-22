@@ -19,6 +19,6 @@ public sealed record Video
     /// </summary>
     [JsonPropertyName("video")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? VideoValue { get; init; }
+    public ReadOnlyMemory<byte> VideoValue { get; init; }
 }
 
