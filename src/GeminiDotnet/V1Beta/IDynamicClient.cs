@@ -15,9 +15,7 @@ public interface IDynamicClient
     /// Part of <c>model</c>. Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion.
     /// Format: <c>models/{model}</c>.
     /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<GenerateContentResponse> GenerateContentByDynamicIdAsync(
         string dynamicId,
@@ -33,9 +31,7 @@ public interface IDynamicClient
     /// Part of <c>model</c>. Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion.
     /// Format: <c>models/{model}</c>.
     /// </param>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentByDynamicIdAsync(
         string dynamicId,

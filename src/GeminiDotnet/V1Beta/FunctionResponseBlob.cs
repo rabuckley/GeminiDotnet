@@ -14,7 +14,7 @@ public sealed record FunctionResponseBlob
     /// </summary>
     [JsonPropertyName("data")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? Data { get; init; }
+    public ReadOnlyMemory<byte> Data { get; init; }
 
     /// <summary>
     /// The IANA standard MIME type of the source data.

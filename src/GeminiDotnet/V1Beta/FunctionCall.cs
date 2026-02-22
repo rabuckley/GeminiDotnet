@@ -18,7 +18,7 @@ public sealed record FunctionCall
     public JsonElement Arguments { get; init; }
 
     /// <summary>
-    /// Optional. The unique identifier of the function call. If populated, the client to
+    /// Optional. Unique identifier of the function call. If populated, the client to
     /// execute the <c>function_call</c> and return the response with the matching <see cref="Id"/>.
     /// </summary>
     [JsonPropertyName("id")]

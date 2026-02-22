@@ -3,8 +3,10 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1.Models;
 
 /// <summary>
-/// Metadata describes the input video content.
+/// Deprecated: Use <c>GenerateContentRequest.processing_options</c> instead. Metadata
+/// describes the input video content.
 /// </summary>
+[Obsolete]
 public sealed record VideoMetadata
 {
     /// <summary>

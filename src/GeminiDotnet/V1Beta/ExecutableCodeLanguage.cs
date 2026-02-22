@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta;
 
 /// <summary>
-/// Required. Programming language of the `code`.
+/// Required. Programming language of the <c>code</c>.
 /// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<ExecutableCodeLanguage>))]
 public enum ExecutableCodeLanguage

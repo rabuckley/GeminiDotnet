@@ -7,12 +7,8 @@ public interface ICorporaClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="operation">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Operation> GetOperationByCorpusAndOperationAsync(
         string corpus,

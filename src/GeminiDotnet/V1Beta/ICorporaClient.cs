@@ -29,9 +29,7 @@ public interface ICorporaClient
     /// <summary>
     /// Creates an empty <see cref="V1Beta.Corpora.Corpus"/>.
     /// </summary>
-    /// <param name="request">
-    /// Required. The <see cref="V1Beta.Corpora.Corpus"/> to create.
-    /// </param>
+    /// <param name="request">Required. The <see cref="V1Beta.Corpora.Corpus"/> to create.</param>
     /// <param name="cancellationToken"></param>
     Task<Corpus> CreateCorpusAsync(
         Corpus request,
@@ -40,9 +38,7 @@ public interface ICorporaClient
     /// <summary>
     /// Gets information about a specific <see cref="V1Beta.Corpora.Corpus"/>.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Corpus> GetCorpusAsync(
         string corpus,
@@ -51,9 +47,7 @@ public interface ICorporaClient
     /// <summary>
     /// Deletes a <see cref="V1Beta.Corpora.Corpus"/>.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="force">
     /// Optional. If set to true, any <see cref="V1Beta.FileSearchStores.Document"/>s and objects related to this <see cref="V1Beta.Corpora.Corpus"/> will
     /// also be deleted.
@@ -71,12 +65,8 @@ public interface ICorporaClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="operation">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Operation> GetOperationByCorpusAndOperationAsync(
         string corpus,
@@ -86,9 +76,7 @@ public interface ICorporaClient
     /// <summary>
     /// Lists permissions for the specific resource.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="pageSize">
     /// Optional. The maximum number of <see cref="V1Beta.Permission"/>s to return (per page).
     /// The service may return fewer permissions.
@@ -113,12 +101,8 @@ public interface ICorporaClient
     /// <summary>
     /// Create a permission to a specific resource.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="request">
-    /// Required. The permission to create.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="request">Required. The permission to create.</param>
     /// <param name="cancellationToken"></param>
     Task<Permission> CreatePermissionByCorpusAsync(
         string corpus,
@@ -128,12 +112,8 @@ public interface ICorporaClient
     /// <summary>
     /// Gets information about a specific Permission.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="permission">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="permission">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Permission> GetPermissionByCorpusAndPermissionAsync(
         string corpus,
@@ -143,12 +123,8 @@ public interface ICorporaClient
     /// <summary>
     /// Deletes the permission.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="permission">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="permission">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
     Task<Empty> DeletePermissionByCorpusAndPermissionAsync(
         string corpus,
@@ -158,12 +134,8 @@ public interface ICorporaClient
     /// <summary>
     /// Updates the permission.
     /// </summary>
-    /// <param name="corpus">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
-    /// <param name="permission">
-    /// Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.
-    /// </param>
+    /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="permission">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">
     /// Required. The permission to update.
     /// The permission's <c>name</c> field is used to identify the permission to update.

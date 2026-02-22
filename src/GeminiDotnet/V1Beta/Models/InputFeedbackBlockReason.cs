@@ -17,7 +17,7 @@ public enum InputFeedbackBlockReason
 
     /// <summary>
     /// Input was blocked due to safety reasons. Inspect
-    /// `safety_ratings` to understand which safety category blocked it.
+    /// <c>safety_ratings</c> to understand which safety category blocked it.
     /// </summary>
     [JsonStringEnumMemberName("SAFETY")]
     Safety,

@@ -16,7 +16,7 @@ public enum PromptFeedbackBlockReason
     Unspecified,
 
     /// <summary>
-    /// Prompt was blocked due to safety reasons. Inspect `safety_ratings`
+    /// Prompt was blocked due to safety reasons. Inspect <c>safety_ratings</c>
     /// to understand which safety category blocked it.
     /// </summary>
     [JsonStringEnumMemberName("SAFETY")]

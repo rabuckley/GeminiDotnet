@@ -11,9 +11,7 @@ public interface IFilesRegisterClient
     /// registered with File API. If one file fails to register, the whole request
     /// fails.
     /// </summary>
-    /// <param name="request">
-    /// The request body.
-    /// </param>
+    /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<RegisterFilesResponse> RegisterFilesAsync(
         RegisterFilesRequest request,
