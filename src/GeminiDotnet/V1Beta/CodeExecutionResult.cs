@@ -4,8 +4,7 @@ namespace GeminiDotnet.V1Beta;
 
 /// <summary>
 /// Result of executing the <see cref="V1Beta.ExecutableCode"/>.
-/// Only generated when using the <see cref="V1Beta.CachedContents.CodeExecution"/>, and always follows a <c>part</c>
-/// containing the <see cref="V1Beta.ExecutableCode"/>.
+/// Generated only when the <see cref="V1Beta.CachedContents.CodeExecution"/> tool is used.
 /// </summary>
 public sealed record CodeExecutionResult
 {

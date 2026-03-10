@@ -8,14 +8,14 @@ namespace GeminiDotnet.V1Beta.Models;
 public sealed record Web
 {
     /// <summary>
-    /// Title of the chunk.
+    /// Output only. Title of the chunk.
     /// </summary>
     [JsonPropertyName("title")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Title { get; init; }
 
     /// <summary>
-    /// URI reference of the chunk.
+    /// Output only. URI reference of the chunk.
     /// </summary>
     [JsonPropertyName("uri")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

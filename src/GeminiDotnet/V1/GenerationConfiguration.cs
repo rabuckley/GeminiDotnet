@@ -45,8 +45,9 @@ public sealed record GenerationConfiguration
 
     /// <summary>
     /// Optional. Only valid if response_logprobs=True.
-    /// This sets the number of top logprobs to return at each decoding step in the
-    /// Candidate.logprobs_result. The number must be in the range of [0, 20].
+    /// This sets the number of top logprobs, including the chosen candidate, to
+    /// return at each decoding step in the Candidate.logprobs_result. The
+    /// number must be in the range of [0, 20].
     /// </summary>
     [JsonPropertyName("logprobs")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

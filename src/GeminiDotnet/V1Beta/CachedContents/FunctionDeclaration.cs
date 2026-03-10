@@ -29,7 +29,7 @@ public sealed record FunctionDeclaration
     /// <summary>
     /// Required. The name of the function.
     /// Must be a-z, A-Z, 0-9, or contain underscores, colons, dots, and dashes,
-    /// with a maximum length of 64.
+    /// with a maximum length of 128.
     /// </summary>
     [JsonPropertyName("name")]
     public required string Name { get; init; }

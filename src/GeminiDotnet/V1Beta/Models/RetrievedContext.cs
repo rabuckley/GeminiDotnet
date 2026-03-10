@@ -8,6 +8,13 @@ namespace GeminiDotnet.V1Beta.Models;
 public sealed record RetrievedContext
 {
     /// <summary>
+    /// Optional. User-provided metadata about the retrieved context.
+    /// </summary>
+    [JsonPropertyName("customMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<GroundingChunkCustomMetadata>? CustomMetadata { get; init; }
+
+    /// <summary>
     /// Optional. Name of the <see cref="V1Beta.FileSearchStores.FileSearchStore"/> containing the document.
     /// Example: <c>fileSearchStores/123</c>
     /// </summary>

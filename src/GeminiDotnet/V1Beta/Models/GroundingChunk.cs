@@ -3,10 +3,19 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta.Models;
 
 /// <summary>
-/// Grounding chunk.
+/// A <see cref="V1Beta.Models.GroundingChunk"/> represents a segment of supporting evidence that grounds
+/// the model's response. It can be a chunk from the web, a retrieved context
+/// from a file, or information from Google Maps.
 /// </summary>
 public sealed record GroundingChunk
 {
+    /// <summary>
+    /// Optional. Grounding chunk from image search.
+    /// </summary>
+    [JsonPropertyName("image")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Image? Image { get; init; }
+
     /// <summary>
     /// Optional. Grounding chunk from Google Maps.
     /// </summary>

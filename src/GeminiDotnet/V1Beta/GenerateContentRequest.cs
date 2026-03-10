@@ -64,6 +64,14 @@ public sealed record GenerateContentRequest
     public IReadOnlyList<SafetySetting>? SafetySettings { get; init; }
 
     /// <summary>
+    /// Optional. Configures the logging behavior for a given request. If set, it takes
+    /// precedence over the project-level logging config.
+    /// </summary>
+    [JsonPropertyName("store")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool? Store { get; init; }
+
+    /// <summary>
     /// Optional. Developer set [system
     /// instruction(s)](https://ai.google.dev/gemini-api/docs/system-instructions).
     /// Currently, text only.

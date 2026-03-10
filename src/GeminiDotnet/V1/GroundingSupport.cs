@@ -31,6 +31,14 @@ public sealed record GroundingSupport
     public ReadOnlyMemory<int> GroundingChunkIndices { get; init; }
 
     /// <summary>
+    /// Output only. Indices into the <c>parts</c> field of the candidate's content. These indices
+    /// specify which rendered parts are associated with this support source.
+    /// </summary>
+    [JsonPropertyName("renderedParts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReadOnlyMemory<int> RenderedParts { get; init; }
+
+    /// <summary>
     /// Segment of the content this support belongs to.
     /// </summary>
     [JsonPropertyName("segment")]

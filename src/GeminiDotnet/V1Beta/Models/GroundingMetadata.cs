@@ -33,6 +33,13 @@ public sealed record GroundingMetadata
     public IReadOnlyList<GroundingSupport>? GroundingSupports { get; init; }
 
     /// <summary>
+    /// Image search queries used for grounding.
+    /// </summary>
+    [JsonPropertyName("imageSearchQueries")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<string>? ImageSearchQueries { get; init; }
+
+    /// <summary>
     /// Metadata related to retrieval in the grounding flow.
     /// </summary>
     [JsonPropertyName("retrievalMetadata")]

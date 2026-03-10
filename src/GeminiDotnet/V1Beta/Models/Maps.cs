@@ -17,7 +17,7 @@ public sealed record Maps
     public PlaceAnswerSources? PlaceAnswerSources { get; init; }
 
     /// <summary>
-    /// This ID of the place, in <c>places/{place_id}</c> format. A user can use this
+    /// The ID of the place, in <c>places/{place_id}</c> format. A user can use this
     /// ID to look up that place.
     /// </summary>
     [JsonPropertyName("placeId")]
