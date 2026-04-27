@@ -1,7 +1,6 @@
 using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Files;
 using Microsoft.Extensions.AI;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using File = GeminiDotnet.V1Beta.Files.File;
 

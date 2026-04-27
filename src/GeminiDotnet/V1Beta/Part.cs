@@ -99,6 +99,24 @@ public sealed record Part
     public string? ThoughtSignature { get; init; }
 
     /// <summary>
+    /// Server-side tool call. This field is populated when the model
+    /// predicts a tool invocation that should be executed on the server.
+    /// The client is expected to echo this message back to the API.
+    /// </summary>
+    [JsonPropertyName("toolCall")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ToolCall? ToolCall { get; init; }
+
+    /// <summary>
+    /// The output from a server-side <see cref="V1Beta.ToolCall"/> execution. This field is
+    /// populated by the client with the results of executing the
+    /// corresponding <see cref="V1Beta.ToolCall"/>.
+    /// </summary>
+    [JsonPropertyName("toolResponse")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ToolResponse? ToolResponse { get; init; }
+
+    /// <summary>
     /// Optional. Video metadata. The metadata should only be specified while the video
     /// data is presented in inline_data or file_data.
     /// </summary>

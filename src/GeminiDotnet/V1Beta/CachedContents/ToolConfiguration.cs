@@ -16,6 +16,15 @@ public sealed record ToolConfiguration
     public FunctionCallingConfiguration? FunctionCallingConfiguration { get; init; }
 
     /// <summary>
+    /// Optional. If true, the API response will include the server-side tool calls and
+    /// responses within the <see cref="V1Beta.Content"/> message. This allows clients to
+    /// observe the server's tool interactions.
+    /// </summary>
+    [JsonPropertyName("includeServerSideToolInvocations")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool? IncludeServerSideToolInvocations { get; init; }
+
+    /// <summary>
     /// Optional. Retrieval config.
     /// </summary>
     [JsonPropertyName("retrievalConfig")]

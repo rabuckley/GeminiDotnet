@@ -54,6 +54,13 @@ public sealed record GenerateContentRequest
     public IReadOnlyList<SafetySetting>? SafetySettings { get; init; }
 
     /// <summary>
+    /// Optional. The service tier of the request.
+    /// </summary>
+    [JsonPropertyName("serviceTier")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ServiceTier? ServiceTier { get; init; }
+
+    /// <summary>
     /// Optional. Configures the logging behavior for a given request. If set, it takes
     /// precedence over the project-level logging config.
     /// </summary>

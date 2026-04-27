@@ -14,5 +14,12 @@ public sealed record BatchEmbedContentsResponse
     [JsonPropertyName("embeddings")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public IReadOnlyList<ContentEmbedding>? Embeddings { get; init; }
+
+    /// <summary>
+    /// Output only. The usage metadata for the request.
+    /// </summary>
+    [JsonPropertyName("usageMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public EmbeddingUsageMetadata? UsageMetadata { get; init; }
 }
 

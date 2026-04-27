@@ -4,7 +4,6 @@ namespace GeminiDotnet.V1Beta.FileSearchStores;
 
 /// <summary>
 /// Request for <c>ImportFile</c> to import a File API file with a <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
-/// LINT.IfChange(ImportFileRequest)
 /// </summary>
 public sealed record ImportFileRequest
 {

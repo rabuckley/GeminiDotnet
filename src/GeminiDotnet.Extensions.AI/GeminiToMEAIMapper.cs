@@ -2,7 +2,6 @@ using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 #pragma warning disable MEAI001 // Experimental API (CodeInterpreter*, WebSearchTool*Content)

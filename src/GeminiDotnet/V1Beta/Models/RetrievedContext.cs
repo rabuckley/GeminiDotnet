@@ -23,6 +23,21 @@ public sealed record RetrievedContext
     public string? FileSearchStore { get; init; }
 
     /// <summary>
+    /// Optional. The media blob resource name for multimodal file search results.
+    /// Format: fileSearchStores/{file_search_store_id}/media/{blob_id}
+    /// </summary>
+    [JsonPropertyName("mediaId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? MediaId { get; init; }
+
+    /// <summary>
+    /// Optional. Page number of the retrieved context, if applicable.
+    /// </summary>
+    [JsonPropertyName("pageNumber")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int? PageNumber { get; init; }
+
+    /// <summary>
     /// Optional. Text of the chunk.
     /// </summary>
     [JsonPropertyName("text")]

@@ -18,6 +18,14 @@ public sealed record ExecutableCode
     public required string Code { get; init; }
 
     /// <summary>
+    /// Optional. Unique identifier of the <see cref="V1Beta.ExecutableCode"/> part.
+    /// The server returns the <see cref="V1Beta.CodeExecutionResult"/> with the matching <see cref="Id"/>.
+    /// </summary>
+    [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Id { get; init; }
+
+    /// <summary>
     /// Required. Programming language of the <see cref="Code"/>.
     /// </summary>
     [JsonPropertyName("language")]

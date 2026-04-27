@@ -1,5 +1,4 @@
 using Microsoft.Extensions.AI;
-using System.Diagnostics.CodeAnalysis;
 
 #pragma warning disable MEAI001 // Type is for evaluation purposes only
 

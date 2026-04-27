@@ -14,6 +14,13 @@ public sealed record EmbedContentRequest
     public required Content Content { get; init; }
 
     /// <summary>
+    /// Optional. Configuration for the EmbedContent request.
+    /// </summary>
+    [JsonPropertyName("embedContentConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public EmbedContentConfiguration? EmbedContentConfiguration { get; init; }
+
+    /// <summary>
     /// Required. The model's resource name. This serves as an ID for the Model to use.
     /// This name should match a model name returned by the <c>ListModels</c> method.
     /// Format: <c>models/{model}</c>
@@ -22,7 +29,8 @@ public sealed record EmbedContentRequest
     public required string Model { get; init; }
 
     /// <summary>
-    /// Optional. Optional reduced dimension for the output embedding. If set, excessive
+    /// Optional. Deprecated: Please use EmbedContentConfig.output_dimensionality instead.
+    /// Optional reduced dimension for the output embedding. If set, excessive
     /// values in the output embedding are truncated from the end. Supported by
     /// newer models since 2024 only. You cannot set this value if using the
     /// earlier model (<c>models/embedding-001</c>).
@@ -32,7 +40,8 @@ public sealed record EmbedContentRequest
     public int? OutputDimensionality { get; init; }
 
     /// <summary>
-    /// Optional. Optional task type for which the embeddings will be used. Not supported on
+    /// Optional. Deprecated: Please use EmbedContentConfig.task_type instead.
+    /// Optional task type for which the embeddings will be used. Not supported on
     /// earlier models (<c>models/embedding-001</c>).
     /// </summary>
     [JsonPropertyName("taskType")]
@@ -40,7 +49,8 @@ public sealed record EmbedContentRequest
     public TaskType? TaskType { get; init; }
 
     /// <summary>
-    /// Optional. An optional title for the text. Only applicable when TaskType is
+    /// Optional. Deprecated: Please use EmbedContentConfig.title instead.
+    /// An optional title for the text. Only applicable when TaskType is
     /// <c>RETRIEVAL_DOCUMENT</c>.
     /// Note: Specifying a <see cref="Title"/> for <c>RETRIEVAL_DOCUMENT</c> provides better quality
     /// embeddings for retrieval.

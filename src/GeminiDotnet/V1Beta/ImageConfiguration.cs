@@ -19,7 +19,7 @@ public sealed record ImageConfiguration
     public string? AspectRatio { get; init; }
 
     /// <summary>
-    /// Optional. Specifies the size of generated images. Supported values are <c>512PX</c>, <c>1K</c>,
+    /// Optional. Specifies the size of generated images. Supported values are <c>512</c>, <c>1K</c>,
     /// <c>2K</c>, <c>4K</c>. If not specified, the model will use default value <c>1K</c>.
     /// </summary>
     [JsonPropertyName("imageSize")]

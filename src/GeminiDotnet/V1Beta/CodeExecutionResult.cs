@@ -9,6 +9,14 @@ namespace GeminiDotnet.V1Beta;
 public sealed record CodeExecutionResult
 {
     /// <summary>
+    /// Optional. The identifier of the <see cref="V1Beta.ExecutableCode"/> part this result is for.
+    /// Only populated if the corresponding <see cref="V1Beta.ExecutableCode"/> has an id.
+    /// </summary>
+    [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Id { get; init; }
+
+    /// <summary>
     /// Required. Outcome of the code execution.
     /// </summary>
     [JsonPropertyName("outcome")]
