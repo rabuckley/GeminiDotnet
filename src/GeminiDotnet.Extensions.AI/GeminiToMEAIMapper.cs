@@ -320,7 +320,7 @@ internal static class GeminiToMEAIMapper
 
         var toolResult = new WebSearchToolResultContent(callId)
         {
-            Results = results,
+            Outputs = results,
             RawRepresentation = groundingMetadata,
         };
 

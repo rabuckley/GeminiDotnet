@@ -844,7 +844,7 @@ public sealed class MEAIToGeminiMapperTests
                 new WebSearchToolCallContent(callId) { Queries = ["test query"] },
                 new WebSearchToolResultContent(callId)
                 {
-                    Results = [new UriContent("https://example.com", "text/html")],
+                    Outputs = [new UriContent("https://example.com", "text/html")],
                 },
             ]),
         ];
