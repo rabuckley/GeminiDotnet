@@ -441,7 +441,7 @@ public sealed class GeminiToMEAIMapperTests
 
         var toolResult = Assert.IsType<WebSearchToolResultContent>(contents[2]);
         Assert.Equal(toolCall.CallId, toolResult.CallId);
-        var uriContent = Assert.IsType<UriContent>(Assert.Single(toolResult.Results!));
+        var uriContent = Assert.IsType<UriContent>(Assert.Single(toolResult.Outputs!));
         Assert.Equal("https://example.com/restaurants", uriContent.Uri.ToString());
         Assert.Equal("text/html", uriContent.MediaType);
         Assert.Equal("Top NYC Restaurants", uriContent.AdditionalProperties!["title"]);
