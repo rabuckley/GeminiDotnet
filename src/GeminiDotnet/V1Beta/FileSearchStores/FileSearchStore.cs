@@ -33,6 +33,16 @@ public sealed record FileSearchStore
     public string? DisplayName { get; init; }
 
     /// <summary>
+    /// Optional. The embedding model to use for the <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
+    /// The model's resource name. This serves as an ID for the Model to use.
+    /// Format: <c>models/{model}</c>.
+    /// If not specified, the default embedding model will be used.
+    /// </summary>
+    [JsonPropertyName("embeddingModel")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? EmbeddingModel { get; init; }
+
+    /// <summary>
     /// Output only. The number of documents in the <see cref="V1Beta.FileSearchStores.FileSearchStore"/> that have failed
     /// processing.
     /// </summary>

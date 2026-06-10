@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.V1Beta.CachedContents;
@@ -14,7 +13,7 @@ public sealed record StreamableHttpTransport
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public JsonElement Headers { get; init; }
+    public IReadOnlyDictionary<string, string>? Headers { get; init; }
 
     /// <summary>
     /// Timeout for SSE read operations.

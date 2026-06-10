@@ -46,6 +46,13 @@ public sealed record UsageMetadata
     public IReadOnlyList<ModalityTokenCount>? PromptTokensDetails { get; init; }
 
     /// <summary>
+    /// Output only. Service tier of the request.
+    /// </summary>
+    [JsonPropertyName("serviceTier")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ServiceTier? ServiceTier { get; init; }
+
+    /// <summary>
     /// Output only. Number of tokens of thoughts for thinking models.
     /// </summary>
     [JsonPropertyName("thoughtsTokenCount")]
@@ -67,8 +74,8 @@ public sealed record UsageMetadata
     public IReadOnlyList<ModalityTokenCount>? ToolUsePromptTokensDetails { get; init; }
 
     /// <summary>
-    /// Total token count for the generation request (prompt + response
-    /// candidates).
+    /// Total token count for the generation request (prompt + thoughts +
+    /// response candidates).
     /// </summary>
     [JsonPropertyName("totalTokenCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

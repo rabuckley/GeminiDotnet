@@ -36,6 +36,7 @@ namespace GeminiDotnet;
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.FileSearchStores.UploadToFileSearchStoreOperation))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.FileSearchStores.ListDocumentsResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.FileSearchStores.Document))]
+[JsonSerializable(typeof(GeminiDotnet.V1Beta.FileSearchStores.DownloadMediaResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.GeneratedFiles.ListGeneratedFilesResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.GeneratedFiles.GeneratedFile))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.Models.ListModelsResponse))]

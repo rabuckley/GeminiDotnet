@@ -1,4 +1,3 @@
-using GeminiDotnet.Text.Json;
 using GeminiDotnet.V1Beta;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;

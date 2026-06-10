@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace GeminiDotnet.V1Beta.Models;
 
 /// <summary>
@@ -5,5 +7,18 @@ namespace GeminiDotnet.V1Beta.Models;
 /// </summary>
 public sealed record PredictLongRunningOperation : BaseOperation
 {
+    /// <summary>
+    /// Metadata for PredictLongRunning long running operations.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public PredictLongRunningMetadata? Metadata { get; init; }
+
+    /// <summary>
+    /// Response message for [PredictionService.PredictLongRunning]
+    /// </summary>
+    [JsonPropertyName("response")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public PredictLongRunningResponse? Response { get; init; }
 }
 

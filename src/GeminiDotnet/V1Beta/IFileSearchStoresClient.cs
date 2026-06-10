@@ -150,6 +150,20 @@ public interface IFileSearchStoresClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Downloads media from a <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
+    /// </summary>
+    /// <param name="fileSearchStoresId">
+    /// Part of <c>name</c>. Required. The resource name of the media to download.
+    /// Example: <c>fileSearchStores/abc-123/media/blob123</c>
+    /// </param>
+    /// <param name="mediaId">Part of <c>name</c>. See documentation of <c>fileSearchStoresId</c>.</param>
+    /// <param name="cancellationToken"></param>
+    Task<DownloadMediaResponse> DownloadMediaAsync(
+        string fileSearchStoresId,
+        string mediaId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets the latest state of a long-running operation.  Clients can use this
     /// method to poll the operation result at intervals as recommended by the API
     /// service.

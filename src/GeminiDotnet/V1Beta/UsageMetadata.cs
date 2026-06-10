@@ -9,18 +9,18 @@ namespace GeminiDotnet.V1Beta;
 public sealed record UsageMetadata
 {
     /// <summary>
-    /// Number of tokens in the cached part of the prompt (the cached content)
-    /// </summary>
-    [JsonPropertyName("cachedContentTokenCount")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public int? CachedContentTokenCount { get; init; }
-
-    /// <summary>
     /// Output only. List of modalities of the cached content in the request input.
     /// </summary>
     [JsonPropertyName("cacheTokensDetails")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public IReadOnlyList<ModalityTokenCount>? CacheTokensDetails { get; init; }
+
+    /// <summary>
+    /// Number of tokens in the cached part of the prompt (the cached content)
+    /// </summary>
+    [JsonPropertyName("cachedContentTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int? CachedContentTokenCount { get; init; }
 
     /// <summary>
     /// Total number of tokens across all the generated response candidates.
@@ -53,6 +53,13 @@ public sealed record UsageMetadata
     public IReadOnlyList<ModalityTokenCount>? PromptTokensDetails { get; init; }
 
     /// <summary>
+    /// Output only. Service tier of the request.
+    /// </summary>
+    [JsonPropertyName("serviceTier")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ServiceTier? ServiceTier { get; init; }
+
+    /// <summary>
     /// Output only. Number of tokens of thoughts for thinking models.
     /// </summary>
     [JsonPropertyName("thoughtsTokenCount")]
@@ -74,8 +81,8 @@ public sealed record UsageMetadata
     public IReadOnlyList<ModalityTokenCount>? ToolUsePromptTokensDetails { get; init; }
 
     /// <summary>
-    /// Total token count for the generation request (prompt + response
-    /// candidates).
+    /// Total token count for the generation request (prompt + thoughts +
+    /// response candidates).
     /// </summary>
     [JsonPropertyName("totalTokenCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

@@ -33,3 +33,4 @@ public sealed record ToolResponse
     [JsonPropertyName("toolType")]
     public required ToolType ToolType { get; init; }
 }
+

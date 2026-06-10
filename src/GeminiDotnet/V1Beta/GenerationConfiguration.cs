@@ -135,6 +135,14 @@ public sealed record GenerationConfiguration
     public float? PresencePenalty { get; init; }
 
     /// <summary>
+    /// Optional. Configuration for the response output format. Allows specifying output
+    /// configuration per modality (text, audio, image) in a flat structure.
+    /// </summary>
+    [JsonPropertyName("responseFormat")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ResponseFormatConfiguration? ResponseFormat { get; init; }
+
+    /// <summary>
     /// Optional. An internal detail. Use <see cref="Responsejsonschema"/> rather than this field.
     /// </summary>
     [JsonPropertyName("responseJsonSchema")]
@@ -262,5 +270,12 @@ public sealed record GenerationConfiguration
     [JsonPropertyName("topP")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public float? TopP { get; init; }
+
+    /// <summary>
+    /// Optional. Config for translation.
+    /// </summary>
+    [JsonPropertyName("translationConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public TranslationConfiguration? TranslationConfiguration { get; init; }
 }
 
