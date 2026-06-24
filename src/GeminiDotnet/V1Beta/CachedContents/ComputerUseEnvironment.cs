@@ -19,5 +19,17 @@ public enum ComputerUseEnvironment
     /// </summary>
     [JsonStringEnumMemberName("ENVIRONMENT_BROWSER")]
     Browser,
+
+    /// <summary>
+    /// Operates in a mobile environment.
+    /// </summary>
+    [JsonStringEnumMemberName("ENVIRONMENT_MOBILE")]
+    Mobile,
+
+    /// <summary>
+    /// Operates in a desktop environment.
+    /// </summary>
+    [JsonStringEnumMemberName("ENVIRONMENT_DESKTOP")]
+    Desktop,
 }
 

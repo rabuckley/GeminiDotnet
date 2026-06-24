@@ -8,6 +8,21 @@ namespace GeminiDotnet.V1Beta.CachedContents;
 public sealed record ComputerUse
 {
     /// <summary>
+    /// Optional. Disabled safety policies for computer use.
+    /// </summary>
+    [JsonPropertyName("disabledSafetyPolicies")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<ComputerUseDisabledSafetyPolicies>? DisabledSafetyPolicies { get; init; }
+
+    /// <summary>
+    /// Optional. Whether enable the prompt injection detection check on computer-use
+    /// request.
+    /// </summary>
+    [JsonPropertyName("enablePromptInjectionDetection")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool? EnablePromptInjectionDetection { get; init; }
+
+    /// <summary>
     /// Required. The environment being operated.
     /// </summary>
     [JsonPropertyName("environment")]
