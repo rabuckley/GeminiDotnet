@@ -133,5 +133,11 @@ public enum CandidateFinishReason
     /// </summary>
     [JsonStringEnumMemberName("MALFORMED_RESPONSE")]
     MalformedResponse,
+
+    /// <summary>
+    /// Request was filtered by an escalation rule.
+    /// </summary>
+    [JsonStringEnumMemberName("ESCALATION")]
+    Escalation,
 }
 

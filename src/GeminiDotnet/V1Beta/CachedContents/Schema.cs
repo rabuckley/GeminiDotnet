@@ -69,13 +69,6 @@ public sealed record Schema
     public Schema? Items { get; init; }
 
     /// <summary>
-    /// Optional. Maximum value of the Type.INTEGER and Type.NUMBER
-    /// </summary>
-    [JsonPropertyName("maximum")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public double? Maximum { get; init; }
-
-    /// <summary>
     /// Optional. Maximum number of the elements for Type.ARRAY.
     /// </summary>
     [JsonPropertyName("maxItems")]
@@ -100,12 +93,11 @@ public sealed record Schema
     public long? MaxProperties { get; init; }
 
     /// <summary>
-    /// Optional. SCHEMA FIELDS FOR TYPE INTEGER and NUMBER
-    /// Minimum value of the Type.INTEGER and Type.NUMBER
+    /// Optional. Maximum value of the Type.INTEGER and Type.NUMBER
     /// </summary>
-    [JsonPropertyName("minimum")]
+    [JsonPropertyName("maximum")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public double? Minimum { get; init; }
+    public double? Maximum { get; init; }
 
     /// <summary>
     /// Optional. Minimum number of the elements for Type.ARRAY.
@@ -133,6 +125,14 @@ public sealed record Schema
     public long? MinProperties { get; init; }
 
     /// <summary>
+    /// Optional. SCHEMA FIELDS FOR TYPE INTEGER and NUMBER
+    /// Minimum value of the Type.INTEGER and Type.NUMBER
+    /// </summary>
+    [JsonPropertyName("minimum")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public double? Minimum { get; init; }
+
+    /// <summary>
     /// Optional. Indicates if the value may be null.
     /// </summary>
     [JsonPropertyName("nullable")]
@@ -151,7 +151,7 @@ public sealed record Schema
     /// </summary>
     [JsonPropertyName("properties")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public JsonElement Properties { get; init; }
+    public IReadOnlyDictionary<string, Schema>? Properties { get; init; }
 
     /// <summary>
     /// Optional. The order of the properties.

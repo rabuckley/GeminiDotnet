@@ -116,6 +116,17 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
+    public Task<DownloadMediaResponse> DownloadMediaAsync(
+        string fileSearchStoresId,
+        string mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(fileSearchStoresId);
+        ArgumentNullException.ThrowIfNull(mediaId);
+        var path = $"/v1beta/fileSearchStores/{fileSearchStoresId}/media/{mediaId}";
+        return _requester.ExecuteAsync<DownloadMediaResponse>(HttpMethod.Get, path, cancellationToken);
+    }
+
     public Task<Operation> GetOperationByFileSearchStoresIdAndOperationsIdAsync(
         string fileSearchStoresId,
         string operationsId,

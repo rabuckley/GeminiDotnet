@@ -42,6 +42,10 @@ public sealed record FunctionResponse
     /// to return the function output, e.g. "output", "result", etc.
     /// In particular, if the function call failed to execute, the response can
     /// have an "error" key to return error details to the model.
+    /// Multimedia can be included by using a subobject containing a single "$ref"
+    /// key whose value is the <c>inline_data.display_name</c> of a
+    /// <see cref="V1Beta.FunctionResponsePart"/> holding the multimedia.
+    /// See https://ai.google.dev/gemini-api/docs/function-calling#multimodal.
     /// </summary>
     [JsonPropertyName("response")]
     public required JsonElement Response { get; init; }

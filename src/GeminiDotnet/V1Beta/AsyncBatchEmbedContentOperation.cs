@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using GeminiDotnet.V1Beta.Batches;
+
 namespace GeminiDotnet.V1Beta;
 
 /// <summary>
@@ -5,5 +8,18 @@ namespace GeminiDotnet.V1Beta;
 /// </summary>
 public sealed record AsyncBatchEmbedContentOperation : BaseOperation
 {
+    /// <summary>
+    /// A resource representing a batch of <c>EmbedContent</c> requests.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public EmbedContentBatch? Metadata { get; init; }
+
+    /// <summary>
+    /// Response for a <c>BatchGenerateContent</c> operation.
+    /// </summary>
+    [JsonPropertyName("response")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public AsyncBatchEmbedContentResponse? Response { get; init; }
 }
 
