@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GeminiDotnet.V1;
 
 namespace GeminiDotnet.V1.Models;
 
@@ -23,8 +24,8 @@ public sealed record CountTokensRequest
     /// instructions](https://ai.google.dev/gemini-api/docs/system-instructions),
     /// and/or function declarations for [function
     /// calling](https://ai.google.dev/gemini-api/docs/function-calling).
-    /// <see cref="V1.Models.Model"/>s/<see cref="V1.Models.Content"/>s and <c>generate_content_request</c>s are mutually
-    /// exclusive. You can either send <see cref="V1.Models.Model"/> + <see cref="V1.Models.Content"/>s or a
+    /// <see cref="V1.Models.Model"/>s/<see cref="V1.Content"/>s and <c>generate_content_request</c>s are mutually
+    /// exclusive. You can either send <see cref="V1.Models.Model"/> + <see cref="V1.Content"/>s or a
     /// <c>generate_content_request</c>, but never both.
     /// </summary>
     [JsonPropertyName("generateContentRequest")]

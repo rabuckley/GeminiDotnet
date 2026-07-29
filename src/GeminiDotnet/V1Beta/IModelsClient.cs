@@ -1,4 +1,13 @@
+using GeminiDotnet.V1Beta.AuthTokens;
+using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1Beta.Corpora;
+using GeminiDotnet.V1Beta.Files;
+using GeminiDotnet.V1Beta.FileSearchStores;
+using GeminiDotnet.V1Beta.FilesRegister;
+using GeminiDotnet.V1Beta.GeneratedFiles;
 using GeminiDotnet.V1Beta.Models;
+using GeminiDotnet.V1Beta.TunedModels;
+using File = GeminiDotnet.V1Beta.Files.File;
 
 namespace GeminiDotnet.V1Beta;
 
@@ -56,7 +65,7 @@ public interface IModelsClient
 
     /// <summary>
     /// Generates multiple embedding vectors from the input <see cref="V1Beta.Content"/> which
-    /// consists of a batch of strings represented as <see cref="V1Beta.Models.EmbedContentRequest"/>
+    /// consists of a batch of strings represented as <see cref="V1Beta.EmbedContentRequest"/>
     /// objects.
     /// </summary>
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>

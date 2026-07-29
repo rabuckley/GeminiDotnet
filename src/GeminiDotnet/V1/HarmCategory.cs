@@ -80,5 +80,12 @@ public enum HarmCategory
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_CIVIC_INTEGRITY")]
     CivicIntegrity,
+
+    /// <summary>
+    /// **Gemini** - Prompts attempting to bypass or subvert the model's safety
+    /// guidelines (jailbreak attempts).
+    /// </summary>
+    [JsonStringEnumMemberName("HARM_CATEGORY_JAILBREAK")]
+    Jailbreak,
 }
 

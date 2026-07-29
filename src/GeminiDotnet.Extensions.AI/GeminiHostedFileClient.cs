@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.CompilerServices;
 using File = GeminiDotnet.V1Beta.Files.File;
+using Type = System.Type;
 
 #pragma warning disable MEAI001 // Type is for evaluation purposes only
 

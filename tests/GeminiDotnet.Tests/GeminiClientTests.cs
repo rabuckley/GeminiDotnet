@@ -66,7 +66,7 @@ public sealed class GeminiClientTests
 
         var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey }).V1Beta.Models;
 
-        const string model = "gemini-2.5-flash";
+        const string model = TestConfiguration.DefaultModel;
 
         var request = new GenerateContentRequest
         {
@@ -81,7 +81,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync("gemini-2.5-flash", request, cancellationToken);
+        var result = await client.GenerateContentAsync(model, request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -151,7 +151,7 @@ public sealed class GeminiClientTests
         var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options).V1Beta.Models;
 
-        const string model = "gemini-2.5-flash";
+        const string model = TestConfiguration.DefaultModel;
 
         var request = new GenerateContentRequest
         {
@@ -199,7 +199,7 @@ public sealed class GeminiClientTests
         var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options).V1Beta.Models;
 
-        var model = "gemini-2.5-pro";
+        var model = TestConfiguration.DefaultModel;
 
         var request = new GenerateContentRequest
         {
@@ -254,7 +254,7 @@ public sealed class GeminiClientTests
         var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options).V1Beta.Models;
 
-        const string model = "gemini-2.5-flash";
+        const string model = TestConfiguration.DefaultModel;
 
         var request = new GenerateContentRequest
         {
@@ -279,7 +279,7 @@ public sealed class GeminiClientTests
         var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options).V1Beta.Models;
 
-        const string model = "gemini-2.5-flash";
+        const string model = TestConfiguration.DefaultModel;
 
         var request = new GenerateContentRequest
         {
@@ -326,7 +326,7 @@ public sealed class GeminiClientTests
         var options = new GeminiClientOptions { ApiKey = _apiKey };
         var client = new GeminiClient(options).V1Beta.Models;
 
-        const string model = "gemini-2.5-flash";
+        const string model = TestConfiguration.DefaultModel;
 
         GenerateContentRequest request = new()
         {
@@ -373,7 +373,7 @@ public sealed class GeminiClientTests
 
         const string url = "https://en.wikipedia.org/wiki/Artificial_intelligence";
 
-        const string model = "gemini-2.5-flash";
+        const string model = TestConfiguration.DefaultModel;
 
         var request = new GenerateContentRequest
         {
@@ -391,7 +391,7 @@ public sealed class GeminiClientTests
 
         // Act
         var response = await client.GenerateContentAsync(
-            "gemini-2.5-flash",
+            model,
             request,
             cancellationToken);
 
@@ -406,6 +406,6 @@ public sealed class GeminiClientTests
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return "gemini-3-pro-preview";
+        yield return TestConfiguration.DefaultModel;
     }
 }

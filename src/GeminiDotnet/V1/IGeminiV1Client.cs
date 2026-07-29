@@ -1,3 +1,10 @@
+using GeminiDotnet.V1.Files;
+using GeminiDotnet.V1.FileSearchStores;
+using GeminiDotnet.V1.FilesRegister;
+using GeminiDotnet.V1.Models;
+using GeminiDotnet.V1.TunedModels;
+using File = GeminiDotnet.V1.Files.File;
+
 namespace GeminiDotnet.V1;
 
 public interface IGeminiV1Client
@@ -18,9 +25,19 @@ public interface IGeminiV1Client
     IDynamicClient Dynamic { get; }
 
     /// <summary>
+    /// Provides access to the Files API operations.
+    /// </summary>
+    IFilesClient Files { get; }
+
+    /// <summary>
     /// Provides access to the FileSearchStores API operations.
     /// </summary>
     IFileSearchStoresClient FileSearchStores { get; }
+
+    /// <summary>
+    /// Provides access to the FilesRegister API operations.
+    /// </summary>
+    IFilesRegisterClient FilesRegister { get; }
 
     /// <summary>
     /// Provides access to the GeneratedFiles API operations.

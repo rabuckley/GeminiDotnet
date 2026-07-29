@@ -1,4 +1,9 @@
+using GeminiDotnet.V1.Files;
+using GeminiDotnet.V1.FileSearchStores;
+using GeminiDotnet.V1.FilesRegister;
 using GeminiDotnet.V1.Models;
+using GeminiDotnet.V1.TunedModels;
+using File = GeminiDotnet.V1.Files.File;
 
 namespace GeminiDotnet.V1;
 
@@ -55,8 +60,8 @@ public interface IModelsClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Generates multiple embedding vectors from the input <see cref="V1.Models.Content"/> which
-    /// consists of a batch of strings represented as <see cref="V1.Models.EmbedContentRequest"/>
+    /// Generates multiple embedding vectors from the input <see cref="V1.Content"/> which
+    /// consists of a batch of strings represented as <see cref="V1.EmbedContentRequest"/>
     /// objects.
     /// </summary>
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
@@ -79,7 +84,7 @@ public interface IModelsClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Runs a model's tokenizer on input <see cref="V1.Models.Content"/> and returns the token count.
+    /// Runs a model's tokenizer on input <see cref="V1.Content"/> and returns the token count.
     /// Refer to the [tokens guide](https://ai.google.dev/gemini-api/docs/tokens)
     /// to learn more about tokens.
     /// </summary>
@@ -92,7 +97,7 @@ public interface IModelsClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Generates a text embedding vector from the input <see cref="V1.Models.Content"/> using the
+    /// Generates a text embedding vector from the input <see cref="V1.Content"/> using the
     /// specified [Gemini Embedding
     /// model](https://ai.google.dev/gemini-api/docs/models/gemini#text-embedding).
     /// </summary>

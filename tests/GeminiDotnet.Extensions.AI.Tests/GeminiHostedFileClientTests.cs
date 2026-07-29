@@ -471,6 +471,7 @@ public sealed class GeminiHostedFileClientTests
             _files = files;
         }
 
+        public IAuthTokensClient AuthTokens => throw new NotImplementedException();
         public IBatchesClient Batches => throw new NotImplementedException();
         public ICachedContentsClient CachedContents => throw new NotImplementedException();
         public ICorporaClient Corpora => throw new NotImplementedException();

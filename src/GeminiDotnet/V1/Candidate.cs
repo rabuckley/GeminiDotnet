@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using GeminiDotnet.V1.Models;
 
 namespace GeminiDotnet.V1;
 
@@ -47,6 +46,14 @@ public sealed record Candidate
     [JsonPropertyName("finishReason")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public CandidateFinishReason? FinishReason { get; init; }
+
+    /// <summary>
+    /// Output only. Attribution information for sources that contributed to a grounded answer.
+    /// This field is populated for <c>GenerateAnswer</c> calls.
+    /// </summary>
+    [JsonPropertyName("groundingAttributions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<GroundingAttribution>? GroundingAttributions { get; init; }
 
     /// <summary>
     /// Output only. Grounding metadata for the candidate.

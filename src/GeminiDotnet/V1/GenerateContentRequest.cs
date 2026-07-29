@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using GeminiDotnet.V1.Models;
 
 namespace GeminiDotnet.V1;
 
@@ -43,7 +42,8 @@ public sealed record GenerateContentRequest
     /// <c>SafetyCategory</c> provided in the list, the API will use the default safety
     /// setting for that category. Harm categories HARM_CATEGORY_HATE_SPEECH,
     /// HARM_CATEGORY_SEXUALLY_EXPLICIT, HARM_CATEGORY_DANGEROUS_CONTENT,
-    /// HARM_CATEGORY_HARASSMENT, HARM_CATEGORY_CIVIC_INTEGRITY are supported.
+    /// HARM_CATEGORY_HARASSMENT, HARM_CATEGORY_CIVIC_INTEGRITY,
+    /// HARM_CATEGORY_JAILBREAK are supported.
     /// Refer to the [guide](https://ai.google.dev/gemini-api/docs/safety-settings)
     /// for detailed information on available safety settings. Also refer to the
     /// [Safety guidance](https://ai.google.dev/gemini-api/docs/safety-guidance) to
@@ -67,5 +67,38 @@ public sealed record GenerateContentRequest
     [JsonPropertyName("store")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool? Store { get; init; }
+
+    /// <summary>
+    /// Optional. Developer set [system
+    /// instruction(s)](https://ai.google.dev/gemini-api/docs/system-instructions).
+    /// Currently, text only.
+    /// </summary>
+    [JsonPropertyName("systemInstruction")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Content? SystemInstruction { get; init; }
+
+    /// <summary>
+    /// Optional. Tool configuration for any <see cref="V1.Tool"/> specified in the request. Refer to the
+    /// [Function calling
+    /// guide](https://ai.google.dev/gemini-api/docs/function-calling#function_calling_mode)
+    /// for a usage example.
+    /// </summary>
+    [JsonPropertyName("toolConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ToolConfiguration? ToolConfiguration { get; init; }
+
+    /// <summary>
+    /// Optional. A list of <c>Tools</c> the <see cref="V1.Models.Model"/> may use to generate the next response.
+    /// A <see cref="V1.Tool"/> is a piece of code that enables the system to interact with
+    /// external systems to perform an action, or set of actions, outside of
+    /// knowledge and scope of the <see cref="V1.Models.Model"/>. Supported <see cref="V1.Tool"/>s are <c>Function</c> and
+    /// <c>code_execution</c>. Refer to the [Function
+    /// calling](https://ai.google.dev/gemini-api/docs/function-calling) and the
+    /// [Code execution](https://ai.google.dev/gemini-api/docs/code-execution)
+    /// guides to learn more.
+    /// </summary>
+    [JsonPropertyName("tools")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<Tool>? Tools { get; init; }
 }
 

@@ -55,6 +55,7 @@ public sealed record TunedModel
     /// Optional. List of project numbers that have read access to the tuned model.
     /// </summary>
     [JsonPropertyName("readerProjectNumbers")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public ReadOnlyMemory<long> ReaderProjectNumbers { get; init; }
 

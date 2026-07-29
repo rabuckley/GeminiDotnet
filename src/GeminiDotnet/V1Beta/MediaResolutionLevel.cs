@@ -2,6 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.V1Beta;
 
+/// <summary>
+/// The tokenization quality used for given media.
+/// for Gemini API support .
+/// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<MediaResolutionLevel>))]
 public enum MediaResolutionLevel
 {

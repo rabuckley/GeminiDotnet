@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GeminiDotnet.V1Beta;
 
 namespace GeminiDotnet.V1Beta.Models;
 
@@ -31,13 +32,13 @@ public sealed record GenerateAnswerRequest
     public GroundingPassages? InlinePassages { get; init; }
 
     /// <summary>
-    /// Optional. A list of unique <see cref="V1Beta.Models.SafetySetting"/> instances for blocking unsafe content.
+    /// Optional. A list of unique <see cref="V1Beta.SafetySetting"/> instances for blocking unsafe content.
     /// This will be enforced on the <see cref="Contents"/> and
     /// <c>GenerateAnswerResponse.candidate</c>. There should not be more than one
     /// setting for each <c>SafetyCategory</c> type. The API will block any contents and
     /// responses that fail to meet the thresholds set by these settings. This list
     /// overrides the default settings for each <c>SafetyCategory</c> specified in the
-    /// safety_settings. If there is no <see cref="V1Beta.Models.SafetySetting"/> for a given
+    /// safety_settings. If there is no <see cref="V1Beta.SafetySetting"/> for a given
     /// <c>SafetyCategory</c> provided in the list, the API will use the default safety
     /// setting for that category. Harm categories HARM_CATEGORY_HATE_SPEECH,
     /// HARM_CATEGORY_SEXUALLY_EXPLICIT, HARM_CATEGORY_DANGEROUS_CONTENT,
