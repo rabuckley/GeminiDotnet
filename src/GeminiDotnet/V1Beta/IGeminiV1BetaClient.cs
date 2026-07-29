@@ -1,7 +1,23 @@
+using GeminiDotnet.V1Beta.AuthTokens;
+using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1Beta.Corpora;
+using GeminiDotnet.V1Beta.Files;
+using GeminiDotnet.V1Beta.FileSearchStores;
+using GeminiDotnet.V1Beta.FilesRegister;
+using GeminiDotnet.V1Beta.GeneratedFiles;
+using GeminiDotnet.V1Beta.Models;
+using GeminiDotnet.V1Beta.TunedModels;
+using File = GeminiDotnet.V1Beta.Files.File;
+
 namespace GeminiDotnet.V1Beta;
 
 public interface IGeminiV1BetaClient
 {
+    /// <summary>
+    /// Provides access to the AuthTokens API operations.
+    /// </summary>
+    IAuthTokensClient AuthTokens { get; }
+
     /// <summary>
     /// Provides access to the Batches API operations.
     /// </summary>

@@ -23,7 +23,7 @@ public sealed class ReadmeTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var options = new GeminiClientOptions { ApiKey = _apiKey, ModelId = "gemini-2.5-flash" };
+        var options = new GeminiClientOptions { ApiKey = _apiKey, ModelId = TestConfiguration.DefaultModel };
 
         IChatClient client = new GeminiChatClient(options);
 
@@ -41,7 +41,7 @@ public sealed class ReadmeTests
         IChatClient geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
             ApiKey = _apiKey,
-            ModelId = "gemini-2.5-flash",
+            ModelId = TestConfiguration.DefaultModel,
         });
 
         [Description("Gets the current weather")]
@@ -76,7 +76,7 @@ public sealed class ReadmeTests
         var options = new GeminiClientOptions
         {
             ApiKey = _apiKey,
-            ModelId = "gemini-2.5-flash",
+            ModelId = TestConfiguration.DefaultModel,
         };
 
         IChatClient client = new GeminiChatClient(options);

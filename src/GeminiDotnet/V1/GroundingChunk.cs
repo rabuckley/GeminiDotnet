@@ -10,6 +10,20 @@ namespace GeminiDotnet.V1;
 public sealed record GroundingChunk
 {
     /// <summary>
+    /// Optional. Grounding chunk from image search.
+    /// </summary>
+    [JsonPropertyName("image")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Image? Image { get; init; }
+
+    /// <summary>
+    /// Optional. Grounding chunk from Google Maps.
+    /// </summary>
+    [JsonPropertyName("maps")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Maps? Maps { get; init; }
+
+    /// <summary>
     /// Grounding chunk from the web.
     /// </summary>
     [JsonPropertyName("web")]

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GeminiDotnet.V1;
 
 namespace GeminiDotnet.V1.Models;
 

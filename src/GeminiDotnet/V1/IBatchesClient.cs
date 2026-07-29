@@ -1,4 +1,9 @@
-using GeminiDotnet.V1.Batches;
+using GeminiDotnet.V1.Files;
+using GeminiDotnet.V1.FileSearchStores;
+using GeminiDotnet.V1.FilesRegister;
+using GeminiDotnet.V1.Models;
+using GeminiDotnet.V1.TunedModels;
+using File = GeminiDotnet.V1.Files.File;
 
 namespace GeminiDotnet.V1;
 

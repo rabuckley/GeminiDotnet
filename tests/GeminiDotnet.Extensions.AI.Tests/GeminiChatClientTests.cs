@@ -80,7 +80,7 @@ public sealed class GeminiChatClientTests
             new(ChatRole.User, "What is your name? What do like to drink?")
         ];
 
-        var chatOptions = new ChatOptions { ModelId = "gemini-2.5-flash" };
+        var chatOptions = new ChatOptions { ModelId = TestConfiguration.DefaultModel };
 
         // Act
         var result = await chatClient.GetResponseAsync(messages, chatOptions, cancellationToken);
@@ -159,6 +159,6 @@ public sealed class GeminiChatClientTests
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()
     {
-        yield return "gemini-2.5-flash-lite";
+        yield return TestConfiguration.DefaultModel;
     }
 }

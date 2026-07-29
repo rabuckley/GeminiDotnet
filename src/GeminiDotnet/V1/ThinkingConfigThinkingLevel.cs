@@ -1,0 +1,46 @@
+using System.Text.Json.Serialization;
+
+namespace GeminiDotnet.V1;
+
+/// <summary>
+/// Optional. Controls the maximum depth of the model's internal reasoning process before
+/// it produces a response. The default value is model-dependent. Refer to the
+/// [Thinking levels
+/// guide](https://ai.google.dev/gemini-api/docs/thinking#thinking-levels) for
+/// more details. Recommended for Gemini 3 or later models. Use with earlier
+/// models results in an error.
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<ThinkingConfigThinkingLevel>))]
+public enum ThinkingConfigThinkingLevel
+{
+    /// <summary>
+    /// Default value.
+    /// </summary>
+    [JsonStringEnumMemberName("THINKING_LEVEL_UNSPECIFIED")]
+    Unspecified,
+
+    /// <summary>
+    /// Little to no thinking.
+    /// </summary>
+    [JsonStringEnumMemberName("MINIMAL")]
+    Minimal,
+
+    /// <summary>
+    /// Low thinking level.
+    /// </summary>
+    [JsonStringEnumMemberName("LOW")]
+    Low,
+
+    /// <summary>
+    /// Medium thinking level.
+    /// </summary>
+    [JsonStringEnumMemberName("MEDIUM")]
+    Medium,
+
+    /// <summary>
+    /// High thinking level.
+    /// </summary>
+    [JsonStringEnumMemberName("HIGH")]
+    High,
+}
+

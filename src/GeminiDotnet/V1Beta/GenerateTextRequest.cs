@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using GeminiDotnet.V1Beta.Models;
 
 namespace GeminiDotnet.V1Beta;
 
@@ -35,13 +34,13 @@ public sealed record GenerateTextRequest
     public required TextPrompt Prompt { get; init; }
 
     /// <summary>
-    /// Optional. A list of unique <see cref="V1Beta.Models.SafetySetting"/> instances for blocking unsafe content.
+    /// Optional. A list of unique <see cref="V1Beta.SafetySetting"/> instances for blocking unsafe content.
     /// that will be enforced on the <see cref="Prompt"/> and
     /// <c>GenerateTextResponse.candidates</c>. There should not be more than one
     /// setting for each <c>SafetyCategory</c> type. The API will block any prompts and
     /// responses that fail to meet the thresholds set by these settings. This list
     /// overrides the default settings for each <c>SafetyCategory</c> specified in the
-    /// safety_settings. If there is no <see cref="V1Beta.Models.SafetySetting"/> for a given
+    /// safety_settings. If there is no <see cref="V1Beta.SafetySetting"/> for a given
     /// <c>SafetyCategory</c> provided in the list, the API will use the default safety
     /// setting for that category. Harm categories HARM_CATEGORY_DEROGATORY,
     /// HARM_CATEGORY_TOXICITY, HARM_CATEGORY_VIOLENCE, HARM_CATEGORY_SEXUAL,

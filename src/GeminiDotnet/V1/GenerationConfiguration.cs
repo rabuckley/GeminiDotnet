@@ -44,6 +44,15 @@ public sealed record GenerationConfiguration
     public float? FrequencyPenalty { get; init; }
 
     /// <summary>
+    /// Optional. Config for image generation.
+    /// An error will be returned if this field is set for models that don't
+    /// support these config options.
+    /// </summary>
+    [JsonPropertyName("imageConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ImageConfiguration? ImageConfiguration { get; init; }
+
+    /// <summary>
     /// Optional. Only valid if response_logprobs=True.
     /// This sets the number of top logprobs, including the chosen candidate, to
     /// return at each decoding step in the Candidate.logprobs_result. The
@@ -63,6 +72,13 @@ public sealed record GenerationConfiguration
     public int? MaxOutputTokens { get; init; }
 
     /// <summary>
+    /// Optional. If specified, the media resolution specified will be used.
+    /// </summary>
+    [JsonPropertyName("mediaResolution")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public GenerationConfigMediaResolution? MediaResolution { get; init; }
+
+    /// <summary>
     /// Optional. Presence penalty applied to the next token's logprobs if the token has
     /// already been seen in the response.
     /// This penalty is binary on/off and not dependant on the number of times the
@@ -79,6 +95,14 @@ public sealed record GenerationConfiguration
     public float? PresencePenalty { get; init; }
 
     /// <summary>
+    /// Optional. Configuration for the response output format. Allows specifying output
+    /// configuration per modality (text, audio, image) in a flat structure.
+    /// </summary>
+    [JsonPropertyName("responseFormat")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ResponseFormatConfiguration? ResponseFormat { get; init; }
+
+    /// <summary>
     /// Optional. An internal detail. Use <see cref="Responsejsonschema"/> rather than this field.
     /// </summary>
     [JsonPropertyName("responseJsonSchema")]
@@ -91,6 +115,47 @@ public sealed record GenerationConfiguration
     [JsonPropertyName("responseLogprobs")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool? ResponseLogprobs { get; init; }
+
+    /// <summary>
+    /// Optional. MIME type of the generated candidate text.
+    /// Supported MIME types are:
+    /// <c>text/plain</c>: (default) Text output.
+    /// <c>application/json</c>: JSON response in the response candidates.
+    /// <c>text/x.enum</c>: ENUM as a string response in the response candidates.
+    /// Refer to the
+    /// [docs](https://ai.google.dev/gemini-api/docs/prompting_with_media#plain_text_formats)
+    /// for a list of all supported text MIME types.
+    /// </summary>
+    [JsonPropertyName("responseMimeType")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? ResponseMimeType { get; init; }
+
+    /// <summary>
+    /// Optional. The requested modalities of the response. Represents the set of modalities
+    /// that the model can return, and should be expected in the response. This is
+    /// an exact match to the modalities of the response.
+    /// A model may have multiple combinations of supported modalities. If the
+    /// requested modalities do not match any of the supported combinations, an
+    /// error will be returned.
+    /// An empty list is equivalent to requesting only text.
+    /// </summary>
+    [JsonPropertyName("responseModalities")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<ResponseModality>? ResponseModalities { get; init; }
+
+    /// <summary>
+    /// Optional. Output schema of the generated candidate text. Schemas must be a
+    /// subset of the [OpenAPI schema](https://spec.openapis.org/oas/v3.0.3#schema)
+    /// and can be objects, primitives or arrays.
+    /// If set, a compatible <c>response_mime_type</c> must also be set.
+    /// Compatible MIME types:
+    /// <c>application/json</c>: Schema for JSON response.
+    /// Refer to the [JSON text generation
+    /// guide](https://ai.google.dev/gemini-api/docs/json-mode) for more details.
+    /// </summary>
+    [JsonPropertyName("responseSchema")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Schema? ResponseSchema { get; init; }
 
     /// <summary>
     /// Optional. Seed used in decoding. If not set, the request uses a randomly generated
@@ -119,6 +184,15 @@ public sealed record GenerationConfiguration
     [JsonPropertyName("temperature")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public float? Temperature { get; init; }
+
+    /// <summary>
+    /// Optional. Config for thinking features.
+    /// An error will be returned if this field is set for models that don't
+    /// support thinking.
+    /// </summary>
+    [JsonPropertyName("thinkingConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ThinkingConfiguration? ThinkingConfiguration { get; init; }
 
     /// <summary>
     /// Optional. The maximum number of tokens to consider when sampling.

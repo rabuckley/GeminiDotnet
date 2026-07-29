@@ -10,7 +10,7 @@ public sealed class GeminiChatClientTests
 {
     private readonly ITestOutputHelper _output;
     private readonly string _apiKey;
-    private const string Model = "gemini-2.5-flash-lite";
+    private const string Model = TestConfiguration.DefaultModel;
 
     public GeminiChatClientTests(ITestOutputHelper output)
     {
@@ -174,7 +174,7 @@ public sealed class GeminiChatClientTests
 
         var geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = "gemini-2.5-flash",
+            ApiKey = _apiKey, ModelId = Model,
         });
 
         var messages = new List<ChatMessage>
@@ -207,7 +207,7 @@ public sealed class GeminiChatClientTests
         IChatClient geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
             ApiKey = _apiKey,
-            ModelId = "gemini-2.5-flash",
+            ModelId = Model,
         });
 
         [Description("Gets the current weather")]
@@ -255,7 +255,7 @@ public sealed class GeminiChatClientTests
 
         IChatClient geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = "gemini-2.5-flash",
+            ApiKey = _apiKey, ModelId = Model,
         });
 
         [Description("Gets the current weather")]

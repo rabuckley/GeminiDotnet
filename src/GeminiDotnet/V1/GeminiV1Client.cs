@@ -1,3 +1,16 @@
+using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using GeminiDotnet.V1.Files;
+using GeminiDotnet.V1.FileSearchStores;
+using GeminiDotnet.V1.FilesRegister;
+using GeminiDotnet.V1.Models;
+using GeminiDotnet.V1.TunedModels;
+using File = GeminiDotnet.V1.Files.File;
+
 namespace GeminiDotnet.V1;
 
 public sealed partial class GeminiV1Client : IGeminiV1Client
@@ -16,7 +29,11 @@ public sealed partial class GeminiV1Client : IGeminiV1Client
 
     public IDynamicClient Dynamic => field ??= new DynamicClient(_requester);
 
+    public IFilesClient Files => field ??= new FilesClient(_requester);
+
     public IFileSearchStoresClient FileSearchStores => field ??= new FileSearchStoresClient(_requester);
+
+    public IFilesRegisterClient FilesRegister => field ??= new FilesRegisterClient(_requester);
 
     public IGeneratedFilesClient GeneratedFiles => field ??= new GeneratedFilesClient(_requester);
 

@@ -1,4 +1,18 @@
+using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using GeminiDotnet.V1Beta.AuthTokens;
+using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1Beta.Corpora;
 using GeminiDotnet.V1Beta.Files;
+using GeminiDotnet.V1Beta.FileSearchStores;
+using GeminiDotnet.V1Beta.FilesRegister;
+using GeminiDotnet.V1Beta.GeneratedFiles;
+using GeminiDotnet.V1Beta.Models;
+using GeminiDotnet.V1Beta.TunedModels;
 using File = GeminiDotnet.V1Beta.Files.File;
 
 namespace GeminiDotnet.V1Beta;
@@ -18,26 +32,7 @@ internal sealed partial class FilesClient : IFilesClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        var path = "/v1beta/files";
-
-        // Build query string from the optional pagination parameters.
-        List<string> queryParams = [];
-
-        if (pageSize is not null)
-        {
-            queryParams.Add($"pageSize={pageSize.Value}");
-        }
-
-        if (pageToken is not null)
-        {
-            queryParams.Add($"pageToken={Uri.EscapeDataString(pageToken)}");
-        }
-
-        if (queryParams.Count > 0)
-        {
-            path = $"{path}?{string.Join('&', queryParams)}";
-        }
-
+        const string path = "/v1beta/files";
         return _requester.ExecuteAsync<ListFilesResponse>(HttpMethod.Get, path, cancellationToken);
     }
 

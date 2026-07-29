@@ -2,6 +2,7 @@
 using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using Type = System.Type;
 
 namespace GeminiDotnet.Extensions.AI;
 
