@@ -3,7 +3,6 @@ using Microsoft.Extensions.AI;
 using System.ComponentModel;
 
 #pragma warning disable xUnit1051 // Use TestContext.Current.CancellationToken
-#pragma warning disable MEAI001 // Experimental API (CodeInterpreterToolCallContent, CodeInterpreterToolResultContent)
 
 namespace GeminiDotnet.Extensions.AI;
 

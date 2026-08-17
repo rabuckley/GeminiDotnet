@@ -229,10 +229,8 @@ internal static class MEAIToGeminiMapper
             {
                 // Web search content is synthesized from GroundingMetadata during response
                 // mapping and has no corresponding Gemini Part representation.
-#pragma warning disable MEAI001 // Experimental API (WebSearchTool*Content)
                 if (content is MEAI.WebSearchToolCallContent or MEAI.WebSearchToolResultContent)
                     continue;
-#pragma warning restore MEAI001
 
                 var mapped = content switch
                 {

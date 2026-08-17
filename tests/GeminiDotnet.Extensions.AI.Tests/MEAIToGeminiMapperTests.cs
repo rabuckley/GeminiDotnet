@@ -6,8 +6,6 @@ using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-#pragma warning disable MEAI001 // Experimental API (WebSearchTool*Content)
-
 namespace GeminiDotnet.Extensions.AI;
 
 public sealed class MEAIToGeminiMapperTests

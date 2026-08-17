@@ -4,8 +4,6 @@ using Microsoft.Extensions.AI;
 using System.Diagnostics;
 using System.Text.Json;
 
-#pragma warning disable MEAI001 // Experimental API (CodeInterpreter*, WebSearchTool*Content)
-
 namespace GeminiDotnet.Extensions.AI;
 
 internal static class GeminiToMEAIMapper
