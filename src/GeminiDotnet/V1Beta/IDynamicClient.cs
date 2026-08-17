@@ -1,6 +1,9 @@
 using GeminiDotnet.V1Beta.AuthTokens;
 using GeminiDotnet.V1Beta.CachedContents;
 using GeminiDotnet.V1Beta.Corpora;
+using GeminiDotnet.V1Beta.Environments;
+using GeminiDotnet.V1Beta.EnvironmentsCreate;
+using GeminiDotnet.V1Beta.EnvironmentsList;
 using GeminiDotnet.V1Beta.Files;
 using GeminiDotnet.V1Beta.FileSearchStores;
 using GeminiDotnet.V1Beta.FilesRegister;

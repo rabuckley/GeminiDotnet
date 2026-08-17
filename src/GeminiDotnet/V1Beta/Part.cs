@@ -60,6 +60,15 @@ public sealed record Part
     public Blob? InlineData { get; init; }
 
     /// <summary>
+    /// Optional. How the model processes this part's media for understanding.
+    /// Only meaningful for video parts (<c>inline_data</c> or <c>file_data</c> with video
+    /// mime). Non-video parts ignore this field.
+    /// </summary>
+    [JsonPropertyName("mediaProcessing")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public PartMediaProcessing? MediaProcessing { get; init; }
+
+    /// <summary>
     /// Optional. Media resolution for the input media.
     /// </summary>
     [JsonPropertyName("mediaResolution")]
@@ -120,6 +129,7 @@ public sealed record Part
     /// Optional. Video metadata. The metadata should only be specified while the video
     /// data is presented in inline_data or file_data.
     /// </summary>
+    [Obsolete("Use MediaProcessing instead.")]
     [JsonPropertyName("videoMetadata")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public VideoMetadata? VideoMetadata { get; init; }

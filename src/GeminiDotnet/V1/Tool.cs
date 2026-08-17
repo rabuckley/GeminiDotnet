@@ -7,7 +7,7 @@ namespace GeminiDotnet.V1;
 /// A <see cref="V1.Tool"/> is a piece of code that enables the system to interact with
 /// external systems to perform an action, or set of actions, outside of
 /// knowledge and scope of the model.
-/// Next ID: 16
+/// Next ID: 17
 /// </summary>
 public sealed record Tool
 {

@@ -35,6 +35,7 @@ public sealed record EmbedContentRequest
     /// newer models since 2024 only. You cannot set this value if using the
     /// earlier model (<c>models/embedding-001</c>).
     /// </summary>
+    [Obsolete("Please use EmbedContentConfig.output_dimensionality instead.")]
     [JsonPropertyName("outputDimensionality")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int? OutputDimensionality { get; init; }
@@ -44,6 +45,7 @@ public sealed record EmbedContentRequest
     /// Optional task type for which the embeddings will be used. Not supported on
     /// earlier models (<c>models/embedding-001</c>).
     /// </summary>
+    [Obsolete("Please use EmbedContentConfig.task_type instead.")]
     [JsonPropertyName("taskType")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public TaskType? TaskType { get; init; }
@@ -55,6 +57,7 @@ public sealed record EmbedContentRequest
     /// Note: Specifying a <see cref="Title"/> for <c>RETRIEVAL_DOCUMENT</c> provides better quality
     /// embeddings for retrieval.
     /// </summary>
+    [Obsolete("Please use EmbedContentConfig.title instead.")]
     [JsonPropertyName("title")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Title { get; init; }

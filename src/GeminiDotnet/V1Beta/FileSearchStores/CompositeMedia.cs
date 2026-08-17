@@ -16,6 +16,7 @@ public sealed record CompositeMedia
     /// For now, any v2 blob will also be represented in this field as
     /// v1 BlobRef.
     /// </summary>
+    [Obsolete]
     [JsonPropertyName("blobRef")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public ReadOnlyMemory<byte> BlobRef { get; init; }

@@ -29,6 +29,13 @@ public sealed record ToolCall
     public string? Id { get; init; }
 
     /// <summary>
+    /// Optional. The name of the tool that was called.
+    /// </summary>
+    [JsonPropertyName("toolName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? ToolName { get; init; }
+
+    /// <summary>
     /// Required. The type of tool that was called.
     /// </summary>
     [JsonPropertyName("toolType")]

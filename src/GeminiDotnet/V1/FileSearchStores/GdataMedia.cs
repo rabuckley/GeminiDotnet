@@ -13,6 +13,7 @@ public sealed record GdataMedia
     /// As of 2011/01/21, "MD5" is the only possible value for this field.
     /// New values may be added at any time.
     /// </summary>
+    [Obsolete("Use one of explicit hash type fields instead.")]
     [JsonPropertyName("algorithm")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Algorithm { get; init; }
@@ -20,6 +21,7 @@ public sealed record GdataMedia
     /// <summary>
     /// Use object_id instead.
     /// </summary>
+    [Obsolete]
     [JsonPropertyName("bigstoreObjectRef")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public ReadOnlyMemory<byte> BigstoreObjectRef { get; init; }
@@ -31,6 +33,7 @@ public sealed record GdataMedia
     /// For now, any v2 blob will also be represented in this field as
     /// v1 BlobRef.
     /// </summary>
+    [Obsolete]
     [JsonPropertyName("blobRef")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public ReadOnlyMemory<byte> BlobRef { get; init; }
@@ -149,6 +152,7 @@ public sealed record GdataMedia
     /// http://cs/#google3/blobstore2/api/scotty/service/proto/upload_listener.proto&q=class:Hash
     /// Hex encoded hash value of the uploaded media.
     /// </summary>
+    [Obsolete("Use one of explicit hash type fields instead.")]
     [JsonPropertyName("hash")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Hash { get; init; }
