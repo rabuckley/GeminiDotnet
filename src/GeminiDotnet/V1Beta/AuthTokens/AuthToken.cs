@@ -42,14 +42,6 @@ public sealed record AuthToken
     public string? FieldMask { get; init; }
 
     /// <summary>
-    /// Optional. Input only. Immutable. The interaction ID that this token is scoped to.
-    /// Specific to the Live Interactions API.
-    /// </summary>
-    [JsonPropertyName("interactionId")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? InteractionId { get; init; }
-
-    /// <summary>
     /// Output only. Identifier. The token itself.
     /// </summary>
     [JsonPropertyName("name")]

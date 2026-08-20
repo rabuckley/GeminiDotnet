@@ -6,7 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Deprecated: Use <c>GenerateContentRequest.processing_options</c> instead. Metadata
 /// describes the input video content.
 /// </summary>
-[Obsolete]
+[Obsolete("Use GenerateContentRequest.processing_options instead.")]
 public sealed record VideoMetadata
 {
     /// <summary>

@@ -6,6 +6,8 @@ using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+#pragma warning disable CS0618 // EmbedContentRequest.OutputDimensionality is the only field the API honours
+
 namespace GeminiDotnet.Extensions.AI;
 
 public sealed class MEAIToGeminiMapperTests
@@ -504,6 +506,25 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Single(result.Requests);
         var request = result.Requests[0];
         Assert.Equal(clientOptions.DefaultEmbeddingDimensions, request.OutputDimensionality);
+    }
+
+    [Fact]
+    public void CreateMappedBatchEmbeddingRequest_WithoutDimensions_ShouldNotSetOutputDimensionality()
+    {
+        // Arrange
+        var inputValues = new[] { "Sample text" };
+        var clientOptions = new GeminiClientOptions { ApiKey = "not needed" };
+
+        // Act
+        var result = MEAIToGeminiMapper.CreateMappedBatchEmbeddingRequest(
+            "gemini-embedding-001",
+            inputValues,
+            options: null,
+            clientOptions);
+
+        // Assert
+        var request = Assert.Single(result.Requests);
+        Assert.Null(request.OutputDimensionality);
     }
 
     [Fact]

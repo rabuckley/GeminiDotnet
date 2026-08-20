@@ -10,6 +10,44 @@ namespace GeminiDotnet.V1Beta;
 public sealed record GenerationConfiguration
 {
     /// <summary>
+    /// Optional. Output schema of the generated response. This is an alternative to
+    /// <c>response_schema</c> that accepts [JSON Schema](https://json-schema.org/).
+    /// If set, <c>response_schema</c> must be omitted, but <c>response_mime_type</c> is
+    /// required.
+    /// While the full JSON Schema may be sent, not all features are supported.
+    /// Specifically, only the following properties are supported:
+    /// - <c>$id</c>
+    /// - <c>$defs</c>
+    /// - <c>$ref</c>
+    /// - <c>$anchor</c>
+    /// - <c>type</c>
+    /// - <c>format</c>
+    /// - <c>title</c>
+    /// - <c>description</c>
+    /// - <c>enum</c> (for strings and numbers)
+    /// - <c>items</c>
+    /// - <c>prefixItems</c>
+    /// - <c>minItems</c>
+    /// - <c>maxItems</c>
+    /// - <c>minimum</c>
+    /// - <c>maximum</c>
+    /// - <c>anyOf</c>
+    /// - <c>oneOf</c> (interpreted the same as <c>anyOf</c>)
+    /// - <c>properties</c>
+    /// - <c>additionalProperties</c>
+    /// - <c>required</c>
+    /// The non-standard <c>propertyOrdering</c> property may also be set.
+    /// Cyclic references are unrolled to a limited degree and, as such, may only
+    /// be used within non-required properties. (Nullable properties are not
+    /// sufficient.) If <c>$ref</c> is set on a sub-schema, no other properties, except
+    /// for than those starting as a <c>$</c>, may be set.
+    /// </summary>
+    [Obsolete]
+    [JsonPropertyName("_responseJsonSchema")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement LegacyResponseJsonSchema { get; init; }
+
+    /// <summary>
     /// Optional. Config for audio transcription (speech recognition).
     /// </summary>
     [JsonPropertyName("audioTranscriptionConfig")]
@@ -168,6 +206,7 @@ public sealed record GenerationConfiguration
     /// Refer to the [JSON text generation
     /// guide](https://ai.google.dev/gemini-api/docs/json-mode) for more details.
     /// </summary>
+    [Obsolete]
     [JsonPropertyName("responseSchema")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Schema? ResponseSchema { get; init; }

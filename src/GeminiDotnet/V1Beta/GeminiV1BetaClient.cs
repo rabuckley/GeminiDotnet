@@ -7,6 +7,9 @@ using System.Text.Json.Serialization.Metadata;
 using GeminiDotnet.V1Beta.AuthTokens;
 using GeminiDotnet.V1Beta.CachedContents;
 using GeminiDotnet.V1Beta.Corpora;
+using GeminiDotnet.V1Beta.Environments;
+using GeminiDotnet.V1Beta.EnvironmentsCreate;
+using GeminiDotnet.V1Beta.EnvironmentsList;
 using GeminiDotnet.V1Beta.Files;
 using GeminiDotnet.V1Beta.FileSearchStores;
 using GeminiDotnet.V1Beta.FilesRegister;
@@ -36,6 +39,12 @@ public sealed partial class GeminiV1BetaClient : IGeminiV1BetaClient
     public ICorporaClient Corpora => field ??= new CorporaClient(_requester);
 
     public IDynamicClient Dynamic => field ??= new DynamicClient(_requester);
+
+    public IEnvironmentsClient Environments => field ??= new EnvironmentsClient(_requester);
+
+    public IEnvironmentsCreateClient EnvironmentsCreate => field ??= new EnvironmentsCreateClient(_requester);
+
+    public IEnvironmentsListClient EnvironmentsList => field ??= new EnvironmentsListClient(_requester);
 
     public IFilesClient Files => field ??= new FilesClient(_requester);
 

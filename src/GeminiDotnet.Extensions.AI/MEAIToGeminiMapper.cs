@@ -182,7 +182,7 @@ internal static class MEAIToGeminiMapper
 
             GeminiMappingException.Throw(
                 fromPropertyName: $"{typeof(MEAI.ChatOptions)}.{nameof(MEAI.ChatOptions.ResponseFormat)}",
-                toPropertyName: $"{typeof(GenerationConfiguration)}.{nameof(GenerationConfiguration.ResponseSchema)}",
+                toPropertyName: $"{typeof(GenerationConfiguration)}.{nameof(GenerationConfiguration.ResponseJsonSchema)}",
                 reason: $"Unsupported {typeof(MEAI.ChatResponseFormat)}: '{responseFormat}'");
 
             return default; // unreachable
@@ -576,12 +576,18 @@ internal static class MEAIToGeminiMapper
         // The BatchEmbedContents API requires the full model path in each request
         var modelPath = model.StartsWith("models/", StringComparison.Ordinal) ? model : $"models/{model}";
 
+        // The spec deprecates EmbedContentRequest.outputDimensionality in favour of
+        // embedContentConfig.outputDimensionality, but the live v1beta API silently ignores the
+        // replacement and returns full-size embeddings (verified 2026-08-18), so the deprecated
+        // field remains the only one that takes effect.
+#pragma warning disable CS0618 // Type or member is obsolete
         var requests = values.Select(value => new EmbedContentRequest
         {
             Model = modelPath,
             Content = new Content { Parts = [new Part { Text = value }] },
             OutputDimensionality = options?.Dimensions ?? clientOptions.DefaultEmbeddingDimensions,
         }).ToList();
+#pragma warning restore CS0618 // Type or member is obsolete
 
         return new BatchEmbedContentsRequest { Requests = requests, };
     }

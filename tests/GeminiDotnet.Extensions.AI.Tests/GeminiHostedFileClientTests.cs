@@ -476,6 +476,9 @@ public sealed class GeminiHostedFileClientTests
         public ICachedContentsClient CachedContents => throw new NotImplementedException();
         public ICorporaClient Corpora => throw new NotImplementedException();
         public IDynamicClient Dynamic => throw new NotImplementedException();
+        public IEnvironmentsClient Environments => throw new NotImplementedException();
+        public IEnvironmentsCreateClient EnvironmentsCreate => throw new NotImplementedException();
+        public IEnvironmentsListClient EnvironmentsList => throw new NotImplementedException();
         public IFilesClient Files => _files;
         public IFileSearchStoresClient FileSearchStores => throw new NotImplementedException();
         public IFilesRegisterClient FilesRegister => throw new NotImplementedException();

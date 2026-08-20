@@ -1,6 +1,9 @@
 using GeminiDotnet.V1Beta.AuthTokens;
 using GeminiDotnet.V1Beta.CachedContents;
 using GeminiDotnet.V1Beta.Corpora;
+using GeminiDotnet.V1Beta.Environments;
+using GeminiDotnet.V1Beta.EnvironmentsCreate;
+using GeminiDotnet.V1Beta.EnvironmentsList;
 using GeminiDotnet.V1Beta.Files;
 using GeminiDotnet.V1Beta.FileSearchStores;
 using GeminiDotnet.V1Beta.FilesRegister;
@@ -37,6 +40,21 @@ public interface IGeminiV1BetaClient
     /// Provides access to the Dynamic API operations.
     /// </summary>
     IDynamicClient Dynamic { get; }
+
+    /// <summary>
+    /// Provides access to the Environments API operations.
+    /// </summary>
+    IEnvironmentsClient Environments { get; }
+
+    /// <summary>
+    /// Provides access to the EnvironmentsCreate API operations.
+    /// </summary>
+    IEnvironmentsCreateClient EnvironmentsCreate { get; }
+
+    /// <summary>
+    /// Provides access to the EnvironmentsList API operations.
+    /// </summary>
+    IEnvironmentsListClient EnvironmentsList { get; }
 
     /// <summary>
     /// Provides access to the Files API operations.
