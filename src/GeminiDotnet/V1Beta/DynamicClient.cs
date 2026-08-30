@@ -37,7 +37,7 @@ internal sealed class DynamicClient : IDynamicClient
     {
         ArgumentNullException.ThrowIfNull(dynamicId);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/dynamic/{dynamicId}:generateContent";
+        var path = $"/v1beta/dynamic/{Uri.EscapeDataString(dynamicId)}:generateContent";
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -48,7 +48,7 @@ internal sealed class DynamicClient : IDynamicClient
     {
         ArgumentNullException.ThrowIfNull(dynamicId);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/dynamic/{dynamicId}:streamGenerateContent?alt=sse";
+        var path = $"/v1beta/dynamic/{Uri.EscapeDataString(dynamicId)}:streamGenerateContent?alt=sse";
         return _requester.ExecuteStreamingAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 

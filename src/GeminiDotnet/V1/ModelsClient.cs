@@ -28,7 +28,11 @@ internal sealed class ModelsClient : IModelsClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1/models";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1/models{query}";
         return _requester.ExecuteAsync<ListModelsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -37,7 +41,7 @@ internal sealed class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
-        var path = $"/v1/models/{model}";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}";
         return _requester.ExecuteAsync<Model>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -48,7 +52,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:asyncBatchEmbedContent";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:asyncBatchEmbedContent";
         return _requester.ExecuteAsync<AsyncBatchEmbedContentRequest, AsyncBatchEmbedContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -59,7 +63,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:batchEmbedContents";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:batchEmbedContents";
         return _requester.ExecuteAsync<BatchEmbedContentsRequest, BatchEmbedContentsResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -70,7 +74,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:batchGenerateContent";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:batchGenerateContent";
         return _requester.ExecuteAsync<BatchGenerateContentRequest, BatchGenerateContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -81,7 +85,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:countTokens";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:countTokens";
         return _requester.ExecuteAsync<CountTokensRequest, CountTokensResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -92,7 +96,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:embedContent";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:embedContent";
         return _requester.ExecuteAsync<EmbedContentRequest, EmbedContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -103,7 +107,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:generateContent";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:generateContent";
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -114,7 +118,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{model}:streamGenerateContent?alt=sse";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}:streamGenerateContent?alt=sse";
         return _requester.ExecuteStreamingAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -127,7 +131,13 @@ internal sealed class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
-        var path = $"/v1/models/{model}/operations";
+        var query = new QueryStringBuilder()
+            .Add("filter", filter)
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .Add("returnPartialSuccess", returnPartialSuccess)
+            .ToString();
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}/operations{query}";
         return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -138,7 +148,7 @@ internal sealed class ModelsClient : IModelsClient
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1/models/{model}/operations/{operation}";
+        var path = $"/v1/models/{Uri.EscapeDataString(model)}/operations/{Uri.EscapeDataString(operation)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 

@@ -35,7 +35,11 @@ internal sealed class GeneratedFilesClient : IGeneratedFilesClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/generatedFiles";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/generatedFiles{query}";
         return _requester.ExecuteAsync<ListGeneratedFilesResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -44,7 +48,7 @@ internal sealed class GeneratedFilesClient : IGeneratedFilesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generatedFile);
-        var path = $"/v1beta/generatedFiles/{generatedFile}";
+        var path = $"/v1beta/generatedFiles/{Uri.EscapeDataString(generatedFile)}";
         return _requester.ExecuteAsync<GeneratedFile>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -55,7 +59,7 @@ internal sealed class GeneratedFilesClient : IGeneratedFilesClient
     {
         ArgumentNullException.ThrowIfNull(generatedFile);
         ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/generatedFiles/{generatedFile}/operations/{operation}";
+        var path = $"/v1beta/generatedFiles/{Uri.EscapeDataString(generatedFile)}/operations/{Uri.EscapeDataString(operation)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 

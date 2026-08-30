@@ -35,7 +35,11 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/cachedContents";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/cachedContents{query}";
         return _requester.ExecuteAsync<ListCachedContentsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -53,7 +57,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/cachedContents/{id}";
+        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}";
         return _requester.ExecuteAsync<CachedContent>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -62,7 +66,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/cachedContents/{id}";
+        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -74,7 +78,10 @@ internal sealed class CachedContentsClient : ICachedContentsClient
     {
         ArgumentNullException.ThrowIfNull(id);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/cachedContents/{id}";
+        var query = new QueryStringBuilder()
+            .Add("updateMask", updateMask)
+            .ToString();
+        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}{query}";
         return _requester.ExecuteAsync<CachedContent, CachedContent>(HttpMethod.Patch, path, request, cancellationToken);
     }
 

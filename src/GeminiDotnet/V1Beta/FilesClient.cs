@@ -35,7 +35,11 @@ internal sealed partial class FilesClient : IFilesClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/files";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/files{query}";
         return _requester.ExecuteAsync<ListFilesResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -53,7 +57,7 @@ internal sealed partial class FilesClient : IFilesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(file);
-        var path = $"/v1beta/files/{file}";
+        var path = $"/v1beta/files/{Uri.EscapeDataString(file)}";
         return _requester.ExecuteAsync<File>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -62,7 +66,7 @@ internal sealed partial class FilesClient : IFilesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(file);
-        var path = $"/v1beta/files/{file}";
+        var path = $"/v1beta/files/{Uri.EscapeDataString(file)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -71,7 +75,7 @@ internal sealed partial class FilesClient : IFilesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(file);
-        var path = $"/v1beta/files/{file}:download";
+        var path = $"/v1beta/files/{Uri.EscapeDataString(file)}:download";
         return _requester.ExecuteAsync<DownloadFileResponse>(HttpMethod.Get, path, cancellationToken);
     }
 

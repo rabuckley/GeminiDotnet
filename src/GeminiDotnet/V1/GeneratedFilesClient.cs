@@ -30,7 +30,7 @@ internal sealed class GeneratedFilesClient : IGeneratedFilesClient
     {
         ArgumentNullException.ThrowIfNull(generatedFile);
         ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1/generatedFiles/{generatedFile}/operations/{operation}";
+        var path = $"/v1/generatedFiles/{Uri.EscapeDataString(generatedFile)}/operations/{Uri.EscapeDataString(operation)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 

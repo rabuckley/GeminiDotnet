@@ -36,7 +36,11 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/environments";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/environments{query}";
         return _requester.ExecuteAsync<HttpBody>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -58,7 +62,13 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(environment);
-        var requestPath = $"/v1beta/environments/{environment}/files";
+        var query = new QueryStringBuilder()
+            .Add("path", path)
+            .Add("recursive", recursive)
+            .Add("page_size", pageSize)
+            .Add("page_token", pageToken)
+            .ToString();
+        var requestPath = $"/v1beta/environments/{Uri.EscapeDataString(environment)}/files{query}";
         return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
     }
 
@@ -72,7 +82,12 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
     {
         ArgumentNullException.ThrowIfNull(environment);
         ArgumentNullException.ThrowIfNull(path);
-        var requestPath = $"/v1beta/environments/{environment}/files/{path}";
+        var query = new QueryStringBuilder()
+            .Add("recursive", recursive)
+            .Add("page_size", pageSize)
+            .Add("page_token", pageToken)
+            .ToString();
+        var requestPath = $"/v1beta/environments/{Uri.EscapeDataString(environment)}/files/{WildcardPath.Escape(path)}{query}";
         return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
     }
 
@@ -81,7 +96,7 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/environments/{id}";
+        var path = $"/v1beta/environments/{Uri.EscapeDataString(id)}";
         return _requester.ExecuteAsync<HttpBody>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -90,7 +105,7 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/environments/{id}";
+        var path = $"/v1beta/environments/{Uri.EscapeDataString(id)}";
         return _requester.ExecuteAsync<HttpBody>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -99,7 +114,7 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/environments/{id}:delete";
+        var path = $"/v1beta/environments/{Uri.EscapeDataString(id)}:delete";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -108,7 +123,7 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/environments/{id}:get";
+        var path = $"/v1beta/environments/{Uri.EscapeDataString(id)}:get";
         return _requester.ExecuteAsync<Environment>(HttpMethod.Get, path, cancellationToken);
     }
 

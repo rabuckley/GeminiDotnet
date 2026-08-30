@@ -37,7 +37,13 @@ internal sealed class BatchesClient : IBatchesClient
         bool? returnPartialSuccess = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/batches";
+        var query = new QueryStringBuilder()
+            .Add("filter", filter)
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .Add("returnPartialSuccess", returnPartialSuccess)
+            .ToString();
+        var path = $"/v1beta/batches{query}";
         return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -46,7 +52,7 @@ internal sealed class BatchesClient : IBatchesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generateContentBatch);
-        var path = $"/v1beta/batches/{generateContentBatch}";
+        var path = $"/v1beta/batches/{Uri.EscapeDataString(generateContentBatch)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -55,7 +61,7 @@ internal sealed class BatchesClient : IBatchesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generateContentBatch);
-        var path = $"/v1beta/batches/{generateContentBatch}";
+        var path = $"/v1beta/batches/{Uri.EscapeDataString(generateContentBatch)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -64,7 +70,7 @@ internal sealed class BatchesClient : IBatchesClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generateContentBatch);
-        var path = $"/v1beta/batches/{generateContentBatch}:cancel";
+        var path = $"/v1beta/batches/{Uri.EscapeDataString(generateContentBatch)}:cancel";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Post, path, cancellationToken);
     }
 
@@ -76,7 +82,10 @@ internal sealed class BatchesClient : IBatchesClient
     {
         ArgumentNullException.ThrowIfNull(generateContentBatch);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/batches/{generateContentBatch}:updateEmbedContentBatch";
+        var query = new QueryStringBuilder()
+            .Add("updateMask", updateMask)
+            .ToString();
+        var path = $"/v1beta/batches/{Uri.EscapeDataString(generateContentBatch)}:updateEmbedContentBatch{query}";
         return _requester.ExecuteAsync<EmbedContentBatch, EmbedContentBatch>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
@@ -88,7 +97,10 @@ internal sealed class BatchesClient : IBatchesClient
     {
         ArgumentNullException.ThrowIfNull(generateContentBatch);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/batches/{generateContentBatch}:updateGenerateContentBatch";
+        var query = new QueryStringBuilder()
+            .Add("updateMask", updateMask)
+            .ToString();
+        var path = $"/v1beta/batches/{Uri.EscapeDataString(generateContentBatch)}:updateGenerateContentBatch{query}";
         return _requester.ExecuteAsync<GenerateContentBatch, GenerateContentBatch>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
