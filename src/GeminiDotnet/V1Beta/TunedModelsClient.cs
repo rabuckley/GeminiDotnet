@@ -36,7 +36,12 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         string? filter = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/tunedModels";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .Add("filter", filter)
+            .ToString();
+        var path = $"/v1beta/tunedModels{query}";
         return _requester.ExecuteAsync<ListTunedModelsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -46,7 +51,10 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        const string path = "/v1beta/tunedModels";
+        var query = new QueryStringBuilder()
+            .Add("tunedModelId", tunedModelId)
+            .ToString();
+        var path = $"/v1beta/tunedModels{query}";
         return _requester.ExecuteAsync<TunedModel, CreateTunedModelOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -55,7 +63,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
-        var path = $"/v1beta/tunedModels/{tunedModel}";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}";
         return _requester.ExecuteAsync<TunedModel>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -64,7 +72,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
-        var path = $"/v1beta/tunedModels/{tunedModel}";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -76,7 +84,10 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}";
+        var query = new QueryStringBuilder()
+            .Add("updateMask", updateMask)
+            .ToString();
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}{query}";
         return _requester.ExecuteAsync<TunedModel, TunedModel>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
@@ -87,7 +98,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}:asyncBatchEmbedContent";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:asyncBatchEmbedContent";
         return _requester.ExecuteAsync<AsyncBatchEmbedContentRequest, AsyncBatchEmbedContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -98,7 +109,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}:batchGenerateContent";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:batchGenerateContent";
         return _requester.ExecuteAsync<BatchGenerateContentRequest, BatchGenerateContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -109,7 +120,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}:generateContent";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:generateContent";
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -120,7 +131,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}:generateText";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:generateText";
         return _requester.ExecuteAsync<GenerateTextRequest, GenerateTextResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -131,7 +142,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}:streamGenerateContent?alt=sse";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:streamGenerateContent?alt=sse";
         return _requester.ExecuteStreamingAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -142,7 +153,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}:transferOwnership";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:transferOwnership";
         return _requester.ExecuteAsync<TransferOwnershipRequest, TransferOwnershipResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -155,7 +166,13 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
-        var path = $"/v1beta/tunedModels/{tunedModel}/operations";
+        var query = new QueryStringBuilder()
+            .Add("filter", filter)
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .Add("returnPartialSuccess", returnPartialSuccess)
+            .ToString();
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/operations{query}";
         return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -166,7 +183,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/tunedModels/{tunedModel}/operations/{operation}";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/operations/{Uri.EscapeDataString(operation)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -177,7 +194,11 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
-        var path = $"/v1beta/tunedModels/{tunedModel}/permissions";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions{query}";
         return _requester.ExecuteAsync<ListPermissionsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -188,7 +209,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}/permissions";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions";
         return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -199,7 +220,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/tunedModels/{tunedModel}/permissions/{permission}";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions/{Uri.EscapeDataString(permission)}";
         return _requester.ExecuteAsync<Permission>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -210,7 +231,7 @@ internal sealed class TunedModelsClient : ITunedModelsClient
     {
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/tunedModels/{tunedModel}/permissions/{permission}";
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions/{Uri.EscapeDataString(permission)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -224,7 +245,11 @@ internal sealed class TunedModelsClient : ITunedModelsClient
         ArgumentNullException.ThrowIfNull(tunedModel);
         ArgumentNullException.ThrowIfNull(permission);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{tunedModel}/permissions/{permission}";
+        ArgumentException.ThrowIfNullOrEmpty(updateMask);
+        var query = new QueryStringBuilder()
+            .Add("updateMask", updateMask)
+            .ToString();
+        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions/{Uri.EscapeDataString(permission)}{query}";
         return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Patch, path, request, cancellationToken);
     }
 

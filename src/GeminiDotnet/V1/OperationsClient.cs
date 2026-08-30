@@ -30,7 +30,13 @@ internal sealed class OperationsClient : IOperationsClient
         bool? returnPartialSuccess = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1/operations";
+        var query = new QueryStringBuilder()
+            .Add("filter", filter)
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .Add("returnPartialSuccess", returnPartialSuccess)
+            .ToString();
+        var path = $"/v1/operations{query}";
         return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -39,7 +45,7 @@ internal sealed class OperationsClient : IOperationsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operationsId);
-        var path = $"/v1/operations/{operationsId}";
+        var path = $"/v1/operations/{Uri.EscapeDataString(operationsId)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 

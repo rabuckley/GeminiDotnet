@@ -35,7 +35,11 @@ internal sealed class EnvironmentsListClient : IEnvironmentsListClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/environments:list";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/environments:list{query}";
         return _requester.ExecuteAsync<ListEnvironmentsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 

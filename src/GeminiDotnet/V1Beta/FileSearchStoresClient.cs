@@ -35,7 +35,11 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/fileSearchStores";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/fileSearchStores{query}";
         return _requester.ExecuteAsync<ListFileSearchStoresResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -53,7 +57,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}";
         return _requester.ExecuteAsync<FileSearchStore>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -63,7 +67,10 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}";
+        var query = new QueryStringBuilder()
+            .Add("force", force)
+            .ToString();
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}{query}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -74,7 +81,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}:importFile";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}:importFile";
         return _requester.ExecuteAsync<ImportFileRequest, ImportFileOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -85,7 +92,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}:uploadToFileSearchStore";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}:uploadToFileSearchStore";
         return _requester.ExecuteAsync<UploadToFileSearchStoreRequest, UploadToFileSearchStoreOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -96,7 +103,11 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}/documents";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/documents{query}";
         return _requester.ExecuteAsync<ListDocumentsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -107,7 +118,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
         ArgumentNullException.ThrowIfNull(document);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}/documents/{document}";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/documents/{Uri.EscapeDataString(document)}";
         return _requester.ExecuteAsync<Document>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -119,7 +130,10 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
         ArgumentNullException.ThrowIfNull(document);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}/documents/{document}";
+        var query = new QueryStringBuilder()
+            .Add("force", force)
+            .ToString();
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/documents/{Uri.EscapeDataString(document)}{query}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -130,7 +144,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
         ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStore}/operations/{operation}";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/operations/{Uri.EscapeDataString(operation)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -141,7 +155,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStoresId);
         ArgumentNullException.ThrowIfNull(mediaId);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStoresId}/media/{mediaId}";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStoresId)}/media/{Uri.EscapeDataString(mediaId)}";
         return _requester.ExecuteAsync<DownloadMediaResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -152,7 +166,7 @@ internal sealed class FileSearchStoresClient : IFileSearchStoresClient
     {
         ArgumentNullException.ThrowIfNull(fileSearchStoresId);
         ArgumentNullException.ThrowIfNull(operationsId);
-        var path = $"/v1beta/fileSearchStores/{fileSearchStoresId}/upload/operations/{operationsId}";
+        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStoresId)}/upload/operations/{Uri.EscapeDataString(operationsId)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 

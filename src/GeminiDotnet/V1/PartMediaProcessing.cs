@@ -11,8 +11,7 @@ namespace GeminiDotnet.V1;
 public enum PartMediaProcessing
 {
     /// <summary>
-    /// Default. Uses model-specific processing
-    /// (3.5 Pro+ -> <c>AGENTIC</c>, older models -> <c>STATIC</c>).
+    /// Defaults to model-specific processing.
     /// </summary>
     [JsonStringEnumMemberName("MEDIA_PROCESSING_UNSPECIFIED")]
     Unspecified,

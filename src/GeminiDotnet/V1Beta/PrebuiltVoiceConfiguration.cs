@@ -8,7 +8,7 @@ namespace GeminiDotnet.V1Beta;
 public sealed record PrebuiltVoiceConfiguration
 {
     /// <summary>
-    /// The name of the preset voice to use.
+    /// Optional. The name of the preset voice to use.
     /// </summary>
     [JsonPropertyName("voiceName")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

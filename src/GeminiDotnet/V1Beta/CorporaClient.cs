@@ -35,7 +35,11 @@ internal sealed class CorporaClient : ICorporaClient
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        const string path = "/v1beta/corpora";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/corpora{query}";
         return _requester.ExecuteAsync<ListCorporaResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -53,7 +57,7 @@ internal sealed class CorporaClient : ICorporaClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(corpus);
-        var path = $"/v1beta/corpora/{corpus}";
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}";
         return _requester.ExecuteAsync<Corpus>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -63,7 +67,10 @@ internal sealed class CorporaClient : ICorporaClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(corpus);
-        var path = $"/v1beta/corpora/{corpus}";
+        var query = new QueryStringBuilder()
+            .Add("force", force)
+            .ToString();
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}{query}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -74,7 +81,7 @@ internal sealed class CorporaClient : ICorporaClient
     {
         ArgumentNullException.ThrowIfNull(corpus);
         ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/corpora/{corpus}/operations/{operation}";
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/operations/{Uri.EscapeDataString(operation)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -85,7 +92,11 @@ internal sealed class CorporaClient : ICorporaClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(corpus);
-        var path = $"/v1beta/corpora/{corpus}/permissions";
+        var query = new QueryStringBuilder()
+            .Add("pageSize", pageSize)
+            .Add("pageToken", pageToken)
+            .ToString();
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions{query}";
         return _requester.ExecuteAsync<ListPermissionsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -96,7 +107,7 @@ internal sealed class CorporaClient : ICorporaClient
     {
         ArgumentNullException.ThrowIfNull(corpus);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/corpora/{corpus}/permissions";
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions";
         return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -107,7 +118,7 @@ internal sealed class CorporaClient : ICorporaClient
     {
         ArgumentNullException.ThrowIfNull(corpus);
         ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/corpora/{corpus}/permissions/{permission}";
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions/{Uri.EscapeDataString(permission)}";
         return _requester.ExecuteAsync<Permission>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -118,7 +129,7 @@ internal sealed class CorporaClient : ICorporaClient
     {
         ArgumentNullException.ThrowIfNull(corpus);
         ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/corpora/{corpus}/permissions/{permission}";
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions/{Uri.EscapeDataString(permission)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -132,7 +143,11 @@ internal sealed class CorporaClient : ICorporaClient
         ArgumentNullException.ThrowIfNull(corpus);
         ArgumentNullException.ThrowIfNull(permission);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/corpora/{corpus}/permissions/{permission}";
+        ArgumentException.ThrowIfNullOrEmpty(updateMask);
+        var query = new QueryStringBuilder()
+            .Add("updateMask", updateMask)
+            .ToString();
+        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions/{Uri.EscapeDataString(permission)}{query}";
         return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
