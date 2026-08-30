@@ -49,6 +49,33 @@ internal sealed class EnvironmentsClient : IEnvironmentsClient
         return _requester.ExecuteAsync<HttpBody, HttpBody>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    public Task<GetEnvironmentFilesResponse> GetEnvironmentFilesHttpByEnvironmentAsync(
+        string environment,
+        string? path = null,
+        bool? recursive = null,
+        int? pageSize = null,
+        string? pageToken = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        var requestPath = $"/v1beta/environments/{environment}/files";
+        return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
+    }
+
+    public Task<GetEnvironmentFilesResponse> GetEnvironmentFilesHttpAsync(
+        string environment,
+        string path,
+        bool? recursive = null,
+        int? pageSize = null,
+        string? pageToken = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        ArgumentNullException.ThrowIfNull(path);
+        var requestPath = $"/v1beta/environments/{environment}/files/{path}";
+        return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
+    }
+
     public Task<HttpBody> GetEnvironmentHttpAsync(
         string id,
         CancellationToken cancellationToken = default)
