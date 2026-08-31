@@ -390,6 +390,118 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(mimeType, fileContent.MediaType);
     }
 
+    #region Candidate Role Mapping Tests
+
+    [Fact]
+    public void CreateMappedChatResponse_WithNoContent_ShouldMapToAssistantRole()
+    {
+        // Arrange
+        var response = new GenerateContentResponse
+        {
+            Candidates = [new Candidate { Content = null, FinishReason = CandidateFinishReason.Stop }],
+            ModelVersion = "gemini-2.0-flash",
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(ChatRole.Assistant, Assert.Single(result.Messages).Role);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithoutRole_ShouldMapToAssistantRole()
+    {
+        // Arrange
+        var response = ResponseWithCandidateRole(null);
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(ChatRole.Assistant, Assert.Single(result.Messages).Role);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithModelRole_ShouldMapToAssistantRole()
+    {
+        // Arrange
+        var response = ResponseWithCandidateRole("model");
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(ChatRole.Assistant, Assert.Single(result.Messages).Role);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithoutRole_ShouldMapToAssistantRole()
+    {
+        // Arrange
+        var response = ResponseWithCandidateRole(null);
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(ChatRole.Assistant, result.Role);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithModelRole_ShouldMapToAssistantRole()
+    {
+        // Arrange
+        var response = ResponseWithCandidateRole("model");
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(ChatRole.Assistant, result.Role);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithUserRole_ShouldMapToUserRole()
+    {
+        // Arrange
+        var response = ResponseWithCandidateRole("user");
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Equal(ChatRole.User, Assert.Single(result.Messages).Role);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithUnsupportedRole_ShouldThrow()
+    {
+        // Arrange
+        var response = ResponseWithCandidateRole("assistant");
+
+        // Act
+        void Act() => GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    private static GenerateContentResponse ResponseWithCandidateRole(string? role) => new()
+    {
+        Candidates =
+        [
+            new Candidate
+            {
+                Content = new Content { Role = role, Parts = [new Part { Text = "The answer is 42." }] },
+                FinishReason = CandidateFinishReason.Stop,
+            },
+        ],
+        ModelVersion = "gemini-2.0-flash",
+    };
+
+    #endregion
+
     #region GroundingMetadata Mapping Tests
 
     [Fact]

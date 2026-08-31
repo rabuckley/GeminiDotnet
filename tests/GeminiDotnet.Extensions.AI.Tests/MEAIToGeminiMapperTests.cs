@@ -937,6 +937,42 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void CreateMappedGenerateContentRequest_WithCandidateThatOmittedItsRole_ShouldKeepItInTheConversation()
+    {
+        // Arrange — Content.Role is optional on a candidate. The turn is still the model's, so fed back
+        // as history it belongs in Contents, not in SystemInstruction.
+        var candidate = new Candidate
+        {
+            Content = new Content { Role = null, Parts = [new Part { Text = "The answer is 42." }] },
+            FinishReason = CandidateFinishReason.Stop,
+        };
+
+        var response = GeminiToMEAIMapper.CreateMappedChatResponse(
+            new GenerateContentResponse { Candidates = [candidate], ModelVersion = "gemini-2.0-flash" },
+            DateTimeOffset.UtcNow);
+
+        List<ChatMessage> messages = [new(ChatRole.User, "Who?"), .. response.Messages];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert
+        Assert.Null(request.SystemInstruction);
+        Assert.Collection(
+            request.Contents,
+            content =>
+            {
+                Assert.Equal(ChatRoles.User, content.Role);
+                Assert.Equal("Who?", Assert.Single(content.Parts!).Text);
+            },
+            content =>
+            {
+                Assert.Equal(ChatRoles.Model, content.Role);
+                Assert.Equal("The answer is 42.", Assert.Single(content.Parts!).Text);
+            });
+    }
+
+    [Fact]
     public void HostedFileContent_ShouldMapToFileDataPart()
     {
         // Arrange
