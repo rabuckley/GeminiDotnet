@@ -3,6 +3,7 @@ using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -392,37 +393,22 @@ public sealed class GeminiToMEAIMapperTests
     #region GroundingMetadata Mapping Tests
 
     [Fact]
-    public void CreateMappedChatResponse_WithGroundingMetadata_ShouldMapToWebSearchContent()
+    public void CreateMappedChatResponse_WithWebGroundingChunk_ShouldProduceCitationAnnotation()
     {
         // Arrange
-        var response = new GenerateContentResponse
-        {
-            Candidates =
-            [
-                new Candidate
-                {
-                    Content = new Content
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                WebSearchQueries = ["best restaurants NYC"],
+                GroundingChunks =
+                [
+                    new GroundingChunk
                     {
-                        Role = "model",
-                        Parts = [new Part { Text = "Here are the best restaurants in NYC." }],
+                        Web = new Web { Uri = "https://example.com/restaurants", Title = "Top NYC Restaurants" }
                     },
-                    GroundingMetadata = new GroundingMetadata
-                    {
-                        WebSearchQueries = ["best restaurants NYC"],
-                        GroundingChunks =
-                        [
-                            new GroundingChunk
-                            {
-                                Web = new Web { Uri = "https://example.com/restaurants", Title = "Top NYC Restaurants" }
-                            },
-                        ],
-                    },
-                    FinishReason = CandidateFinishReason.Stop,
-                },
-            ],
-            ModelVersion = "gemini-2.0-flash",
-            ResponseId = "test-grounding",
-        };
+                ],
+            },
+            new Part { Text = "Here are the best restaurants in NYC." });
 
         // Act
         var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
@@ -430,19 +416,417 @@ public sealed class GeminiToMEAIMapperTests
         // Assert
         var contents = Assert.Single(result.Messages).Contents;
 
-        Assert.IsType<TextContent>(contents[0]);
+        var text = Assert.IsType<TextContent>(contents[0]);
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        Assert.Equal(GeminiToolNames.GoogleSearch, citation.ToolName);
+        Assert.Equal("Top NYC Restaurants", citation.Title);
+        Assert.Equal("https://example.com/restaurants", citation.Url!.ToString());
 
         var toolCall = Assert.IsType<WebSearchToolCallContent>(contents[1]);
-        Assert.NotNull(toolCall.CallId);
-        var query = Assert.Single(toolCall.Queries!);
-        Assert.Equal("best restaurants NYC", query);
+        Assert.Equal("best restaurants NYC", Assert.Single(toolCall.Queries!));
 
+        // The sources live on the annotations, so the result carries no outputs.
         var toolResult = Assert.IsType<WebSearchToolResultContent>(contents[2]);
         Assert.Equal(toolCall.CallId, toolResult.CallId);
-        var uriContent = Assert.IsType<UriContent>(Assert.Single(toolResult.Outputs!));
-        Assert.Equal("https://example.com/restaurants", uriContent.Uri.ToString());
-        Assert.Equal("text/html", uriContent.MediaType);
-        Assert.Equal("Top NYC Restaurants", uriContent.AdditionalProperties!["title"]);
+        Assert.Null(toolResult.Outputs);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithRetrievedContextWithoutUri_ShouldCarryTitleSnippetAndFileId()
+    {
+        // Arrange — the shape a file search produces: evidence, but no search was run. retrievedContext
+        // frequently omits uri, which is why the evidence is an annotation rather than a UriContent.
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk
+                    {
+                        RetrievedContext = new RetrievedContext
+                        {
+                            Title = "Poems",
+                            Text = "The tenth muse.",
+                            FileSearchStore = "fileSearchStores/poems",
+                            MediaId = "fileSearchStores/poems/media/blob123",
+                            PageNumber = 4,
+                            Uri = null,
+                        },
+                    },
+                ],
+            },
+            new Part { Text = "A line from the poem." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+
+        Assert.Equal(GeminiToolNames.FileSearch, citation.ToolName);
+        Assert.Equal("Poems", citation.Title);
+        Assert.Equal("The tenth muse.", citation.Snippet);
+        Assert.Equal("fileSearchStores/poems/media/blob123", citation.FileId);
+        Assert.Null(citation.Url);
+        Assert.Equal(4, citation.AdditionalProperties![GeminiCitationProperties.PageNumber]);
+        Assert.Equal(
+            "fileSearchStores/poems",
+            citation.AdditionalProperties[GeminiCitationProperties.FileSearchStore]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithRetrievedContextWithoutMediaId_ShouldLeaveFileIdUnset()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk
+                    {
+                        RetrievedContext = new RetrievedContext
+                        {
+                            Title = "Poems",
+                            FileSearchStore = "fileSearchStores/poems",
+                        },
+                    },
+                ],
+            },
+            new Part { Text = "A line from the poem." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert — a store is not a file, so it must not masquerade as one.
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+
+        Assert.Null(citation.FileId);
+        Assert.Equal(
+            "fileSearchStores/poems",
+            citation.AdditionalProperties![GeminiCitationProperties.FileSearchStore]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithCustomMetadata_ShouldFlattenToSerializableValues()
+    {
+        // Arrange — AdditionalProperties is serialized with the consumer's options, so the values
+        // must be types Microsoft.Extensions.AI's own serializer context knows.
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk
+                    {
+                        RetrievedContext = new RetrievedContext
+                        {
+                            Title = "Poems",
+                            CustomMetadata =
+                            [
+                                new GroundingChunkCustomMetadata { Key = "author", StringValue = "Bradstreet" },
+                                new GroundingChunkCustomMetadata { Key = "year", NumericValue = 1650 },
+                                new GroundingChunkCustomMetadata
+                                {
+                                    Key = "tags",
+                                    StringListValue = new GroundingChunkStringList { Values = ["verse", "colonial"] },
+                                },
+                                new GroundingChunkCustomMetadata { StringValue = "no key, dropped" },
+                            ],
+                        },
+                    },
+                ],
+            },
+            new Part { Text = "A line from the poem." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        var metadata = Assert.IsType<AdditionalPropertiesDictionary>(
+            citation.AdditionalProperties![GeminiCitationProperties.CustomMetadata]);
+
+        Assert.Equal(3, metadata.Count);
+        Assert.Equal("Bradstreet", metadata["author"]);
+        Assert.Equal(1650f, metadata["year"]);
+
+        var tags = Assert.IsType<JsonArray>(metadata["tags"]);
+        Assert.Equal(["verse", "colonial"], tags.Select(t => t!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithOneSupportCitingTwoChunks_ShouldGiveEachAnnotationItsOwnRegion()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://one.example", Title = "One" } },
+                    new GroundingChunk { Web = new Web { Uri = "https://two.example", Title = "Two" } },
+                ],
+                GroundingSupports =
+                [
+                    new GroundingSupport
+                    {
+                        GroundingChunkIndices = new[] { 0, 1 },
+                        Segment = new Segment { PartIndex = 0, StartIndex = 0, EndIndex = 5 },
+                    },
+                ],
+            },
+            new Part { Text = "Hello world." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert — TextSpanAnnotatedRegion is mutable, so a shared instance would let an edit on one
+        // citation reach the other.
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citations = text.Annotations!.OfType<CitationAnnotation>().ToList();
+        Assert.Equal(2, citations.Count);
+
+        var first = Assert.Single(citations[0].AnnotatedRegions!);
+        var second = Assert.Single(citations[1].AnnotatedRegions!);
+
+        Assert.NotSame(first, second);
+
+        Assert.IsType<TextSpanAnnotatedRegion>(first).EndIndex = 11;
+        Assert.Equal(5, Assert.IsType<TextSpanAnnotatedRegion>(second).EndIndex);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithImageAndMapsChunks_ShouldProduceCitationAnnotations()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk
+                    {
+                        Image = new Image
+                        {
+                            Title = "A photo of the Shard",
+                            SourceUri = "https://example.com/shard",
+                            ImageUri = "https://example.com/shard.jpg",
+                            Domain = "example.com",
+                        },
+                    },
+                    new GroundingChunk
+                    {
+                        Maps = new Maps
+                        {
+                            Title = "The Shard",
+                            Uri = "https://maps.example.com/shard",
+                            PlaceId = "places/shard-123",
+                            Text = "A 72-storey skyscraper in Southwark.",
+                        },
+                    },
+                ],
+            },
+            new Part { Text = "The Shard is in London." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citations = text.Annotations!.OfType<CitationAnnotation>().ToList();
+        Assert.Equal(2, citations.Count);
+
+        Assert.Equal(GeminiToolNames.GoogleSearch, citations[0].ToolName);
+        Assert.Equal("A photo of the Shard", citations[0].Title);
+        Assert.Equal("https://example.com/shard", citations[0].Url!.ToString());
+        Assert.Equal(
+            "https://example.com/shard.jpg",
+            citations[0].AdditionalProperties![GeminiCitationProperties.ImageUri]);
+        Assert.Equal("example.com", citations[0].AdditionalProperties!["domain"]);
+
+        Assert.Equal(GeminiToolNames.GoogleMaps, citations[1].ToolName);
+        Assert.Equal("The Shard", citations[1].Title);
+        Assert.Equal("places/shard-123", citations[1].FileId);
+        Assert.Equal("A 72-storey skyscraper in Southwark.", citations[1].Snippet);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithGroundingSupport_ShouldAnnotateRegionOnNamedPart()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                ],
+                GroundingSupports =
+                [
+                    new GroundingSupport
+                    {
+                        GroundingChunkIndices = new[] { 0 },
+                        Segment = new Segment { PartIndex = 1, StartIndex = 6, EndIndex = 11 },
+                    },
+                ],
+            },
+            new Part { Text = "First part." },
+            new Part { Text = "Hello world, again." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        Assert.Null(Assert.IsType<TextContent>(contents[0]).Annotations);
+
+        var text = Assert.IsType<TextContent>(contents[1]);
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        var region = Assert.IsType<TextSpanAnnotatedRegion>(Assert.Single(citation.AnnotatedRegions!));
+
+        Assert.Equal("world", text.Text[region.StartIndex!.Value..region.EndIndex!.Value]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithMultiByteSegment_ShouldConvertByteOffsetsToCharacterIndices()
+    {
+        // Arrange — "Héllo wörld" is 13 UTF-8 bytes but 11 UTF-16 characters. Gemini's segment
+        // offsets are bytes; TextSpanAnnotatedRegion's are characters.
+        const string answer = "Héllo wörld";
+
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                ],
+                GroundingSupports =
+                [
+                    new GroundingSupport
+                    {
+                        GroundingChunkIndices = new[] { 0 },
+                        Segment = new Segment { PartIndex = 0, StartIndex = 7, EndIndex = 13 },
+                    },
+                ],
+            },
+            new Part { Text = answer });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        var region = Assert.IsType<TextSpanAnnotatedRegion>(Assert.Single(citation.AnnotatedRegions!));
+
+        Assert.Equal(6, region.StartIndex);
+        Assert.Equal(11, region.EndIndex);
+        Assert.Equal("wörld", answer[region.StartIndex!.Value..region.EndIndex!.Value]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithOutOfRangeSupportIndices_ShouldAnnotateWithoutRegion()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                ],
+                GroundingSupports =
+                [
+                    new GroundingSupport
+                    {
+                        GroundingChunkIndices = new[] { 0 },
+                        Segment = new Segment { PartIndex = 7, StartIndex = 0, EndIndex = 5 },
+                    },
+                    new GroundingSupport
+                    {
+                        GroundingChunkIndices = new[] { 9 },
+                        Segment = new Segment { PartIndex = 0, StartIndex = 0, EndIndex = 5 },
+                    },
+                ],
+            },
+            new Part { Text = "Hello world." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        Assert.Null(citation.AnnotatedRegions);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithChunkNoSupportReferences_ShouldAnnotateWithoutRegion()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://cited.example", Title = "Cited" } },
+                    new GroundingChunk { Web = new Web { Uri = "https://loose.example", Title = "Loose" } },
+                ],
+                GroundingSupports =
+                [
+                    new GroundingSupport
+                    {
+                        GroundingChunkIndices = new[] { 0 },
+                        Segment = new Segment { PartIndex = 0, StartIndex = 0, EndIndex = 5 },
+                    },
+                ],
+            },
+            new Part { Text = "Hello world." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citations = text.Annotations!.OfType<CitationAnnotation>().ToList();
+        Assert.Equal(2, citations.Count);
+
+        Assert.Equal("Cited", citations[0].Title);
+        Assert.NotNull(citations[0].AnnotatedRegions);
+
+        Assert.Equal("Loose", citations[1].Title);
+        Assert.Null(citations[1].AnnotatedRegions);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithGroundingMetadataAndNoTextPart_ShouldStillSurfaceAnnotations()
+    {
+        // Arrange
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                ],
+            },
+            new Part { FileData = new FileData { FileUri = "files/abc123", MimeType = "text/plain" } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var text = Assert.IsType<TextContent>(contents[1]);
+        Assert.Equal(string.Empty, text.Text);
+
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        Assert.Equal("Example", citation.Title);
     }
 
     [Fact]
@@ -486,14 +870,64 @@ public sealed class GeminiToMEAIMapperTests
 
         // Assert — web search content appears after text but before UsageContent
         var contents = result.Contents;
-        Assert.IsType<TextContent>(contents[0]);
+        var text = Assert.IsType<TextContent>(contents[0]);
         Assert.IsType<WebSearchToolCallContent>(contents[1]);
         Assert.IsType<WebSearchToolResultContent>(contents[2]);
         Assert.IsType<UsageContent>(contents[3]);
+
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        Assert.Equal("Example", citation.Title);
     }
 
     [Fact]
-    public void CreateMappedChatResponse_WithNullGroundingMetadata_ShouldProduceNoWebSearchContent()
+    public void CreateMappedChatResponseUpdate_WithGroundingSupports_ShouldNotAttachRegions()
+    {
+        // Arrange — streaming segment indices are cumulative across responses, so a per-update mapper
+        // cannot place them; the citation is emitted without a region.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts = [new Part { Text = "Hello world." }],
+                    },
+                    GroundingMetadata = new GroundingMetadata
+                    {
+                        GroundingChunks =
+                        [
+                            new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                        ],
+                        GroundingSupports =
+                        [
+                            new GroundingSupport
+                            {
+                                GroundingChunkIndices = new[] { 0 },
+                                Segment = new Segment { PartIndex = 0, StartIndex = 0, EndIndex = 5 },
+                            },
+                        ],
+                    },
+                    FinishReason = CandidateFinishReason.Stop,
+                },
+            ],
+            ModelVersion = "gemini-2.0-flash",
+            ResponseId = "test-grounding-streaming-supports",
+        };
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(result.Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        Assert.Null(citation.AnnotatedRegions);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithNullGroundingMetadata_ShouldProduceNoGroundingContent()
     {
         // Arrange
         var response = new GenerateContentResponse
@@ -519,40 +953,43 @@ public sealed class GeminiToMEAIMapperTests
 
         // Assert
         var contents = Assert.Single(result.Messages).Contents;
-        Assert.DoesNotContain(contents, c => c is WebSearchToolCallContent);
-        Assert.DoesNotContain(contents, c => c is WebSearchToolResultContent);
+        Assert.DoesNotContain(contents, c => c is WebSearchToolCallContent or WebSearchToolResultContent);
+        Assert.Null(Assert.IsType<TextContent>(Assert.Single(contents)).Annotations);
     }
 
     [Fact]
-    public void CreateMappedChatResponse_WithEmptyGroundingMetadata_ShouldProduceNoWebSearchContent()
+    public void CreateMappedChatResponse_WithEmptyGroundingMetadata_ShouldProduceNoGroundingContent()
     {
-        // Arrange — GroundingMetadata is present but both collections are null
-        var response = new GenerateContentResponse
-        {
-            Candidates =
-            [
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Role = "model",
-                        Parts = [new Part { Text = "Empty grounding." }],
-                    },
-                    GroundingMetadata = new GroundingMetadata(),
-                    FinishReason = CandidateFinishReason.Stop,
-                },
-            ],
-            ModelVersion = "gemini-2.0-flash",
-            ResponseId = "test-empty-grounding",
-        };
+        // Arrange
+        var response = CreateGroundedResponse(new GroundingMetadata(), new Part { Text = "Empty grounding." });
 
         // Act
         var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
 
         // Assert
         var contents = Assert.Single(result.Messages).Contents;
-        Assert.DoesNotContain(contents, c => c is WebSearchToolCallContent);
-        Assert.DoesNotContain(contents, c => c is WebSearchToolResultContent);
+        Assert.DoesNotContain(contents, c => c is WebSearchToolCallContent or WebSearchToolResultContent);
+        Assert.Null(Assert.IsType<TextContent>(Assert.Single(contents)).Annotations);
+    }
+
+    private static GenerateContentResponse CreateGroundedResponse(
+        GroundingMetadata groundingMetadata,
+        params Part[] parts)
+    {
+        return new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content { Role = "model", Parts = parts },
+                    GroundingMetadata = groundingMetadata,
+                    FinishReason = CandidateFinishReason.Stop,
+                },
+            ],
+            ModelVersion = "gemini-2.0-flash",
+            ResponseId = "test-grounding",
+        };
     }
 
     #endregion

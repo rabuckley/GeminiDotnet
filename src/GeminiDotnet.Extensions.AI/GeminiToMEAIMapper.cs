@@ -2,7 +2,9 @@ using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -17,7 +19,11 @@ internal static class GeminiToMEAIMapper
         // Map content parts
         var contents = CreateMappedContents(candidate?.Content?.Parts) ?? [];
 
-        AppendMappedGroundingMetadata(contents, candidate?.GroundingMetadata);
+        // Streaming responses carry only the grounding chunks not already sent, while
+        // GroundingSupport.GroundingChunkIndices index the accumulated list across every response.
+        // This mapper is per-update and stateless, so it cannot resolve them; citations for a
+        // streamed update therefore carry no regions.
+        AppendMappedGroundingMetadata(contents, candidate?.GroundingMetadata, groundingSupports: null);
 
         // Add UsageContent for streaming aggregation (consumed by ToChatResponse())
         if (CreateMappedUsageDetails(response.UsageMetadata) is { } usageDetails)
@@ -71,6 +77,10 @@ internal static class GeminiToMEAIMapper
         };
     }
 
+    /// <summary>
+    /// Maps each <see cref="Part"/> to exactly one <see cref="AIContent"/>, in order, so that a
+    /// <see cref="Segment.PartIndex"/> also indexes the returned list.
+    /// </summary>
     private static List<AIContent>? CreateMappedContents(IReadOnlyList<Part>? parts)
     {
         if (parts is null)
@@ -270,60 +280,353 @@ internal static class GeminiToMEAIMapper
         }
     }
 
-    private static void AppendMappedGroundingMetadata(List<AIContent> contents, GroundingMetadata? groundingMetadata)
+    /// <summary>
+    /// Appends the evidence and invocation content that <paramref name="groundingMetadata"/> describes.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every recognised <see cref="GroundingChunk"/> becomes a <see cref="CitationAnnotation"/> on the text
+    /// it grounds, whether it came from the web, a file search store, image search or Google Maps, so that
+    /// one loop over the annotations reaches every source behind an answer.
+    /// </para>
+    /// <para>
+    /// Gemini reports no invocation signal for file search equivalent to the
+    /// <see cref="WebSearchToolCallContent"/> / <see cref="WebSearchToolResultContent"/> pair — there is no
+    /// query field, and <see cref="GroundingMetadata.RetrievalMetadata"/> only carries a Google Search
+    /// dynamic-retrieval score — so a file search that matched nothing is indistinguishable from no file
+    /// search at all.
+    /// </para>
+    /// </remarks>
+    /// <param name="groundingSupports">
+    /// The supports locating each chunk within the candidate's parts, or <see langword="null"/> to emit
+    /// region-less citations. Streaming callers pass <see langword="null"/>, because chunk indices there are
+    /// cumulative across responses and this mapper sees one response at a time.
+    /// </param>
+    private static void AppendMappedGroundingMetadata(
+        List<AIContent> contents,
+        GroundingMetadata? groundingMetadata,
+        IReadOnlyList<GroundingSupport>? groundingSupports)
     {
         if (groundingMetadata is null)
         {
             return;
         }
 
-        var hasQueries = groundingMetadata.WebSearchQueries is { Count: > 0 };
-        var hasChunks = groundingMetadata.GroundingChunks is { Count: > 0 };
+        if (groundingMetadata.GroundingChunks is { Count: > 0 } chunks)
+        {
+            AttachMappedCitationAnnotations(contents, chunks, groundingSupports);
+        }
 
-        if (!hasQueries && !hasChunks)
+        if (groundingMetadata.WebSearchQueries is not { Count: > 0 } queries)
         {
             return;
         }
 
         var callId = $"web-search/{Guid.NewGuid()}";
 
-        var toolCall = new WebSearchToolCallContent(callId)
+        contents.Add(new WebSearchToolCallContent(callId)
         {
-            Queries = groundingMetadata.WebSearchQueries is { } queries ? [.. queries] : null,
+            Queries = [.. queries],
             RawRepresentation = groundingMetadata,
-        };
+        });
 
-        List<AIContent>? results = null;
-        if (groundingMetadata.GroundingChunks is { } chunks)
+        // The sources live on the citation annotations, so the result carries no outputs of its own.
+        contents.Add(new WebSearchToolResultContent(callId)
         {
-            results = new(chunks.Count);
-            foreach (var chunk in chunks)
+            Outputs = null,
+            RawRepresentation = groundingMetadata,
+        });
+    }
+
+    /// <summary>
+    /// Attaches one <see cref="CitationAnnotation"/> per grounding chunk to the content it grounds.
+    /// </summary>
+    /// <remarks>
+    /// A chunk cited from several spans of the same part yields a single annotation carrying several
+    /// regions. A chunk that no support references still gets an annotation, without a region, because the
+    /// source is real even when the span it grounds is unknown.
+    /// </remarks>
+    private static void AttachMappedCitationAnnotations(
+        List<AIContent> contents,
+        IReadOnlyList<GroundingChunk> chunks,
+        IReadOnlyList<GroundingSupport>? groundingSupports)
+    {
+        Dictionary<(int ContentIndex, int ChunkIndex), CitationAnnotation> attached = [];
+        HashSet<int> referencedChunks = [];
+
+        foreach (var support in groundingSupports ?? [])
+        {
+            if (support.Segment is not { } segment)
             {
-                if (chunk.Web is not { } web)
+                continue;
+            }
+
+            var contentIndex = segment.PartIndex ?? 0;
+
+            // Gemini can name a part this mapper produced no text for (a thought, a function call), and
+            // nothing stops it naming one that does not exist. Neither can carry a region.
+            if ((uint)contentIndex >= (uint)contents.Count || contents[contentIndex] is not TextContent text)
+            {
+                continue;
+            }
+
+            var span = CreateMappedTextSpan(text.Text, segment);
+
+            foreach (var chunkIndex in support.GroundingChunkIndices.Span)
+            {
+                if ((uint)chunkIndex >= (uint)chunks.Count)
                 {
                     continue;
                 }
 
-                var uriContent = new UriContent(web.Uri ?? string.Empty, "text/html")
-                {
-                    RawRepresentation = chunk,
-                    AdditionalProperties = web.Title is not null
-                        ? new() { ["title"] = web.Title }
-                        : null,
-                };
+                referencedChunks.Add(chunkIndex);
 
-                results.Add(uriContent);
+                if (!attached.TryGetValue((contentIndex, chunkIndex), out var annotation))
+                {
+                    if (CreateMappedCitationAnnotation(chunks[chunkIndex]) is not { } created)
+                    {
+                        continue;
+                    }
+
+                    annotation = created;
+                    attached[(contentIndex, chunkIndex)] = annotation;
+                    (text.Annotations ??= []).Add(annotation);
+                }
+
+                if (span is { } textSpan)
+                {
+                    // TextSpanAnnotatedRegion is mutable, so each annotation gets its own instance
+                    // rather than an edit on one co-cited annotation reaching all of them.
+                    (annotation.AnnotatedRegions ??= []).Add(new TextSpanAnnotatedRegion
+                    {
+                        StartIndex = textSpan.StartIndex,
+                        EndIndex = textSpan.EndIndex,
+                    });
+                }
             }
         }
 
-        var toolResult = new WebSearchToolResultContent(callId)
-        {
-            Outputs = results,
-            RawRepresentation = groundingMetadata,
-        };
+        List<CitationAnnotation>? unreferenced = null;
 
-        contents.Add(toolCall);
-        contents.Add(toolResult);
+        for (var chunkIndex = 0; chunkIndex < chunks.Count; chunkIndex++)
+        {
+            if (referencedChunks.Contains(chunkIndex))
+            {
+                continue;
+            }
+
+            if (CreateMappedCitationAnnotation(chunks[chunkIndex]) is { } annotation)
+            {
+                (unreferenced ??= []).Add(annotation);
+            }
+        }
+
+        if (unreferenced is null)
+        {
+            return;
+        }
+
+        var target = contents.OfType<TextContent>().FirstOrDefault();
+
+        if (target is null)
+        {
+            // A candidate can be grounded without a text part of its own. Carry the sources rather than
+            // dropping them.
+            target = new TextContent(string.Empty);
+            contents.Add(target);
+        }
+
+        foreach (var annotation in unreferenced)
+        {
+            (target.Annotations ??= []).Add(annotation);
+        }
+    }
+
+    /// <summary>
+    /// Maps a <see cref="GroundingChunk"/> to a <see cref="CitationAnnotation"/>, or returns
+    /// <see langword="null"/> when the chunk carries no variant this mapper recognises.
+    /// </summary>
+    private static CitationAnnotation? CreateMappedCitationAnnotation(GroundingChunk chunk)
+    {
+        if (chunk.Web is { } web)
+        {
+            return new CitationAnnotation
+            {
+                Title = web.Title,
+                Url = CreateMappedUri(web.Uri),
+                ToolName = GeminiToolNames.GoogleSearch,
+                RawRepresentation = chunk,
+            };
+        }
+
+        if (chunk.RetrievedContext is { } retrievedContext)
+        {
+            return new CitationAnnotation
+            {
+                Title = retrievedContext.Title,
+                Url = CreateMappedUri(retrievedContext.Uri),
+                // Only the media blob is a file. The store it came from is named separately, because a
+                // store name in FileId would leave the consumer unable to tell the two apart.
+                FileId = retrievedContext.MediaId,
+                ToolName = GeminiToolNames.FileSearch,
+                Snippet = retrievedContext.Text,
+                RawRepresentation = chunk,
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiCitationProperties.PageNumber, retrievedContext.PageNumber),
+                    new(GeminiCitationProperties.FileSearchStore, retrievedContext.FileSearchStore),
+                    new(
+                        GeminiCitationProperties.CustomMetadata,
+                        CreateMappedCustomMetadata(retrievedContext.CustomMetadata)),
+                ]),
+            };
+        }
+
+        if (chunk.Image is { } image)
+        {
+            return new CitationAnnotation
+            {
+                Title = image.Title,
+                Url = CreateMappedUri(image.SourceUri),
+                ToolName = GeminiToolNames.GoogleSearch,
+                RawRepresentation = chunk,
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiCitationProperties.ImageUri, image.ImageUri),
+                    new(GeminiCitationProperties.Domain, image.Domain),
+                ]),
+            };
+        }
+
+        if (chunk.Maps is { } maps)
+        {
+            return new CitationAnnotation
+            {
+                Title = maps.Title,
+                Url = CreateMappedUri(maps.Uri),
+                FileId = maps.PlaceId,
+                ToolName = GeminiToolNames.GoogleMaps,
+                Snippet = maps.Text,
+                RawRepresentation = chunk,
+            };
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Builds the dictionary carrying the fields of a grounding chunk variant that
+    /// <see cref="CitationAnnotation"/> has no property for, dropping the entries with no value.
+    /// </summary>
+    private static AdditionalPropertiesDictionary? CreateMappedAdditionalProperties(
+        ReadOnlySpan<KeyValuePair<string, object?>> entries)
+    {
+        AdditionalPropertiesDictionary? properties = null;
+
+        foreach (var (key, value) in entries)
+        {
+            if (value is null)
+            {
+                continue;
+            }
+
+            properties ??= [];
+            properties[key] = value;
+        }
+
+        return properties;
+    }
+
+    private static AdditionalPropertiesDictionary? CreateMappedCustomMetadata(
+        IReadOnlyList<GroundingChunkCustomMetadata>? customMetadata)
+    {
+        AdditionalPropertiesDictionary? properties = null;
+
+        foreach (var entry in customMetadata ?? [])
+        {
+            if (entry.Key is not { } key || CreateMappedCustomMetadataValue(entry) is not { } value)
+            {
+                continue;
+            }
+
+            properties ??= [];
+            properties[key] = value;
+        }
+
+        return properties;
+
+        static object? CreateMappedCustomMetadataValue(GroundingChunkCustomMetadata entry)
+        {
+            if (entry.StringValue is { } stringValue)
+            {
+                return stringValue;
+            }
+
+            if (entry.NumericValue is { } numericValue)
+            {
+                return numericValue;
+            }
+
+            if (entry.StringListValue?.Values is not { } values)
+            {
+                return null;
+            }
+
+            var array = new JsonArray();
+
+            foreach (var value in values)
+            {
+                array.Add((JsonNode?)JsonValue.Create(value));
+            }
+
+            return array;
+        }
+    }
+
+    private static Uri? CreateMappedUri(string? uri)
+    {
+        return uri is not null && Uri.TryCreate(uri, UriKind.RelativeOrAbsolute, out var result)
+            ? result
+            : null;
+    }
+
+    /// <summary>
+    /// Converts a <see cref="Segment"/>'s UTF-8 byte offsets into the UTF-16 character indices that
+    /// <see cref="TextSpanAnnotatedRegion"/> uses, or returns <see langword="null"/> when the segment does
+    /// not describe a span that lies within <paramref name="text"/>.
+    /// </summary>
+    private static (int StartIndex, int EndIndex)? CreateMappedTextSpan(string text, Segment segment)
+    {
+        if (segment.StartIndex is not { } startByte || segment.EndIndex is not { } endByte)
+        {
+            return null;
+        }
+
+        if (startByte < 0 || endByte < startByte || endByte > Encoding.UTF8.GetByteCount(text))
+        {
+            return null;
+        }
+
+        return (CountCharsInUtf8Prefix(text, startByte), CountCharsInUtf8Prefix(text, endByte));
+
+        static int CountCharsInUtf8Prefix(string text, int byteOffset)
+        {
+            var bytes = 0;
+            var chars = 0;
+
+            foreach (var rune in text.EnumerateRunes())
+            {
+                if (bytes >= byteOffset)
+                {
+                    break;
+                }
+
+                bytes += rune.Utf8SequenceLength;
+                chars += rune.Utf16SequenceLength;
+            }
+
+            return chars;
+        }
     }
 
     public static ChatResponse CreateMappedChatResponse(GenerateContentResponse response, DateTimeOffset createdAt)
@@ -346,7 +649,11 @@ internal static class GeminiToMEAIMapper
         static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
         {
             var contents = CreateMappedContents(candidateResponse.Content?.Parts) ?? [];
-            AppendMappedGroundingMetadata(contents, candidateResponse.GroundingMetadata);
+
+            AppendMappedGroundingMetadata(
+                contents,
+                candidateResponse.GroundingMetadata,
+                candidateResponse.GroundingMetadata?.GroundingSupports);
 
             return new ChatMessage
             {
