@@ -189,7 +189,7 @@ public sealed class GeminiClientTests
     }
 
     [Fact]
-    public async Task GenerateContent_WithThinkingModel()
+    public async Task StreamGenerateContentAsync_WithIncludeThoughts_ShouldStreamThoughtParts()
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -204,7 +204,14 @@ public sealed class GeminiClientTests
             Model = model,
             GenerationConfiguration = new GenerationConfiguration
             {
-                ThinkingConfiguration = new ThinkingConfiguration { IncludeThoughts = true },
+                ThinkingConfiguration = new ThinkingConfiguration
+                {
+                    IncludeThoughts = true,
+                    // IncludeThoughts alone is not enough: at the default thinking level the flash-lite
+                    // tier answers without thinking, so the response carries no thought parts and no
+                    // thoughts token count. Asking for a level that thinks is what makes them appear.
+                    ThinkingLevel = ThinkingConfigThinkingLevel.High,
+                },
             },
             Contents =
             [
@@ -212,35 +219,31 @@ public sealed class GeminiClientTests
             ]
         };
 
-        var sb = new StringBuilder();
-
-        GenerateContentResponse? response = null;
+        var thoughts = new StringBuilder();
+        var answer = new StringBuilder();
+        UsageMetadata? usage = null;
 
         // Act
-        await foreach (var result in client.StreamGenerateContentAsync(model, request, cancellationToken))
+        await foreach (var chunk in client.StreamGenerateContentAsync(model, request, cancellationToken))
         {
-            response = result;
-            var part = result.Candidates.Single().Content.Parts.Single();
+            usage = chunk.UsageMetadata ?? usage;
 
-            Assert.NotNull(part.Text);
-
-            if (part.Thought is true)
+            foreach (var part in StreamedParts(chunk))
             {
-                sb.Append($"Thought: {part.Text}");
-            }
-            else
-            {
-                sb.Append(part.Text);
+                (part.Thought is true ? thoughts : answer).Append(part.Text);
             }
         }
 
-        var resultText = sb.ToString();
-        _output.WriteLine(resultText);
+        _output.WriteLine("Thoughts:");
+        _output.WriteLine(thoughts.ToString());
+        _output.WriteLine("Answer:");
+        _output.WriteLine(answer.ToString());
 
         // Assert
-        Assert.NotNull(response);
-        Assert.True(response.UsageMetadata.ThoughtsTokenCount > 0);
-        Assert.Contains("prisoner", resultText, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEmpty(thoughts.ToString());
+        Assert.NotEmpty(answer.ToString());
+        Assert.NotNull(usage);
+        Assert.True(usage.ThoughtsTokenCount > 0, $"Expected thought tokens, got {usage.ThoughtsTokenCount}.");
     }
 
     [Fact]
@@ -348,11 +351,12 @@ public sealed class GeminiClientTests
 
         await foreach (var update in client.StreamGenerateContentAsync(model, request, cancellationToken))
         {
-            var response = update.Candidates.Single().Content.Parts.Single();
-
-            if (response.Text is not null)
+            foreach (var part in StreamedParts(update))
             {
-                _output.Write(response.Text);
+                if (part.Text is not null)
+                {
+                    _output.Write(part.Text);
+                }
             }
         }
 
@@ -400,6 +404,27 @@ public sealed class GeminiClientTests
         var urlContext = Assert.Single(metadata);
         Assert.Equal(url, urlContext.RetrievedUrl);
         Assert.Equal(UrlMetadataUrlRetrievalStatus.Success, urlContext.UrlRetrievalStatus);
+    }
+
+    /// <summary>
+    /// Flattens the parts of a streamed chunk. A chunk is free to carry no candidates, a candidate
+    /// with no content, or content with no parts — a trailing usage-only chunk does exactly that —
+    /// so nothing here may assume any of them are present.
+    /// </summary>
+    private static IEnumerable<Part> StreamedParts(GenerateContentResponse chunk)
+    {
+        if (chunk.Candidates is null)
+        {
+            yield break;
+        }
+
+        foreach (var candidate in chunk.Candidates)
+        {
+            foreach (var part in candidate.Content?.Parts ?? [])
+            {
+                yield return part;
+            }
+        }
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()

@@ -88,17 +88,28 @@ public sealed class ReadmeTests
             cancellationToken);
         
         Assert.NotEmpty(response.Messages);
-        var message = response.Messages[0];
+        var contents = response.Messages.SelectMany(m => m.Contents).ToList();
 
-        _ = Assert.Single(message.Contents.OfType<CodeInterpreterToolCallContent>());
-        _ = Assert.Single(message.Contents.OfType<CodeInterpreterToolResultContent>());
+        // The model decides how many programs to run, so only the pairing is ours to assert: every
+        // executed program comes back as one call and the one result carrying its call id.
+        var calls = contents.OfType<CodeInterpreterToolCallContent>().ToList();
+        var results = contents.OfType<CodeInterpreterToolResultContent>().ToList();
 
-        foreach (var content in message.Contents)
+        Assert.NotEmpty(calls);
+        Assert.Equal(calls.Count, results.Count);
+
+        foreach (var call in calls)
         {
-            if (content is TextContent textContent)
-            {
-                _output.WriteLine(textContent.Text);
-            }
+            var input = Assert.Single(call.Inputs!.OfType<DataContent>());
+            Assert.False(input.Data.IsEmpty);
+
+            var result = Assert.Single(results, r => r.CallId == call.CallId);
+            Assert.NotEmpty(result.Outputs!);
+        }
+
+        foreach (var content in contents.OfType<TextContent>())
+        {
+            _output.WriteLine(content.Text);
         }
     }
 }

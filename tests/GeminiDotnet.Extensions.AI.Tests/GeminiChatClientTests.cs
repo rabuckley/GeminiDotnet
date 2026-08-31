@@ -1,4 +1,4 @@
-﻿using GeminiDotnet.Testing;
+using GeminiDotnet.Testing;
 using Microsoft.Extensions.AI;
 using System.Text;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -138,23 +138,30 @@ public sealed class GeminiChatClientTests
         ];
 
         var chatOptions = new ChatOptions { ModelId = model };
-        var sb = new StringBuilder(512);
-        var count = 0;
+        var updates = new List<ChatResponseUpdate>();
+        var streamed = new StringBuilder(512);
 
         // Act
         await foreach (var update in chatClient.GetStreamingResponseAsync(messages, chatOptions, cancellationToken))
         {
-            Assert.NotNull(update.Text);
-            sb.Append(update.Text);
-            count++;
+            updates.Add(update);
+            streamed.Append(update.Text);
         }
 
-        var result = sb.ToString();
-        _output.WriteLine(result);
+        _output.WriteLine(streamed.ToString());
 
         // Assert
-        Assert.True(count > 1);
-        Assert.Contains("Einstein", result, StringComparison.OrdinalIgnoreCase);
+        Assert.True(updates.Count > 1, $"Expected the answer to arrive in several updates, got {updates.Count}.");
+        Assert.NotEmpty(streamed.ToString());
+        Assert.Contains(updates, update => update.FinishReason == ChatFinishReason.Stop);
+        Assert.All(updates, update => Assert.NotNull(update.ResponseId));
+        Assert.Single(updates.Select(u => u.ResponseId).Distinct());
+
+        // The updates must assemble back into the same answer the caller saw arrive piecewise.
+        var response = updates.ToChatResponse();
+        Assert.Equal(streamed.ToString(), response.Text);
+        Assert.Equal(ChatRole.Assistant, Assert.Single(response.Messages).Role);
+        Assert.NotNull(response.ModelId);
     }
 
     public static IEnumerable<TheoryDataRow<string>> StableModels()

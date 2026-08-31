@@ -29,8 +29,15 @@ public sealed class GeminiChatClientTests
             ApiKey = _apiKey, ModelId = Model,
         });
 
+        const string weather = "It's raining.";
+        var calls = 0;
+
         [Description("Gets the current weather")]
-        static string GetCurrentWeather() => "It's raining.";
+        string GetCurrentWeather()
+        {
+            calls++;
+            return weather;
+        }
 
         IChatClient client = new ChatClientBuilder(geminiClient)
             .UseFunctionInvocation()
@@ -47,37 +54,34 @@ public sealed class GeminiChatClientTests
         };
 
         // Act
-        var response = client.GetStreamingResponseAsync(
-            messages,
-            options,
-            cancellationToken);
+        var updates = new List<ChatResponseUpdate>();
 
-        var sb = new StringBuilder();
-
-        await foreach (var update in response)
+        await foreach (var update in client.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
-            sb.Append(update.Text);
+            updates.Add(update);
             _output.Write(update.Text);
         }
 
-        var output = sb.ToString();
-
         // Assert
-        Assert.Contains("yes", output, StringComparison.OrdinalIgnoreCase);
+        // The model's wording is its own business; what this test owns is that the tool was offered,
+        // called, and its result fed back into the same exchange.
+        Assert.Equal(1, calls);
+        AssertFunctionRoundTrip(updates, nameof(GetCurrentWeather), weather);
+        Assert.NotEmpty(updates.ToChatResponse().Text);
 
-        var message = new ChatMessage(ChatRole.User, "Thanks, I'll wear a rain coat.");
-        messages.Add(message);
-        _output.WriteLine(message.Text!);
+        // A follow-up turn must accept the assistant and tool messages the first turn produced.
+        messages.AddRange(updates.ToChatResponse().Messages);
+        messages.Add(new ChatMessage(ChatRole.User, "Thanks, I'll wear a rain coat."));
 
-        var response2 = client.GetStreamingResponseAsync(messages, options, cancellationToken);
+        var followUp = new List<ChatResponseUpdate>();
 
-        await foreach (var update in response2)
+        await foreach (var update in client.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
-            foreach (var content in update.Contents)
-            {
-                _output.Write(content.ToString() ?? "<null>");
-            }
+            followUp.Add(update);
+            _output.Write(update.Text);
         }
+
+        Assert.NotEmpty(followUp.ToChatResponse().Text);
     }
 
     [Fact]
@@ -91,11 +95,12 @@ public sealed class GeminiChatClientTests
             ApiKey = _apiKey, ModelId = Model,
         });
 
+        var arguments = new List<(string Location, DateOnly Date)>();
+
         [Description("Gets the current weather")]
-        static string GetCurrentWeather(string location, DateOnly date)
+        string GetCurrentWeather(string location, DateOnly date)
         {
-            Assert.Equal("London", location, StringComparer.OrdinalIgnoreCase);
-            Assert.Equal(new DateOnly(2000, 10, 1), date);
+            arguments.Add((location, date));
             return $"It's raining in {location}.";
         }
 
@@ -115,31 +120,40 @@ public sealed class GeminiChatClientTests
         };
 
         // Act
-        var response = client.GetStreamingResponseAsync(
-            messages,
-            options,
-            cancellationToken);
+        var updates = new List<ChatResponseUpdate>();
 
-        var sb = new StringBuilder();
-
-        await foreach (var update in response)
+        await foreach (var update in client.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
-            foreach (var content in update.Contents)
-            {
-                if (content is not TextContent tc)
-                {
-                    continue;
-                }
-
-                sb.Append(tc.Text);
-                _output.Write(tc.Text);
-            }
+            updates.Add(update);
+            _output.Write(update.Text);
         }
 
-        var output = sb.ToString();
-
         // Assert
-        Assert.Contains("yes", output, StringComparison.OrdinalIgnoreCase);
+        var (location, date) = Assert.Single(arguments);
+        Assert.Equal("London", location, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(new DateOnly(2000, 10, 1), date);
+        AssertFunctionRoundTrip(updates, nameof(GetCurrentWeather), "It's raining in London.");
+        Assert.NotEmpty(updates.ToChatResponse().Text);
+    }
+
+    /// <summary>
+    /// Asserts that the streamed updates carry a call to <paramref name="functionName"/> and the
+    /// matching result, correlated by call id — the round trip the function-invoking client is
+    /// responsible for, independent of how the model words its final answer.
+    /// </summary>
+    private static void AssertFunctionRoundTrip(
+        IEnumerable<ChatResponseUpdate> updates,
+        string functionName,
+        string expectedResult)
+    {
+        var contents = updates.SelectMany(u => u.Contents).ToList();
+
+        var call = Assert.Single(contents.OfType<FunctionCallContent>(), c => c.Name == functionName);
+        var result = Assert.Single(contents.OfType<FunctionResultContent>(), r => r.CallId == call.CallId);
+
+        Assert.Null(result.Exception);
+        // The function-invoking client hands the return value back as its serialized JSON form.
+        Assert.Equal(expectedResult, result.Result?.ToString());
     }
 
     /// <summary>
