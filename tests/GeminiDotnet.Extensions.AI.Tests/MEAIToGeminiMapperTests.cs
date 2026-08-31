@@ -1162,4 +1162,377 @@ public sealed class MEAIToGeminiMapperTests
         var part = Assert.Single(content.Parts!);
         Assert.Equal("Here are the results.", part.Text);
     }
+
+    [Fact]
+    public void HostedMcpServerTool_ShouldMapToMcpServer()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var tool = new HostedMcpServerTool("weather", "https://example.com/mcp")
+        {
+            ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+            ServerDescription = "Forecasts for UK cities.",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = "Bearer token",
+            },
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var mcpServer = Assert.Single(Assert.Single(request.Tools!).McpServers!);
+        Assert.Equal("weather", mcpServer.Name);
+        Assert.Equal("https://example.com/mcp", mcpServer.StreamableHttpTransport?.Url);
+        Assert.Equal(
+            new KeyValuePair<string, string>("Authorization", "Bearer token"),
+            Assert.Single(mcpServer.StreamableHttpTransport!.Headers!));
+
+        // ServerDescription has no Gemini counterpart, so it must not reach the wire under any name.
+        Assert.DoesNotContain("Forecasts for UK cities.", JsonSerializer.Serialize(request.Tools));
+    }
+
+    [Fact]
+    public void HostedMcpServerTool_ShouldMatchTheWireShapeGeminiAccepts()
+    {
+        // Arrange — this is the tools payload of a request the live v1beta API answered with HTTP 200.
+        const string expected =
+            """[{"mcpServers":[{"name":"weather","streamableHttpTransport":{"url":"https://gemini-api-demos.uc.r.appspot.com/mcp"}}]}]""";
+
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://gemini-api-demos.uc.r.appspot.com/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Equal(expected, JsonSerializer.Serialize(request.Tools));
+    }
+
+    [Fact]
+    public void HostedMcpServerTool_WithHeadersMutatedAfterMapping_ShouldKeepTheRequestUnchanged()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var headers = new Dictionary<string, string> { ["Authorization"] = "Bearer token" };
+        var tool = new HostedMcpServerTool("weather", "https://example.com/mcp")
+        {
+            ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+            Headers = headers,
+        };
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+        headers["Authorization"] = "Bearer leaked";
+        headers["X-Extra"] = "added";
+
+        // Assert
+        var mcpServer = Assert.Single(Assert.Single(request.Tools!).McpServers!);
+        Assert.Equal(
+            new KeyValuePair<string, string>("Authorization", "Bearer token"),
+            Assert.Single(mcpServer.StreamableHttpTransport!.Headers!));
+    }
+
+    [Fact]
+    public void HostedMcpServerTool_WithEmptyHeaders_ShouldMapHeadersToNull()
+    {
+        // Arrange — an empty dictionary is not omitted by WhenWritingDefault, so it would ship "headers":{}.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var tool = new HostedMcpServerTool("weather", "https://example.com/mcp")
+        {
+            ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+            Headers = new Dictionary<string, string>(),
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var mcpServer = Assert.Single(Assert.Single(request.Tools!).McpServers!);
+        Assert.Null(mcpServer.StreamableHttpTransport?.Headers);
+    }
+
+    [Fact]
+    public void HostedMcpServerTool_WithSeveralServers_ShouldMapEachOne()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://example.com/weather/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+                new HostedMcpServerTool("tides", "https://example.com/tides/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert — how the servers are grouped into Tool entries is not observable to the API.
+        var mcpServers = request.Tools!.SelectMany(t => t.McpServers ?? []).ToList();
+        Assert.Equal(["weather", "tides"], mcpServers.Select(s => s.Name));
+        Assert.Equal(
+            ["https://example.com/weather/mcp", "https://example.com/tides/mcp"],
+            mcpServers.Select(s => s.StreamableHttpTransport?.Url));
+    }
+
+    [Fact]
+    public void HostedMcpServerTool_WithAFunction_ShouldMapBoth()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://example.com/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+                new TestFunction(),
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var mcpServer = Assert.Single(request.Tools!.SelectMany(t => t.McpServers ?? []));
+        Assert.Equal("weather", mcpServer.Name);
+        Assert.Single(request.Tools!.SelectMany(t => t.FunctionDeclarations ?? []));
+    }
+
+    public static TheoryData<IList<string>> AllowedToolLists => new()
+    {
+        new List<string> { "get_weather" },
+        new List<string>(),
+    };
+
+    [Theory]
+    [MemberData(nameof(AllowedToolLists))]
+    public void HostedMcpServerTool_WithAllowedTools_ShouldThrow(IList<string> allowedTools)
+    {
+        // Arrange — Gemini accepts an allow-list and then ignores it, so mapping one would promise a
+        // restriction that never applies.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var tool = new HostedMcpServerTool("weather", "https://example.com/mcp")
+        {
+            ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+            AllowedTools = allowedTools,
+        };
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    public static TheoryData<HostedMcpServerToolApprovalMode?> ApprovalModesGeminiCannotHonour => new()
+    {
+        // Null is the default, and M.E.AI documents it as a value providers may read as AlwaysRequire, so
+        // it has to be rejected rather than resolved into consent the caller never gave.
+        null,
+        HostedMcpServerToolApprovalMode.AlwaysRequire,
+        HostedMcpServerToolApprovalMode.RequireSpecific(alwaysRequireApprovalToolNames: ["get_weather"],
+            neverRequireApprovalToolNames: null),
+    };
+
+    [Theory]
+    [MemberData(nameof(ApprovalModesGeminiCannotHonour))]
+    public void HostedMcpServerTool_WithoutNeverRequireApproval_ShouldThrow(
+        HostedMcpServerToolApprovalMode? approvalMode)
+    {
+        // Arrange — Gemini runs the tools server-side with no approval hook.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var tool = new HostedMcpServerTool("weather", "https://example.com/mcp") { ApprovalMode = approvalMode };
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void HostedMcpServerTool_WithNeverRequireApproval_ShouldMap()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var tool = new HostedMcpServerTool("weather", "https://example.com/mcp")
+        {
+            ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var mcpServer = Assert.Single(Assert.Single(request.Tools!).McpServers!);
+        Assert.Equal("weather", mcpServer.Name);
+    }
+
+    public static TheoryData<AITool> BuiltInTools => new()
+    {
+        new HostedWebSearchTool(),
+        new HostedCodeInterpreterTool(),
+        new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")] },
+    };
+
+    [Theory]
+    [MemberData(nameof(BuiltInTools))]
+    public void HostedMcpServerTool_WithABuiltInTool_ShouldThrow(AITool builtInTool)
+    {
+        // Arrange — Gemini rejects this combination outright.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://example.com/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+                builtInTool,
+            ],
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    public static TheoryData<AITool> ToolsThatDeclareNoFunctions => new()
+    {
+        new HostedMcpServerTool("weather", "https://example.com/mcp")
+            { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+        new HostedWebSearchTool(),
+        new HostedCodeInterpreterTool(),
+        new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")] },
+    };
+
+    [Theory]
+    [MemberData(nameof(ToolsThatDeclareNoFunctions))]
+    public void CreateMappedGenerateContentRequest_WithRequiredToolModeAndNoFunctions_ShouldThrow(AITool tool)
+    {
+        // Arrange — asked to require a function call when the request declares no functions, Gemini burns
+        // tool-call round-trips and answers with an empty TOO_MANY_TOOL_CALLS candidate, so this has to fail
+        // here rather than bill the caller for nothing.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions { Tools = [tool], ToolMode = ChatToolMode.RequireAny };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithRequiredToolModeAndFunctionsFromTheRawRepresentation_ShouldMapToAny()
+    {
+        // Arrange — the functions the request declares come from the raw representation, not from
+        // ChatOptions.Tools, so ANY mode is satisfiable and must not be rejected.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://example.com/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+            ],
+            ToolMode = ChatToolMode.RequireAny,
+        };
+
+        var rawRepresentation = new GenerateContentRequest
+        {
+            Model = "",
+            Contents = [],
+            Tools =
+            [
+                new Tool
+                {
+                    FunctionDeclarations =
+                        [new FunctionDeclaration { Name = "get_weather", Description = "Gets the weather." }],
+                },
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options, rawRepresentation);
+
+        // Assert
+        Assert.Equal(FunctionCallingConfigMode.Any, request.ToolConfiguration?.FunctionCallingConfiguration?.Mode);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithRequiredToolModeAndAFunctionAlongsideAnMcpServer_ShouldMapToAny()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://example.com/mcp")
+                    { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
+                new TestFunction(),
+            ],
+            ToolMode = ChatToolMode.RequireAny,
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Equal(FunctionCallingConfigMode.Any, request.ToolConfiguration?.FunctionCallingConfiguration?.Mode);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAnUnsupportedToolType_ShouldThrow()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Is it raining in London?") };
+
+        var options = new ChatOptions { Tools = [new UnsupportedTool()] };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    private sealed class UnsupportedTool : AITool;
 }

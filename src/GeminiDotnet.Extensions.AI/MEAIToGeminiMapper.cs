@@ -58,6 +58,8 @@ internal static class MEAIToGeminiMapper
             contents.RemoveAll(static content => content.Parts is not { Count: > 0 });
         }
 
+        var tools = rawRepresentation?.Tools ?? CreateMappedTools(options?.Tools);
+
         return new GenerateContentRequest
         {
             Model = rawRepresentation?.Model ?? model,
@@ -66,8 +68,8 @@ internal static class MEAIToGeminiMapper
                 rawRepresentation?.GenerationConfiguration ?? CreateMappedGenerationConfiguration(options),
             CachedContent = rawRepresentation?.CachedContent,
             Contents = rawRepresentation?.Contents ?? contents!,
-            Tools = rawRepresentation?.Tools ?? CreateMappedTools(options?.Tools),
-            ToolConfiguration = rawRepresentation?.ToolConfiguration ?? CreateMappedToolConfiguration(options),
+            Tools = tools,
+            ToolConfiguration = rawRepresentation?.ToolConfiguration ?? CreateMappedToolConfiguration(options, tools),
             SafetySettings = rawRepresentation?.SafetySettings,
         };
 
@@ -80,6 +82,8 @@ internal static class MEAIToGeminiMapper
 
             List<Tool> mappedTools = new(tools.Count);
             List<FunctionDeclaration>? functionDeclarations = null;
+            List<McpServer>? mcpServers = null;
+            MEAI.AITool? builtInTool = null;
 
             foreach (var tool in tools)
             {
@@ -98,13 +102,20 @@ internal static class MEAIToGeminiMapper
 
                         break;
                     case MEAI.HostedCodeInterpreterTool:
+                        builtInTool = tool;
                         mappedTools.Add(new Tool { CodeExecution = new CodeExecution() });
                         break;
                     case MEAI.HostedWebSearchTool:
+                        builtInTool = tool;
                         mappedTools.Add(new Tool { GoogleSearch = new GoogleSearch() });
                         break;
                     case MEAI.HostedFileSearchTool fileSearchTool:
+                        builtInTool = tool;
                         mappedTools.Add(new Tool { FileSearch = CreateMappedFileSearch(fileSearchTool) });
+                        break;
+                    case MEAI.HostedMcpServerTool mcpServerTool:
+                        mcpServers ??= [];
+                        mcpServers.Add(CreateMappedMcpServer(mcpServerTool));
                         break;
                     default:
                         GeminiMappingException.Throw(
@@ -114,6 +125,23 @@ internal static class MEAIToGeminiMapper
 
                         break;
                 }
+            }
+
+            if (mcpServers is not null)
+            {
+                if (builtInTool is not null)
+                {
+                    // Gemini expands each MCP server into synthetic function declarations, and rejects
+                    // those alongside a built-in tool unless toolConfig.includeServerSideToolInvocations
+                    // is set — which in turn produces tool calls this library cannot yet read back.
+                    GeminiMappingException.Throw(
+                        fromPropertyName: $"{typeof(MEAI.ChatOptions)}.{nameof(MEAI.ChatOptions.Tools)}",
+                        toPropertyName: $"{typeof(Tool)}.{nameof(Tool.McpServers)}",
+                        reason:
+                        $"Gemini rejects a request that combines MCP servers with a built-in tool, so {typeof(MEAI.HostedMcpServerTool)} cannot be used alongside {builtInTool.GetType()}.");
+                }
+
+                mappedTools.Add(new Tool { McpServers = mcpServers });
             }
 
             if (functionDeclarations is not null)
@@ -357,7 +385,12 @@ internal static class MEAIToGeminiMapper
         }
     }
 
-    private static ToolConfiguration? CreateMappedToolConfiguration(MEAI.ChatOptions? options)
+    /// <param name="requestTools">
+    /// The tools the request carries, which a raw representation may supply in place of the mapped ones.
+    /// </param>
+    private static ToolConfiguration? CreateMappedToolConfiguration(
+        MEAI.ChatOptions? options,
+        IReadOnlyList<Tool>? requestTools)
     {
         if (options?.ToolMode is null)
         {
@@ -367,6 +400,22 @@ internal static class MEAIToGeminiMapper
         if (options.Tools?.Count is null or 0)
         {
             return null;
+        }
+
+        // Gemini's ANY mode forces the model to call a function. Asked to require one when the request
+        // declares none — only hosted tools — the model loops until it hits the tool-call cap and returns an
+        // empty candidate with finishReason TOO_MANY_TOOL_CALLS, after billing every round-trip it made
+        // (2026-08-31, v1beta: ~30k tool-use prompt tokens for one such request). An MCP server is no
+        // exception; Gemini runs its tools server-side, so no client-visible call can satisfy the mode.
+        if (options.ToolMode is MEAI.RequiredChatToolMode
+            && requestTools?.Any(static tool => tool.FunctionDeclarations is { Count: > 0 }) is not true)
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{typeof(MEAI.ChatOptions)}.{nameof(MEAI.ChatOptions.ToolMode)}",
+                toPropertyName:
+                $"{typeof(FunctionCallingConfiguration)}.{nameof(FunctionCallingConfiguration.Mode)}",
+                reason:
+                $"{typeof(MEAI.RequiredChatToolMode)} maps to {nameof(FunctionCallingConfigMode.Any)}, which requires the request to declare at least one function; add an {typeof(MEAI.AIFunctionDeclaration)} to {nameof(MEAI.ChatOptions.Tools)}.");
         }
 
         var functionCallingConfig = options.ToolMode switch
@@ -524,6 +573,66 @@ internal static class MEAIToGeminiMapper
                 GeminiAdditionalProperties.MetadataFilter,
                 fromPropertyName: $"{typeof(MEAI.AITool)}.{nameof(MEAI.AITool.AdditionalProperties)}",
                 toPropertyName: $"{typeof(FileSearch)}.{nameof(FileSearch.MetadataFilter)}"),
+        };
+    }
+
+    /// <remarks>
+    /// <para>
+    /// <see cref="MEAI.HostedMcpServerTool.ServerName"/> and
+    /// <see cref="MEAI.HostedMcpServerTool.ServerAddress"/> are passed through verbatim. Gemini requires the
+    /// name to be lowercase snake_case and unique across the request, and the address to be an absolute URL;
+    /// its own errors name the offending value, so they are not re-checked here.
+    /// </para>
+    /// <para>
+    /// <see cref="MEAI.HostedMcpServerTool.ServerDescription"/> has no Gemini counterpart and is dropped. It
+    /// is advisory, so nothing observable changes; the two properties below are restrictions, so silently
+    /// dropping either would leave a caller believing in a limit that does not apply.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="GeminiMappingException">
+    /// <see cref="MEAI.HostedMcpServerTool.AllowedTools"/> is not <see langword="null"/>, or
+    /// <see cref="MEAI.HostedMcpServerTool.ApprovalMode"/> is not
+    /// <see cref="MEAI.HostedMcpServerToolApprovalMode.NeverRequire"/>.
+    /// </exception>
+    private static McpServer CreateMappedMcpServer(MEAI.HostedMcpServerTool tool)
+    {
+        if (tool.AllowedTools is not null)
+        {
+            // Gemini has a hidden allowedTools field that it accepts and then ignores: a request
+            // restricted to one tool still had the model calling the others.
+            GeminiMappingException.Throw(
+                fromPropertyName:
+                $"{typeof(MEAI.HostedMcpServerTool)}.{nameof(MEAI.HostedMcpServerTool.AllowedTools)}",
+                toPropertyName: $"{typeof(McpServer)}",
+                reason:
+                $"Gemini offers the model every tool the MCP server exposes and enforces no allow-list, so restrict the tools on the server itself and leave {nameof(MEAI.HostedMcpServerTool.AllowedTools)} null.");
+        }
+
+        // Null, the default, is rejected alongside the modes that ask for approval. M.E.AI documents it as a
+        // value "some providers might treat the same as AlwaysRequire", and OpenAIResponsesChatClient does
+        // exactly that by leaving the policy unset, letting OpenAI's own "always" default apply. Gemini has
+        // no approval hook to leave unset, so reading null as NeverRequire would turn an unstated default
+        // into unattended server-side execution with the caller's Headers attached.
+        if (tool.ApprovalMode is not MEAI.HostedMcpServerToolNeverRequireApprovalMode)
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName:
+                $"{typeof(MEAI.HostedMcpServerTool)}.{nameof(MEAI.HostedMcpServerTool.ApprovalMode)}",
+                toPropertyName: $"{typeof(McpServer)}",
+                reason:
+                $"Gemini invokes remote MCP tools server-side with no approval hook, so only {nameof(MEAI.HostedMcpServerToolApprovalMode)}.{nameof(MEAI.HostedMcpServerToolApprovalMode.NeverRequire)} can be honoured; set it explicitly to accept that.");
+        }
+
+        return new McpServer
+        {
+            Name = tool.ServerName,
+            StreamableHttpTransport = new StreamableHttpTransport
+            {
+                Url = tool.ServerAddress,
+                // Copied so that mutating the tool afterwards cannot alter the built request. An empty
+                // dictionary would be written as "headers":{} rather than omitted, so it maps to null.
+                Headers = tool.Headers is { Count: > 0 } headers ? new Dictionary<string, string>(headers) : null,
+            },
         };
     }
 

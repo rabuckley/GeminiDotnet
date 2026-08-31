@@ -24,6 +24,8 @@ The following examples use the [`GeminiDotnet.Extensions.AI`](https://www.nuget.
 - [Streaming Text Generation](#streaming-text-generation)
 - [Function Execution](#function-execution)
 - [Code Execution](#code-execution)
+- [Remote MCP Servers](#remote-mcp-servers)
+- [Requiring a Tool Call](#requiring-a-tool-call)
 
 ### Streaming Text Generation
 
@@ -93,3 +95,62 @@ var response = await geminiClient.GetResponseAsync(
     cancellationToken);
 ```
 
+### Remote MCP Servers
+
+Gemini can connect to a remote MCP server itself, discover its tools and call them server-side. Map a
+`HostedMcpServerTool` onto that with the server's name and its streamable HTTP endpoint.
+
+```cs
+var options = new GeminiClientOptions
+{
+    ApiKey = _apiKey, ModelId = "gemini-2.5-flash"
+};
+
+IChatClient geminiClient = new GeminiChatClient(options);
+
+var chatOptions = new ChatOptions
+{
+    Tools =
+    [
+        new HostedMcpServerTool("weather", "https://example.com/mcp")
+        {
+            ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+        },
+    ]
+};
+
+var response = await geminiClient.GetResponseAsync(
+    [new(ChatRole.User, "Will it rain in London tomorrow?")],
+    chatOptions,
+    cancellationToken);
+```
+
+Gemini rejects a request whose MCP servers break its own naming and addressing rules:
+
+- `ServerName` must be lowercase snake_case (`weather`, `rain_forecast`), and must be unique across the
+  servers in one request.
+- `ServerAddress` must be an absolute URL.
+
+The rest of `HostedMcpServerTool` is what Gemini cannot honour. Rather than dropping a restriction the
+caller asked for, the mapping throws a `GeminiMappingException`:
+
+- `AllowedTools` must be `null`. Gemini accepts an allow-list and then ignores it, so the model would still
+  be offered every tool the server exposes. Restrict the tools on the server instead.
+- `ApprovalMode` must be set to `HostedMcpServerToolApprovalMode.NeverRequire`. Gemini runs the tools
+  server-side with no approval hook, so that is the only mode it can honour. The default `null` is rejected
+  too: M.E.AI documents it as a value some providers treat as `AlwaysRequire`, and the OpenAI client does
+  exactly that, so reading it as `NeverRequire` here would quietly turn "unspecified" into consent.
+- An MCP server cannot be combined with `HostedWebSearchTool`, `HostedCodeInterpreterTool` or
+  `HostedFileSearchTool` in the same request, because Gemini rejects that combination. `AIFunction` tools
+  can be used alongside it.
+
+`ServerDescription` has no Gemini counterpart and is ignored.
+
+### Requiring a Tool Call
+
+`ChatOptions.ToolMode = ChatToolMode.RequireAny` (or `RequireSpecific`) makes Gemini require a *function*
+call, so the request must also declare at least one `AIFunction`. Asked to require one when only hosted
+tools are present, the model loops until it hits the tool-call cap and returns an empty response with
+`finishReason: TOO_MANY_TOOL_CALLS`, having billed every round-trip it made along the way. An MCP server is
+no exception, because Gemini runs its tools server-side and no client-visible call ever satisfies the mode.
+This library therefore throws a `GeminiMappingException` instead of sending such a request.
