@@ -51,6 +51,11 @@ internal static class MEAIToGeminiMapper
             // This is intentionally skipped when rawRepresentation provides its
             // own Contents, as the caller has full control in that case.
             InjectToolInputParts(options, contents);
+
+            // A message whose contents all mapped away (an empty text carrier for citations, or web
+            // search content synthesized during response mapping) leaves a Content with no parts, which
+            // the API rejects. Done after injection so an empty user message can still host tool inputs.
+            contents.RemoveAll(static content => content.Parts is not { Count: > 0 });
         }
 
         return new GenerateContentRequest
@@ -97,6 +102,9 @@ internal static class MEAIToGeminiMapper
                         break;
                     case MEAI.HostedWebSearchTool:
                         mappedTools.Add(new Tool { GoogleSearch = new GoogleSearch() });
+                        break;
+                    case MEAI.HostedFileSearchTool fileSearchTool:
+                        mappedTools.Add(new Tool { FileSearch = CreateMappedFileSearch(fileSearchTool) });
                         break;
                     default:
                         GeminiMappingException.Throw(
@@ -229,6 +237,12 @@ internal static class MEAIToGeminiMapper
                 // Web search content is synthesized from GroundingMetadata during response
                 // mapping and has no corresponding Gemini Part representation.
                 if (content is MEAI.WebSearchToolCallContent or MEAI.WebSearchToolResultContent)
+                    continue;
+
+                // Gemini rejects a part whose text is empty, and empty text carries nothing anyway.
+                // Response mapping produces one as a carrier for citations that ground no span, so a
+                // response fed back as history would otherwise fail.
+                if (content is MEAI.TextContent { Text: null or "" })
                     continue;
 
                 var mapped = content switch
@@ -452,6 +466,64 @@ internal static class MEAIToGeminiMapper
                 MimeType = fileContent.MediaType,
             },
             ThoughtSignature = GetThoughtSignature(fileContent),
+        };
+    }
+
+    /// <remarks>
+    /// <para>
+    /// Store names are passed through verbatim; the API's own error on an unknown store is clearer than
+    /// anything this mapper could infer from the shape of the identifier.
+    /// </para>
+    /// <para>
+    /// This deviates from <see cref="MEAI.HostedFileSearchTool.Inputs"/>, which lets a service pick the
+    /// inputs when none are given: Gemini has no default store, so a bare
+    /// <see cref="MEAI.HostedFileSearchTool"/> — as a generic host such as Semantic Kernel adds — cannot
+    /// be mapped at all and is reported here rather than as an API error.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="GeminiMappingException">
+    /// <see cref="MEAI.HostedFileSearchTool.Inputs"/> is empty, or holds content that is not a
+    /// <see cref="MEAI.HostedVectorStoreContent"/>; or the tool carries a
+    /// <see cref="GeminiAdditionalProperties.MetadataFilter"/> that is not a string.
+    /// </exception>
+    private static FileSearch CreateMappedFileSearch(MEAI.HostedFileSearchTool tool)
+    {
+        if (tool.Inputs is not { Count: > 0 })
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName:
+                $"{typeof(MEAI.HostedFileSearchTool)}.{nameof(MEAI.HostedFileSearchTool.Inputs)}",
+                toPropertyName: $"{typeof(FileSearch)}.{nameof(FileSearch.FileSearchStoreNames)}",
+                reason:
+                $"Gemini requires at least one file search store to retrieve from, so {nameof(MEAI.HostedFileSearchTool.Inputs)} must contain at least one {typeof(MEAI.HostedVectorStoreContent)}.");
+        }
+
+        var storeNames = new List<string>(tool.Inputs.Count);
+
+        foreach (var input in tool.Inputs)
+        {
+            if (input is not MEAI.HostedVectorStoreContent vectorStore)
+            {
+                GeminiMappingException.Throw(
+                    fromPropertyName:
+                    $"{typeof(MEAI.HostedFileSearchTool)}.{nameof(MEAI.HostedFileSearchTool.Inputs)}",
+                    toPropertyName: $"{typeof(FileSearch)}.{nameof(FileSearch.FileSearchStoreNames)}",
+                    reason: $"Unsupported tool input type: {input.GetType()}");
+
+                return null!; // unreachable
+            }
+
+            storeNames.Add(vectorStore.VectorStoreId);
+        }
+
+        return new FileSearch
+        {
+            FileSearchStoreNames = storeNames,
+            TopK = tool.MaximumResultCount,
+            MetadataFilter = tool.AdditionalProperties.GetValueOrThrow<string>(
+                GeminiAdditionalProperties.MetadataFilter,
+                fromPropertyName: $"{typeof(MEAI.AITool)}.{nameof(MEAI.AITool.AdditionalProperties)}",
+                toPropertyName: $"{typeof(FileSearch)}.{nameof(FileSearch.MetadataFilter)}"),
         };
     }
 

@@ -288,6 +288,233 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void HostedFileSearchTool_ShouldMapToFileSearchTool()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var tool = new HostedFileSearchTool(new Dictionary<string, object?>
+        {
+            [GeminiAdditionalProperties.MetadataFilter] = "author = \"Robert Graves\"",
+        })
+        {
+            Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")],
+            MaximumResultCount = 5,
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var fileSearch = Assert.Single(request.Tools!).FileSearch;
+        Assert.NotNull(fileSearch);
+        Assert.Equal("fileSearchStores/poems", Assert.Single(fileSearch.FileSearchStoreNames));
+        Assert.Equal(5, fileSearch.TopK);
+        Assert.Equal("author = \"Robert Graves\"", fileSearch.MetadataFilter);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithInputsOnly_ShouldLeaveOptionalFieldsNull()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")] },
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var fileSearch = Assert.Single(request.Tools!).FileSearch;
+        Assert.NotNull(fileSearch);
+        Assert.Null(fileSearch.TopK);
+        Assert.Null(fileSearch.MetadataFilter);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithSeveralStores_ShouldPreserveOrder()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedFileSearchTool
+                {
+                    Inputs =
+                    [
+                        new HostedVectorStoreContent("fileSearchStores/poems"),
+                        new HostedVectorStoreContent("fileSearchStores/letters"),
+                    ],
+                },
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var fileSearch = Assert.Single(request.Tools!).FileSearch;
+        Assert.NotNull(fileSearch);
+        Assert.Equal(["fileSearchStores/poems", "fileSearchStores/letters"], fileSearch.FileSearchStoreNames);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithNonStringMetadataFilter_ShouldThrow()
+    {
+        // Arrange — dropping the filter would widen retrieval to the whole store, which nothing in the
+        // response would reveal.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var tool = new HostedFileSearchTool(new Dictionary<string, object?>
+        {
+            [GeminiAdditionalProperties.MetadataFilter] = 42,
+        })
+        {
+            Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")],
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act & Assert
+        Assert.Throws<GeminiMappingException>(
+            () => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options));
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithNullMetadataFilter_ShouldMapWithoutAFilter()
+    {
+        // Arrange — an explicitly null value reads as "no filter", not as a mistake.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var tool = new HostedFileSearchTool(new Dictionary<string, object?>
+        {
+            [GeminiAdditionalProperties.MetadataFilter] = null,
+        })
+        {
+            Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")],
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var fileSearch = Assert.Single(request.Tools!).FileSearch;
+        Assert.NotNull(fileSearch);
+        Assert.Null(fileSearch.MetadataFilter);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithJsonElementMetadataFilter_ShouldMapTheFilter()
+    {
+        // Arrange — simulate SK's JSON roundtrip behavior, which delivers additional properties as
+        // JsonElement rather than the original CLR type.
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var tool = new HostedFileSearchTool(new Dictionary<string, object?>
+        {
+            [GeminiAdditionalProperties.MetadataFilter] =
+                JsonSerializer.SerializeToElement("author = \"Robert Graves\""),
+        })
+        {
+            Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")],
+        };
+
+        var options = new ChatOptions { Tools = [tool] };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        var fileSearch = Assert.Single(request.Tools!).FileSearch;
+        Assert.NotNull(fileSearch);
+        Assert.Equal("author = \"Robert Graves\"", fileSearch.MetadataFilter);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_AlongsideAFunction_ShouldProduceBothTools()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")] },
+                AIFunctionFactory.Create(() => "sunny", "GetWeather"),
+            ],
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Single(request.Tools!, t => t.FileSearch is not null);
+
+        var functionTool = Assert.Single(request.Tools!, t => t.FunctionDeclarations is not null);
+        Assert.Equal("GetWeather", Assert.Single(functionTool.FunctionDeclarations!).Name);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithoutInputs_ShouldThrow()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+        var options = new ChatOptions { Tools = [new HostedFileSearchTool()] };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithEmptyInputs_ShouldThrow()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+        var options = new ChatOptions { Tools = [new HostedFileSearchTool { Inputs = [] }] };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void HostedFileSearchTool_WithUnsupportedInput_ShouldThrow()
+    {
+        // Arrange
+        var messages = new List<ChatMessage> { new(ChatRole.User, "Tell me about I, Claudius") };
+
+        var options = new ChatOptions
+        {
+            Tools = [new HostedFileSearchTool { Inputs = [new HostedFileContent("files/abc123")] }],
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
     public void OptionsInstruction_ShouldBeInsertedIntoSystemInstruction()
     {
         // Arrange
@@ -647,6 +874,66 @@ public sealed class MEAIToGeminiMapperTests
 
         Assert.NotNull(functionResponse);
         Assert.Equal(callId, functionResponse.Name);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithEmptyTextContent_ShouldNotEmitATextPart()
+    {
+        // Arrange — response mapping synthesizes an empty TextContent to carry citations that ground no
+        // span. Gemini rejects a part whose text is empty, so feeding that response back must not send one.
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.Assistant,
+            [
+                new TextContent("Grounded answer."),
+                new TextContent(string.Empty) { Annotations = [new CitationAnnotation { Title = "Source" }] },
+            ]),
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert
+        var part = Assert.Single(request.Contents.Single().Parts);
+        Assert.Equal("Grounded answer.", part.Text);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithOnlyEmptyTextContent_ShouldDropTheMessage()
+    {
+        // Arrange — a candidate grounded without a text part of its own maps to a message whose only
+        // content is the empty citation carrier. Fed back as history, it must not become an
+        // empty-parts Content, which the API rejects.
+        var candidate = new Candidate
+        {
+            Content = new Content { Role = "model", Parts = null },
+            GroundingMetadata = new GroundingMetadata
+            {
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                ],
+            },
+            FinishReason = CandidateFinishReason.Stop,
+        };
+
+        var response = GeminiToMEAIMapper.CreateMappedChatResponse(
+            new GenerateContentResponse { Candidates = [candidate], ModelVersion = "gemini-2.0-flash" },
+            DateTimeOffset.UtcNow);
+
+        var carrier = Assert.IsType<TextContent>(Assert.Single(Assert.Single(response.Messages).Contents));
+        Assert.Equal(string.Empty, carrier.Text);
+
+        List<ChatMessage> messages = [new(ChatRole.User, "Who?"), .. response.Messages];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert
+        var content = Assert.Single(request.Contents);
+        Assert.Equal(ChatRoles.User, content.Role);
+        Assert.Equal("Who?", Assert.Single(content.Parts!).Text);
+        Assert.Null(request.SystemInstruction);
     }
 
     [Fact]

@@ -1,4 +1,6 @@
 using GeminiDotnet.Testing;
+using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1Beta.FileSearchStores;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;
 using System.Text;
@@ -305,5 +307,136 @@ public sealed class GeminiChatClientTests
         Assert.NotNull(functionCall.Arguments);
         Assert.Equal("London", functionCall.Arguments["location"]?.ToString());
         Assert.Equal(DateOnly.Parse("2000-10-01"), DateOnly.Parse(functionCall.Arguments["date"]!.ToString()!));
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithHostedFileSearchTool_ShouldGroundTheAnswerInTheStore()
+    {
+        // Arrange — no store fixture exists, so this test owns the whole lifecycle.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var client = new GeminiClient(new GeminiClientOptions { ApiKey = _apiKey, ModelId = Model });
+        var stores = client.V1Beta.FileSearchStores;
+
+        // A fact the model cannot know, so an answer containing it can only have come from the store.
+        const string fact = "The Aldbourne Reading Room was founded in 1873 by Hester Vane.";
+
+        var store = await stores.CreateFileSearchStoreAsync(
+            new FileSearchStore { DisplayName = $"gemini-dotnet-test-{Guid.NewGuid():N}" },
+            cancellationToken);
+
+        Assert.NotNull(store.Name);
+        var storeId = store.Name["fileSearchStores/".Length..];
+        string? uploadedFileId = null;
+
+        try
+        {
+            var fileName = await UploadDocumentAsync(client, fact, cancellationToken);
+            uploadedFileId = fileName["files/".Length..];
+
+            await ImportDocumentAsync(client, storeId, fileName, cancellationToken);
+
+            IChatClient chatClient = new GeminiChatClient(new GeminiClientOptions
+            {
+                ApiKey = _apiKey, ModelId = Model,
+            });
+
+            var options = new ChatOptions
+            {
+                Tools =
+                [
+                    new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent(store.Name)] },
+                ],
+            };
+
+            // Act
+            var response = await chatClient.GetResponseAsync(
+                "Who founded the Aldbourne Reading Room, and in what year?",
+                options,
+                cancellationToken);
+
+            // Assert
+            _output.WriteLine(response.Text);
+
+            Assert.Contains("Hester Vane", response.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("1873", response.Text, StringComparison.Ordinal);
+
+            var citations = response.Messages
+                .SelectMany(m => m.Contents)
+                .OfType<TextContent>()
+                .SelectMany(t => t.Annotations ?? [])
+                .OfType<CitationAnnotation>()
+                .ToList();
+
+            Assert.Contains(citations, c => c.ToolName == GeminiToolNames.FileSearch);
+        }
+        finally
+        {
+            // Nested so a failure deleting the store cannot leave the uploaded file behind in the
+            // shared project, where nothing else would ever notice it.
+            try
+            {
+                await stores.DeleteFileSearchStoreAsync(storeId, force: true, CancellationToken.None);
+            }
+            finally
+            {
+                if (uploadedFileId is not null)
+                {
+                    // Importing copies the file into the store, so the upload is the test's to clean up.
+                    await client.V1Beta.Files.DeleteFileAsync(uploadedFileId, CancellationToken.None);
+                }
+            }
+        }
+    }
+
+    private static async Task<string> UploadDocumentAsync(
+        GeminiClient client,
+        string text,
+        CancellationToken cancellationToken)
+    {
+        var bytes = Encoding.UTF8.GetBytes(text);
+
+        var file = await client.V1Beta.Files.UploadFileAsync(
+            new MemoryStream(bytes),
+            bytes.Length,
+            new UploadFileOptions { DisplayName = "aldbourne-reading-room", MimeType = "text/plain" },
+            cancellationToken);
+
+        Assert.NotNull(file.Name);
+
+        return file.Name;
+    }
+
+    private static async Task ImportDocumentAsync(
+        GeminiClient client,
+        string storeId,
+        string fileName,
+        CancellationToken cancellationToken)
+    {
+        var operation = await client.V1Beta.FileSearchStores.ImportFileAsync(
+            storeId,
+            new ImportFileRequest { FileName = fileName },
+            cancellationToken);
+
+        Assert.NotNull(operation.Name);
+        var operationId = operation.Name[(operation.Name.LastIndexOf('/') + 1)..];
+
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(2);
+
+        while (operation.Done is not true)
+        {
+            Assert.True(DateTimeOffset.UtcNow < deadline, "Timed out importing the file into the store.");
+
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
+            var polled = await client.V1Beta.FileSearchStores.GetOperationByFileSearchStoreAndOperationAsync(
+                storeId,
+                operationId,
+                cancellationToken);
+
+            operation = operation with { Done = polled.Done, Error = polled.Error };
+        }
+
+        Assert.Null(operation.Error);
     }
 }
