@@ -1,6 +1,6 @@
-using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1.CachedContents;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1;
 
 public interface ICachedContentsClient
 {

@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using GeminiDotnet.V1Beta;
 
-namespace GeminiDotnet.V1Beta.EnvironmentsList;
+namespace GeminiDotnet.V1Beta;
 
 /// <summary>
 /// An execution environment for an agent.

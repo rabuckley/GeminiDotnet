@@ -129,7 +129,7 @@ public sealed record Part
     /// Optional. Video metadata. The metadata should only be specified while the video
     /// data is presented in inline_data or file_data.
     /// </summary>
-    [Obsolete("Use MediaProcessing instead.")]
+    [Obsolete("Use GenerateContentRequest.processing_options instead.")]
     [JsonPropertyName("videoMetadata")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public VideoMetadata? VideoMetadata { get; init; }

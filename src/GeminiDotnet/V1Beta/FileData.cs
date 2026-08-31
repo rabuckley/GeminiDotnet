@@ -8,6 +8,15 @@ namespace GeminiDotnet.V1Beta;
 public sealed record FileData
 {
     /// <summary>
+    /// Optional. Specifies the name used to refer to this file to the model (e.g.
+    /// "my_file.pdf"). Used as the file reference identifier when
+    /// <c>verbalization_mode</c> is set to <c>REFERENCE_ONLY</c>.
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? DisplayName { get; init; }
+
+    /// <summary>
     /// Required. URI.
     /// </summary>
     [JsonPropertyName("fileUri")]

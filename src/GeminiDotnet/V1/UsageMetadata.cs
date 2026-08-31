@@ -15,6 +15,13 @@ public sealed record UsageMetadata
     public IReadOnlyList<ModalityTokenCount>? CacheTokensDetails { get; init; }
 
     /// <summary>
+    /// Number of tokens in the cached part of the prompt (the cached content)
+    /// </summary>
+    [JsonPropertyName("cachedContentTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int? CachedContentTokenCount { get; init; }
+
+    /// <summary>
     /// Total number of tokens across all the generated response candidates.
     /// </summary>
     [JsonPropertyName("candidatesTokenCount")]

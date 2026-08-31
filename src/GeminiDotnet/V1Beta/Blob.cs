@@ -16,6 +16,15 @@ public sealed record Blob
     public ReadOnlyMemory<byte> Data { get; init; }
 
     /// <summary>
+    /// Optional. Specifies the name used to refer to this blob to the model (e.g.
+    /// "my_blob.png"). Used as the blob reference identifier when
+    /// <c>verbalization_mode</c> is set to <c>REFERENCE_ONLY</c>.
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? DisplayName { get; init; }
+
+    /// <summary>
     /// The IANA standard MIME type of the source data.
     /// Examples of supported types:
     /// - Images: image/png, image/jpeg, image/jpg, image/webp, image/heic,

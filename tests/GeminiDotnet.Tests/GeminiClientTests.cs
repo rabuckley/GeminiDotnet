@@ -1,7 +1,5 @@
 using GeminiDotnet.Testing;
 using GeminiDotnet.V1Beta;
-using GeminiDotnet.V1Beta.CachedContents;
-using GeminiDotnet.V1Beta.Models;
 using System.Net;
 using System.Text;
 

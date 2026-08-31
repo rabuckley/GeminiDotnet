@@ -1,9 +1,3 @@
-using GeminiDotnet.V1.Files;
-using GeminiDotnet.V1.FileSearchStores;
-using GeminiDotnet.V1.FilesRegister;
-using GeminiDotnet.V1.Models;
-using GeminiDotnet.V1.TunedModels;
-using File = GeminiDotnet.V1.Files.File;
 
 namespace GeminiDotnet.V1;
 
@@ -13,6 +7,11 @@ public interface IGeminiV1Client
     /// Provides access to the Batches API operations.
     /// </summary>
     IBatchesClient Batches { get; }
+
+    /// <summary>
+    /// Provides access to the CachedContents API operations.
+    /// </summary>
+    ICachedContentsClient CachedContents { get; }
 
     /// <summary>
     /// Provides access to the Corpora API operations.

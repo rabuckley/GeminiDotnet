@@ -13,6 +13,14 @@ namespace GeminiDotnet.V1Beta;
 public sealed record Part
 {
     /// <summary>
+    /// Optional. Audio (input or output) transcription.
+    /// This is only set when this Part contains audio data.
+    /// </summary>
+    [JsonPropertyName("audioTranscription")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public AudioTranscription? AudioTranscription { get; init; }
+
+    /// <summary>
     /// Result of executing the <see cref="V1Beta.ExecutableCode"/>.
     /// </summary>
     [JsonPropertyName("codeExecutionResult")]
@@ -129,7 +137,7 @@ public sealed record Part
     /// Optional. Video metadata. The metadata should only be specified while the video
     /// data is presented in inline_data or file_data.
     /// </summary>
-    [Obsolete("Use MediaProcessing instead.")]
+    [Obsolete("Use GenerateContentRequest.processing_options instead.")]
     [JsonPropertyName("videoMetadata")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public VideoMetadata? VideoMetadata { get; init; }

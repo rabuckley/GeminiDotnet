@@ -1,16 +1,3 @@
-using System.Net.Http.Json;
-using System.Net.ServerSentEvents;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
-using GeminiDotnet.V1.Files;
-using GeminiDotnet.V1.FileSearchStores;
-using GeminiDotnet.V1.FilesRegister;
-using GeminiDotnet.V1.Models;
-using GeminiDotnet.V1.TunedModels;
-using File = GeminiDotnet.V1.Files.File;
-
 namespace GeminiDotnet.V1;
 
 public sealed partial class GeminiV1Client : IGeminiV1Client
@@ -24,6 +11,8 @@ public sealed partial class GeminiV1Client : IGeminiV1Client
     }
 
     public IBatchesClient Batches => field ??= new BatchesClient(_requester);
+
+    public ICachedContentsClient CachedContents => field ??= new CachedContentsClient(_requester);
 
     public ICorporaClient Corpora => field ??= new CorporaClient(_requester);
 

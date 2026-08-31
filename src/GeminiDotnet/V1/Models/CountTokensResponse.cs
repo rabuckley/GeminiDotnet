@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using GeminiDotnet.V1;
 
 namespace GeminiDotnet.V1.Models;
 
@@ -15,6 +14,13 @@ public sealed record CountTokensResponse
     [JsonPropertyName("cacheTokensDetails")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public IReadOnlyList<ModalityTokenCount>? CacheTokensDetails { get; init; }
+
+    /// <summary>
+    /// Number of tokens in the cached part of the prompt (the cached content).
+    /// </summary>
+    [JsonPropertyName("cachedContentTokenCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int? CachedContentTokenCount { get; init; }
 
     /// <summary>
     /// Output only. List of modalities that were processed in the request input.

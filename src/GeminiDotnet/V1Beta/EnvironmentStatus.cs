@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta.EnvironmentsList;
+namespace GeminiDotnet.V1Beta;
 
 /// <summary>
 /// Output only. The status of the environment container.

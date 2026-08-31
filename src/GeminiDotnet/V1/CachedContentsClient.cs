@@ -1,6 +1,6 @@
-using GeminiDotnet.V1Beta.CachedContents;
+using GeminiDotnet.V1.CachedContents;
 
-namespace GeminiDotnet.V1Beta;
+namespace GeminiDotnet.V1;
 
 internal sealed class CachedContentsClient : ICachedContentsClient
 {
@@ -21,7 +21,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
             .Add("pageSize", pageSize)
             .Add("pageToken", pageToken)
             .ToString();
-        var path = $"/v1beta/cachedContents{query}";
+        var path = $"/v1/cachedContents{query}";
         return _requester.ExecuteAsync<ListCachedContentsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -30,7 +30,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        const string path = "/v1beta/cachedContents";
+        const string path = "/v1/cachedContents";
         return _requester.ExecuteAsync<CachedContent, CachedContent>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -39,7 +39,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}";
+        var path = $"/v1/cachedContents/{Uri.EscapeDataString(id)}";
         return _requester.ExecuteAsync<CachedContent>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -48,7 +48,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}";
+        var path = $"/v1/cachedContents/{Uri.EscapeDataString(id)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
@@ -63,7 +63,7 @@ internal sealed class CachedContentsClient : ICachedContentsClient
         var query = new QueryStringBuilder()
             .Add("updateMask", updateMask)
             .ToString();
-        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}{query}";
+        var path = $"/v1/cachedContents/{Uri.EscapeDataString(id)}{query}";
         return _requester.ExecuteAsync<CachedContent, CachedContent>(HttpMethod.Patch, path, request, cancellationToken);
     }
 

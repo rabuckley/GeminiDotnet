@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace GeminiDotnet.V1Beta.CachedContents;
+namespace GeminiDotnet.V1.CachedContents;
 
 /// <summary>
 /// Content that has been preprocessed and can be used in subsequent request
@@ -41,7 +41,7 @@ public sealed record CachedContent
     public DateTimeOffset? ExpireTime { get; init; }
 
     /// <summary>
-    /// Required. Immutable. The name of the <see cref="V1Beta.Models.Model"/> to use for cached content
+    /// Required. Immutable. The name of the <see cref="V1.Models.Model"/> to use for cached content
     /// Format: <c>models/{model}</c>
     /// </summary>
     [JsonPropertyName("model")]

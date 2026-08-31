@@ -8,6 +8,15 @@ namespace GeminiDotnet.V1;
 public sealed record GenerateContentRequest
 {
     /// <summary>
+    /// Optional. The name of the content
+    /// [cached](https://ai.google.dev/gemini-api/docs/caching) to use as context
+    /// to serve the prediction. Format: <c>cachedContents/{cachedContent}</c>
+    /// </summary>
+    [JsonPropertyName("cachedContent")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? CachedContent { get; init; }
+
+    /// <summary>
     /// Required. The content of the current conversation with the model.
     /// For single-turn queries, this is a single instance. For multi-turn queries
     /// like [chat](https://ai.google.dev/gemini-api/docs/text-generation#chat),

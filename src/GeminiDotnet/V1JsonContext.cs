@@ -13,6 +13,8 @@ namespace GeminiDotnet;
 [JsonSerializable(typeof(GeminiDotnet.V1.Empty))]
 [JsonSerializable(typeof(GeminiDotnet.V1.EmbedContentBatch))]
 [JsonSerializable(typeof(GeminiDotnet.V1.GenerateContentBatch))]
+[JsonSerializable(typeof(GeminiDotnet.V1.CachedContents.ListCachedContentsResponse))]
+[JsonSerializable(typeof(GeminiDotnet.V1.CachedContents.CachedContent))]
 [JsonSerializable(typeof(GeminiDotnet.V1.GenerateContentRequest))]
 [JsonSerializable(typeof(GeminiDotnet.V1.GenerateContentResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1.Files.ListFilesResponse))]
