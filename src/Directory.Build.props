@@ -1,0 +1,29 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove($(MSBuildThisFile), $(MSBuildThisFileDirectory)..))" />
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573;CS1570;CS1574</NoWarn>
+
+    <EnablePackageValidation>true</EnablePackageValidation>
+
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <Copyright>Copyright © Ryan Buckley</Copyright>
+  </PropertyGroup>
+
+  <!--
+    MinVer sets AssemblyVersion to $(MinVerMajor).0.0.0, which is right only from 1.0.0 on.
+  -->
+  <Target Name="SetPreReleaseAssemblyVersion" AfterTargets="MinVer" Condition="'$(MinVerMajor)' == '0'">
+    <PropertyGroup>
+      <AssemblyVersion>0.$(MinVerMinor).0.0</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
+</Project>

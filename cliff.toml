@@ -1,0 +1,33 @@
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# The release title comes from `gh release create --title`, so the body
+# starts straight at the first group heading.
+# A literal string: the `\n` below reaches Tera as an escape sequence rather
+# than being resolved by the TOML parser first.
+body = '''
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim }}
+    {% for commit in commits %}
+        - {% if commit.breaking %}**Breaking:** {% endif -%}
+          {{ commit.message | split(pat="\n") | first | trim | upper_first }}
+    {%- endfor %}
+{% endfor %}
+'''
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+protect_breaking_commits = true
+tag_pattern = "v[0-9].*"
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^docs", group = "<!-- 3 -->Documentation" },
+  { message = "^refactor", group = "<!-- 4 -->Refactoring" },
+  { message = "^(chore|ci|build|test|style)", skip = true },
+  { message = "^Merge (pull request|branch|remote)", skip = true },
+  { message = ".*", group = "<!-- 5 -->Other" },
+]
