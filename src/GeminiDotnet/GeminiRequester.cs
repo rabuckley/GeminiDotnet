@@ -62,6 +62,19 @@ internal sealed class GeminiRequester : IGeminiRequester
         return result!;
     }
 
+    public async IAsyncEnumerable<TResponse> ExecuteStreamingAsync<TResponse>(
+        HttpMethod method,
+        string path,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(method, path);
+
+        await foreach (var item in ExecuteStreamingAsync<TResponse>(message, cancellationToken).ConfigureAwait(false))
+        {
+            yield return item;
+        }
+    }
+
     public async IAsyncEnumerable<TResponse> ExecuteStreamingAsync<TRequest, TResponse>(
         HttpMethod method,
         string path,
