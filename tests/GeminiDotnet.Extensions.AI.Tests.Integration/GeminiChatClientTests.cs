@@ -1,4 +1,4 @@
-using GeminiDotnet.Testing;
+﻿using GeminiDotnet.Testing;
 using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.FileSearchStores;
 using Microsoft.Extensions.AI;
@@ -387,6 +387,50 @@ public sealed class GeminiChatClientTests
                 }
             }
         }
+    }
+
+
+    [Fact]
+    public async Task GetResponseAsync_WithHostedMcpServerTool_ShouldAnswerFromTheRemoteServer()
+    {
+        // Arrange — Google's public demo MCP server, which exposes weather tools. Gemini connects to it
+        // and runs the tools server-side, so nothing here handles a tool call.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        IChatClient chatClient = new GeminiChatClient(new GeminiClientOptions
+        {
+            ApiKey = _apiKey, ModelId = Model,
+        });
+
+        var options = new ChatOptions
+        {
+            Tools =
+            [
+                new HostedMcpServerTool("weather", "https://gemini-api-demos.uc.r.appspot.com/mcp")
+                {
+                    ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+                },
+            ],
+        };
+
+        // Act
+        var response = await chatClient.GetResponseAsync(
+            "Will it rain in London tomorrow? Use the weather tools.",
+            options,
+            cancellationToken);
+
+        // Assert — the demo server answers the call itself with "not implemented", so the model's prose says
+        // nothing about whether Gemini reached it. The tool-use prompt tokens do: Gemini only bills them once
+        // it has connected to the server, pulled the tool schemas and run a tool round-trip.
+        _output.WriteLine(response.Text);
+
+        Assert.NotEmpty(response.Text);
+
+        var toolUseTokens = response.Usage?.AdditionalCounts?
+            .GetValueOrDefault(GeminiAdditionalCounts.ToolUsePromptTokenCount);
+
+        Assert.NotNull(toolUseTokens);
+        Assert.True(toolUseTokens > 0, $"Expected the MCP server to be invoked, got {toolUseTokens} tool-use tokens.");
     }
 
     private static async Task<string> UploadDocumentAsync(
