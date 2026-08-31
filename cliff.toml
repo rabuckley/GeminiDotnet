@@ -1,18 +1,31 @@
-# https://git-cliff.org/docs/configuration
+[remote.github]
+owner = "rabuckley"
+repo = "GeminiDotnet"
 
 [changelog]
-# The release title comes from `gh release create --title`, so the body
-# starts straight at the first group heading.
-# A literal string: the `\n` below reaches Tera as an escape sequence rather
-# than being resolved by the TOML parser first.
 body = '''
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | striptags | trim }}
     {% for commit in commits %}
         - {% if commit.breaking %}**Breaking:** {% endif -%}
           {{ commit.message | split(pat="\n") | first | trim | upper_first }}
+          {%- if commit.remote.pr_number %} #{{ commit.remote.pr_number }}{% endif -%}
+          {%- if commit.remote.username %} by @{{ commit.remote.username }}{% endif -%}
     {%- endfor %}
 {% endfor %}
+{%- set_global new_contributors = [] -%}
+{%- for contributor in github.contributors | filter(attribute="is_first_time", value=true) -%}
+    {%- if not contributor.username is ending_with("[bot]") -%}
+        {%- set_global new_contributors = new_contributors | concat(with=contributor) -%}
+    {%- endif -%}
+{%- endfor -%}
+{% if new_contributors | length > 0 %}
+    ### New contributors
+    {% for contributor in new_contributors %}
+        - @{{ contributor.username }} made their first contribution
+          {%- if contributor.pr_number %} in #{{ contributor.pr_number }}{% endif -%}
+    {%- endfor %}
+{% endif %}
 '''
 trim = true
 
@@ -21,6 +34,8 @@ conventional_commits = true
 filter_unconventional = false
 protect_breaking_commits = true
 tag_pattern = "v[0-9].*"
+# Squash-merge subjects end in the PR number, which the body now renders itself.
+commit_preprocessors = [{ pattern = '(?m) \((\w+\s)?#[0-9]+\)$', replace = "" }]
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->Features" },
   { message = "^fix", group = "<!-- 1 -->Bug fixes" },

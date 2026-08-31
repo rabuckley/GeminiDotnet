@@ -111,6 +111,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      pull-requests: read
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -138,6 +139,7 @@ jobs:
           args: --latest
         env:
           OUTPUT: release-notes.md
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Draft the release
         env:
