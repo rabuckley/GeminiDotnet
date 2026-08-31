@@ -85,7 +85,7 @@ var options = new GeminiClientOptions
 
 IChatClient geminiClient = new GeminiChatClient(options);
 
-var chatOptions = new ChatOptions { Tools = [new CodeInterpreterTool()] };
+var chatOptions = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
 
 var response = await geminiClient.GetResponseAsync(
     [new(ChatRole.User, "What is the sum of the first 42 fibonacci numbers? Generate and run code to do the calculation.")],
