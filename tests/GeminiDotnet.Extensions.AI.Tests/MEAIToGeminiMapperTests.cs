@@ -586,6 +586,69 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equal(secondMessage, request.SystemInstruction.Parts[1].Text);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public void EmptySystemMessage_ShouldNotProduceASystemInstruction(string? text)
+    {
+        // Arrange — an empty part says nothing, and a null one serializes to a part with no field
+        // set, which the API rejects with "required oneof field 'data' must have one initialized field".
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.System, [new TextContent(text!)]),
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, null);
+
+        // Assert
+        Assert.Null(request.SystemInstruction);
+        var content = Assert.Single(request.Contents);
+        Assert.Equal(ChatRoles.User, content.Role);
+    }
+
+    [Fact]
+    public void EmptySystemMessage_ShouldNotDropTheInstructionsAroundIt()
+    {
+        // Arrange
+        const string instructions = "You are a helpful assistant.";
+        const string systemMessage = "Always respond in a cheerful tone.";
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.System, [new TextContent(""), new TextContent(systemMessage)]),
+            new(ChatRole.User, "Who was the first person to walk on the moon?")
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            messages,
+            new ChatOptions { Instructions = instructions });
+
+        // Assert
+        Assert.NotNull(request.SystemInstruction);
+        Assert.Equal(2, request.SystemInstruction.Parts.Count);
+        Assert.Equal(instructions, request.SystemInstruction.Parts[0].Text);
+        Assert.Equal(systemMessage, request.SystemInstruction.Parts[1].Text);
+    }
+
+    [Fact]
+    public void EmptyOptionsInstructions_ShouldNotProduceASystemInstruction()
+    {
+        // Arrange
+        List<ChatMessage> messages = [new(ChatRole.User, "Who was the first person to walk on the moon?")];
+
+        var options = new ChatOptions { Instructions = "" };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
+
+        // Assert
+        Assert.Null(request.SystemInstruction);
+    }
+
     [Fact]
     public void CreateMappedGenerateContentRequest_WithRefsResponseFormat_ShouldMapResponseFormat()
     {

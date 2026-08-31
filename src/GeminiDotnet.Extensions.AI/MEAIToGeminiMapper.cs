@@ -24,7 +24,7 @@ internal static class MEAIToGeminiMapper
                 ? new List<Content>(count)
                 : [];
 
-            List<Part> systemInstructionParts = options?.Instructions is { } instructions
+            List<Part> systemInstructionParts = options?.Instructions is { Length: > 0 } instructions
                 ? [new Part { Text = instructions }]
                 : [];
 
@@ -267,9 +267,9 @@ internal static class MEAIToGeminiMapper
                 if (content is MEAI.WebSearchToolCallContent or MEAI.WebSearchToolResultContent)
                     continue;
 
-                // Gemini rejects a part whose text is empty, and empty text carries nothing anyway.
-                // Response mapping produces one as a carrier for citations that ground no span, so a
-                // response fed back as history would otherwise fail.
+                // Empty text carries nothing, and a null one leaves a part with no field set, which
+                // the API rejects. Response mapping produces an empty text content as a carrier for
+                // citations that ground no span, so a response fed back as history would otherwise fail.
                 if (content is MEAI.TextContent { Text: null or "" })
                     continue;
 
@@ -720,6 +720,11 @@ internal static class MEAIToGeminiMapper
                     $"Only {typeof(MEAI.TextContent)} is supported in system instructions because Gemini doesn't support non-text system instructions. Got {content.GetType()}");
 
                 return; // unreachable
+            }
+
+            if (string.IsNullOrEmpty(textContent.Text))
+            {
+                continue;
             }
 
             systemInstructionParts.Add(new Part { Text = textContent.Text });
