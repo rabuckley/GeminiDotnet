@@ -104,9 +104,61 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  draft:
+    name: Draft the GitHub release
+    needs: attest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # git-cliff walks the tag history for the release span
+          filter: tree:0
+          persist-credentials: false
+
+      - name: Download packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: packages
+          path: packages
+
+      - name: Download the attestation bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: attestation
+          path: attestation
+
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
+        with:
+          config: cliff.toml
+          args: --latest
+        env:
+          OUTPUT: release-notes.md
+
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            flags=(--draft --verify-tag --title "$TAG" --notes-file release-notes.md)
+            # A MinVer tag carrying a pre-release identifier, e.g. v1.0.0-rc.1.
+            case "$TAG" in *-*) flags+=(--prerelease) ;; esac
+
+            gh release create "$TAG" "${flags[@]}"
+          fi
+
+          gh release upload "$TAG" \
+            packages/*.nupkg attestation/*.intoto.jsonl --clobber
+
   publish:
     name: Publish to NuGet.org
-    needs: attest
+    needs: draft
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -142,40 +194,16 @@ jobs:
             --skip-duplicate
 
   release:
-    name: Create the GitHub release
+    name: Publish the GitHub release
     needs: publish
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write # create the release and attach its assets
+      contents: write
     steps:
-      - name: Download packages
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: packages
-          path: packages
-
-      - name: Download the attestation bundle
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: attestation
-          path: attestation
-
-      - name: Publish the release
+      - name: Undraft the release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
-        run: |
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            flags=(--draft --verify-tag --title "$TAG" --generate-notes)
-            # A MinVer tag carrying a pre-release identifier, e.g. v1.0.0-rc.1.
-            case "$TAG" in *-*) flags+=(--prerelease) ;; esac
-
-            gh release create "$TAG" "${flags[@]}"
-          fi
-
-          gh release upload "$TAG" \
-            packages/*.nupkg attestation/*.intoto.jsonl --clobber
-
-          gh release edit "$TAG" --draft=false
+        run: gh release edit "$TAG" --draft=false
