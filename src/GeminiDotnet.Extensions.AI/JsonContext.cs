@@ -24,4 +24,6 @@ namespace GeminiDotnet.Extensions.AI;
 [JsonSerializable(typeof(ResponseModality))]
 [JsonSerializable(typeof(IEnumerable<ResponseModality>))]
 [JsonSerializable(typeof(List<ResponseModality>))]
+// Read back out of AIContent.AdditionalProperties by GeminiToolInvocationProperties.ToolType.
+[JsonSerializable(typeof(ToolType))]
 internal sealed partial class JsonContext : JsonSerializerContext;

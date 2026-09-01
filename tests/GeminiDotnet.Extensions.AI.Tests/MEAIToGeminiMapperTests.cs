@@ -1633,5 +1633,315 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Throws<GeminiMappingException>(Act);
     }
 
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAToolCallCarryingItsPart_ShouldEchoThePart()
+    {
+        // Arrange
+        var part = new Part
+        {
+            ToolCall = new ToolCall
+            {
+                Id = "call-1",
+                ToolName = "google_search",
+                ToolType = ToolType.GoogleSearchWeb,
+                Arguments = JsonSerializer.Deserialize<JsonElement>("""{"query":"weather in London"}"""),
+            },
+            ThoughtSignature = "signature",
+        };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new ToolCallContent("call-1") { RawRepresentation = part }]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Same(part, Assert.Single(parts));
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAToolResultCarryingItsPart_ShouldEchoThePart()
+    {
+        // Arrange
+        var part = new Part
+        {
+            ToolResponse = new ToolResponse
+            {
+                Id = "call-1",
+                ToolType = ToolType.GoogleSearchWeb,
+                Response = JsonSerializer.Deserialize<JsonElement>("""{"results":["18C and raining"]}"""),
+            },
+            ThoughtSignature = "signature",
+        };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new ToolResultContent("call-1") { RawRepresentation = part }]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Same(part, Assert.Single(parts));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAToolCallCarryingOnlyProperties_ShouldRebuildThePart(
+        bool roundTripThroughJson)
+    {
+        // Arrange — RawRepresentation does not survive serialization, so a caller who persisted the
+        // history as JSON arrives with only the additional properties, and with each value as a
+        // JsonElement.
+        var arguments = JsonSerializer.Deserialize<JsonElement>("""{"query":"weather in London"}""");
+
+        var properties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary
+            {
+                [GeminiToolInvocationProperties.Id] = "call-1",
+                [GeminiToolInvocationProperties.ToolType] = ToolType.GoogleSearchWeb,
+                [GeminiToolInvocationProperties.ToolName] = "google_search",
+                [GeminiToolInvocationProperties.Arguments] = arguments,
+                [GeminiToolInvocationProperties.ThoughtSignature] = "signature",
+            },
+            roundTripThroughJson);
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new ToolCallContent("call-1") { AdditionalProperties = properties }]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        var part = Assert.Single(parts);
+        Assert.Equal("signature", part.ThoughtSignature);
+        Assert.NotNull(part.ToolCall);
+        Assert.Equal("call-1", part.ToolCall.Id);
+        Assert.Equal("google_search", part.ToolCall.ToolName);
+        Assert.Equal(ToolType.GoogleSearchWeb, part.ToolCall.ToolType);
+        Assert.Equal(arguments.GetRawText(), part.ToolCall.Arguments.GetRawText());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAToolResultCarryingOnlyProperties_ShouldRebuildThePart(
+        bool roundTripThroughJson)
+    {
+        // Arrange
+        var toolResponse = JsonSerializer.Deserialize<JsonElement>("""{"results":["18C and raining"]}""");
+
+        var properties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary
+            {
+                [GeminiToolInvocationProperties.Id] = "call-1",
+                [GeminiToolInvocationProperties.ToolType] = ToolType.GoogleSearchWeb,
+                [GeminiToolInvocationProperties.Response] = toolResponse,
+                [GeminiToolInvocationProperties.ThoughtSignature] = "signature",
+            },
+            roundTripThroughJson);
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new ToolResultContent("call-1") { AdditionalProperties = properties }]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        var part = Assert.Single(parts);
+        Assert.Equal("signature", part.ThoughtSignature);
+        Assert.NotNull(part.ToolResponse);
+        Assert.Equal("call-1", part.ToolResponse.Id);
+        Assert.Equal(ToolType.GoogleSearchWeb, part.ToolResponse.ToolType);
+        Assert.Equal(toolResponse.GetRawText(), part.ToolResponse.Response.GetRawText());
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithARebuiltIdLessToolInvocation_ShouldSendNoId()
+    {
+        // Arrange — GeminiToMEAIMapper fills CallId in when Gemini issued no id, so rebuilding from it
+        // would send back an id the server never handed out.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
+                            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } },
+                        ],
+                    },
+                },
+            ],
+        };
+
+        var mapped = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+        var message = Assert.Single(mapped.Messages);
+
+        // Persisting the history as JSON loses the parts, leaving only the additional properties.
+        foreach (var content in message.Contents)
+        {
+            content.RawRepresentation = null;
+        }
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            mapped.Messages,
+            new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Null(Assert.IsType<Part>(parts[0]).ToolCall!.Id);
+        Assert.Null(Assert.IsType<Part>(parts[1]).ToolResponse!.Id);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAToolCallCarryingNoToolType_ShouldThrow()
+    {
+        // Arrange — ToolCall.toolType is required, and TOOL_TYPE_UNSPECIFIED is not a stand-in for it.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new ToolCallContent("call-1")]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAToolCallCarryingAWrongTypedToolType_ShouldThrow()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new ToolCallContent("call-1")
+                {
+                    AdditionalProperties = new() { [GeminiToolInvocationProperties.ToolType] = 42 },
+                },
+            ]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAnMcpServerToolCall_ShouldThrow()
+    {
+        // Arrange — McpServerToolCallContent derives from ToolCallContent, and this mapper does not
+        // support it. It must be reported rather than sent as a server-side invocation Gemini never made.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new McpServerToolCallContent("call-1", "get_weather", "weather")]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAMappedServerSideToolInvocation_ShouldRoundTripTheParts()
+    {
+        // Arrange
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part
+                            {
+                                ToolCall = new ToolCall
+                                {
+                                    Id = "call-1",
+                                    ToolName = "google_search",
+                                    ToolType = ToolType.GoogleSearchWeb,
+                                    Arguments =
+                                        JsonSerializer.Deserialize<JsonElement>("""{"query":"weather"}"""),
+                                },
+                                ThoughtSignature = "signature",
+                            },
+                            new Part
+                            {
+                                ToolResponse = new ToolResponse
+                                {
+                                    Id = "call-1",
+                                    ToolType = ToolType.GoogleSearchWeb,
+                                    Response =
+                                        JsonSerializer.Deserialize<JsonElement>("""{"results":["18C"]}"""),
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+        };
+
+        var expectedParts = response.Candidates[0].Content!.Parts;
+
+        var mapped = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            mapped.Messages,
+            new ChatOptions());
+
+        // Assert
+        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
+    private static AdditionalPropertiesDictionary MaybeRoundTripThroughJson(
+        AdditionalPropertiesDictionary properties,
+        bool roundTrip)
+    {
+        if (!roundTrip)
+        {
+            return properties;
+        }
+
+        var json = JsonSerializer.Serialize(properties);
+        return JsonSerializer.Deserialize<AdditionalPropertiesDictionary>(json)!;
+    }
+
     private sealed class UnsupportedTool : AITool;
 }
