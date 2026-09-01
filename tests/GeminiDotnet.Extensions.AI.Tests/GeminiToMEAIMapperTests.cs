@@ -390,6 +390,188 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(mimeType, fileContent.MediaType);
     }
 
+    #region Server-Side Tool Invocation Mapping Tests
+
+    [Fact]
+    public void CreateMappedChatResponse_WithServerSideToolCall_ShouldMapToToolCallContent()
+    {
+        // Arrange
+        var arguments = JsonSerializer.Deserialize<JsonElement>("""{"query":"weather in London"}""");
+
+        var response = ResponseWithParts(new Part
+        {
+            ToolCall = new ToolCall
+            {
+                Id = "call-1",
+                ToolName = "google_search",
+                ToolType = ToolType.GoogleSearchWeb,
+                Arguments = arguments,
+            },
+            ThoughtSignature = "signature",
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var toolCall = Assert.IsType<ToolCallContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+
+        Assert.Equal("call-1", toolCall.CallId);
+
+        var properties = Assert.IsType<AdditionalPropertiesDictionary>(toolCall.AdditionalProperties);
+        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiToolInvocationProperties.ToolType]);
+        Assert.Equal("google_search", properties[GeminiToolInvocationProperties.ToolName]);
+        Assert.Equal("signature", properties[GeminiToolInvocationProperties.ThoughtSignature]);
+        Assert.Equal(
+            arguments.GetRawText(),
+            Assert.IsType<JsonElement>(properties[GeminiToolInvocationProperties.Arguments]).GetRawText());
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithServerSideToolResponse_ShouldMapToToolResultContent()
+    {
+        // Arrange
+        var toolResponse = JsonSerializer.Deserialize<JsonElement>("""{"results":["18C and raining"]}""");
+
+        var response = ResponseWithParts(new Part
+        {
+            ToolResponse = new ToolResponse
+            {
+                Id = "call-1",
+                ToolType = ToolType.GoogleSearchWeb,
+                Response = toolResponse,
+            },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var toolResult = Assert.IsType<ToolResultContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+
+        Assert.Equal("call-1", toolResult.CallId);
+
+        var properties = Assert.IsType<AdditionalPropertiesDictionary>(toolResult.AdditionalProperties);
+        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiToolInvocationProperties.ToolType]);
+        Assert.Equal(
+            toolResponse.GetRawText(),
+            Assert.IsType<JsonElement>(properties[GeminiToolInvocationProperties.Response]).GetRawText());
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithIdLessServerSideToolInvocation_ShouldCorrelateTheSynthesizedCallId()
+    {
+        // Arrange — ToolCall.Id and ToolResponse.Id are both optional on the wire, but
+        // ToolCallContent.CallId is not, and the pair still has to correlate.
+        var response = ResponseWithParts(
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var toolCall = Assert.IsType<ToolCallContent>(contents[0]);
+        var toolResult = Assert.IsType<ToolResultContent>(contents[1]);
+
+        Assert.NotEmpty(toolCall.CallId);
+        Assert.Equal(toolCall.CallId, toolResult.CallId);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithParallelIdLessServerSideToolInvocations_ShouldCorrelateInOrder()
+    {
+        // Arrange — Gemini can run several built-in tools in one turn and report the responses after
+        // the calls, so each response has to pair with its own call, not with whichever came last.
+        var response = ResponseWithParts(
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var firstCall = Assert.IsType<ToolCallContent>(contents[0]);
+        var secondCall = Assert.IsType<ToolCallContent>(contents[1]);
+        var firstResult = Assert.IsType<ToolResultContent>(contents[2]);
+        var secondResult = Assert.IsType<ToolResultContent>(contents[3]);
+
+        Assert.NotEqual(firstCall.CallId, secondCall.CallId);
+        Assert.Equal(firstCall.CallId, firstResult.CallId);
+        Assert.Equal(secondCall.CallId, secondResult.CallId);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAnIdLessServerSideToolCall_ShouldNotReportTheSynthesizedCallId()
+    {
+        // Arrange — the synthesized CallId correlates the pair for M.E.AI consumers, but it is not an
+        // id Gemini issued, so nothing may echo it back as one.
+        var response = ResponseWithParts(
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+
+        Assert.DoesNotContain(
+            GeminiToolInvocationProperties.Id,
+            Assert.IsType<ToolCallContent>(contents[0]).AdditionalProperties!.Keys);
+
+        Assert.DoesNotContain(
+            GeminiToolInvocationProperties.Id,
+            Assert.IsType<ToolResultContent>(contents[1]).AdditionalProperties!.Keys);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithServerSideToolInvocationAmongText_ShouldMapOneContentPerPart()
+    {
+        // Arrange — Segment.PartIndex indexes the mapped contents, so the 1:1 order must hold.
+        var response = ResponseWithParts(
+            new Part { Text = "Let me look that up." },
+            new Part { ToolCall = new ToolCall { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolResponse = new ToolResponse { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } },
+            new Part { Text = "It is raining." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+
+        Assert.Equal(4, contents.Count);
+        Assert.Equal("Let me look that up.", Assert.IsType<TextContent>(contents[0]).Text);
+        Assert.IsType<ToolCallContent>(contents[1]);
+        Assert.IsType<ToolResultContent>(contents[2]);
+        Assert.Equal("It is raining.", Assert.IsType<TextContent>(contents[3]).Text);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAnUnrecognisedPart_ShouldThrowGeminiMappingException()
+    {
+        // Arrange — a part carrying only a thought signature has no field this mapper reads.
+        var response = ResponseWithParts(new Part { ThoughtSignature = "signature" });
+
+        // Act
+        void Act() => GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    private static GenerateContentResponse ResponseWithParts(params Part[] parts) => new()
+    {
+        Candidates = [new Candidate { Content = new Content { Role = "model", Parts = parts } }],
+    };
+
+    #endregion
+
     #region Candidate Role Mapping Tests
 
     [Fact]

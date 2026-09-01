@@ -2,6 +2,7 @@ using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -89,6 +90,11 @@ internal static class GeminiToMEAIMapper
         // We generate a CallId on the call and carry it forward to the result for correlation.
         string? lastCodeInterpreterCallId = null;
 
+        // Likewise for a server-side ToolCall and the ToolResponse that answers it, whose ids are
+        // optional on the wire. Gemini can run several built-in tools in one turn, so responses are
+        // paired with calls in order rather than with whichever call came last.
+        Queue<string> unansweredToolCallIds = [];
+
         foreach (var part in parts)
         {
             // Each Part should have exactly one property set. Using else-if makes
@@ -127,9 +133,25 @@ internal static class GeminiToMEAIMapper
                 mapped = CreateMappedCodeInterpreterToolResultContent(part, lastCodeInterpreterCallId);
                 lastCodeInterpreterCallId = null;
             }
+            else if (part.ToolCall is not null)
+            {
+                var callId = part.ToolCall.Id ?? $"{part.ToolCall.ToolType}/{Guid.NewGuid()}";
+                unansweredToolCallIds.Enqueue(callId);
+                mapped = CreateMappedToolCallContent(part, callId);
+            }
+            else if (part.ToolResponse is not null)
+            {
+                unansweredToolCallIds.TryDequeue(out var unansweredCallId);
+
+                var callId = part.ToolResponse.Id
+                    ?? unansweredCallId
+                    ?? $"{part.ToolResponse.ToolType}/{Guid.NewGuid()}";
+
+                mapped = CreateMappedToolResultContent(part, callId);
+            }
             else
             {
-                throw new UnreachableException($"All properties of {nameof(Part)} are null.");
+                mapped = ThrowUnrecognisedPart();
             }
 
             contents.Add(mapped);
@@ -272,6 +294,63 @@ internal static class GeminiToMEAIMapper
                     ? new() { ["outcome"] = codeExecutionResult.Outcome.ToString() }
                     : null,
             };
+        }
+
+        static ToolCallContent CreateMappedToolCallContent(Part part, string callId)
+        {
+            Debug.Assert(part.ToolCall is not null);
+
+            var toolCall = part.ToolCall!;
+
+            return new ToolCallContent(callId)
+            {
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiToolInvocationProperties.Id, toolCall.Id),
+                    new(GeminiToolInvocationProperties.ToolType, toolCall.ToolType),
+                    new(GeminiToolInvocationProperties.ToolName, toolCall.ToolName),
+                    new(GeminiToolInvocationProperties.Arguments, DefinedOrNull(toolCall.Arguments)),
+                    new(GeminiToolInvocationProperties.ThoughtSignature, part.ThoughtSignature),
+                ]),
+            };
+        }
+
+        static ToolResultContent CreateMappedToolResultContent(Part part, string callId)
+        {
+            Debug.Assert(part.ToolResponse is not null);
+
+            var toolResponse = part.ToolResponse!;
+
+            return new ToolResultContent(callId)
+            {
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiToolInvocationProperties.Id, toolResponse.Id),
+                    new(GeminiToolInvocationProperties.ToolType, toolResponse.ToolType),
+                    new(GeminiToolInvocationProperties.Response, DefinedOrNull(toolResponse.Response)),
+                    new(GeminiToolInvocationProperties.ThoughtSignature, part.ThoughtSignature),
+                ]),
+            };
+        }
+
+        static object? DefinedOrNull(JsonElement element)
+        {
+            return element.ValueKind is JsonValueKind.Undefined ? null : element;
+        }
+
+        [DoesNotReturn]
+        static AIContent ThrowUnrecognisedPart()
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{typeof(Part)}",
+                toPropertyName: $"{typeof(AIContent)}",
+                reason: $"The {nameof(Part)} carries no field this mapper recognises.");
+
+            return null!;
         }
     }
 
@@ -510,8 +589,8 @@ internal static class GeminiToMEAIMapper
     }
 
     /// <summary>
-    /// Builds the dictionary carrying the fields of a grounding chunk variant that
-    /// <see cref="CitationAnnotation"/> has no property for, dropping the entries with no value.
+    /// Builds the dictionary carrying the fields the mapped content type has no property for, dropping
+    /// the entries with no value.
     /// </summary>
     private static AdditionalPropertiesDictionary? CreateMappedAdditionalProperties(
         ReadOnlySpan<KeyValuePair<string, object?>> entries)

@@ -133,7 +133,8 @@ internal static class MEAIToGeminiMapper
                 {
                     // Gemini expands each MCP server into synthetic function declarations, and rejects
                     // those alongside a built-in tool unless toolConfig.includeServerSideToolInvocations
-                    // is set — which in turn produces tool calls this library cannot yet read back.
+                    // is set — which in turn returns an MCP invocation as {args, id, toolName}, a shape
+                    // the generated ToolCall rejects because it declares toolType required.
                     GeminiMappingException.Throw(
                         fromPropertyName: $"{typeof(MEAI.ChatOptions)}.{nameof(MEAI.ChatOptions.Tools)}",
                         toPropertyName: $"{typeof(Tool)}.{nameof(Tool.McpServers)}",
@@ -282,6 +283,14 @@ internal static class MEAIToGeminiMapper
                     MEAI.HostedFileContent fileContent => CreateHostedFileDataPart(fileContent),
                     MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
                     MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
+                    // Every hosted-tool content type derives from ToolCallContent or ToolResultContent,
+                    // so these arms match the exact type: a pattern on the base type would swallow the
+                    // subclasses this mapper does not support and send Gemini a wrong part instead of
+                    // reporting them below.
+                    MEAI.ToolCallContent toolCall when toolCall.GetType() == typeof(MEAI.ToolCallContent) =>
+                        CreateToolCallPart(toolCall),
+                    MEAI.ToolResultContent toolResult when toolResult.GetType() == typeof(MEAI.ToolResultContent) =>
+                        CreateToolResponsePart(toolResult),
                     _ => ThrowUnsupportedContentException(content),
                 };
 
@@ -375,6 +384,70 @@ internal static class MEAIToGeminiMapper
                             JsonContext.Default.IDictionaryStringObject)
                     },
                     ThoughtSignature = GetThoughtSignature(functionResult)
+                };
+            }
+
+            static Part CreateToolCallPart(MEAI.ToolCallContent toolCall)
+            {
+                // Gemini requires a server-side invocation echoed back unchanged, so prefer the part it
+                // sent: it carries the thought signature and any field a future spec revision adds.
+                if (toolCall.RawRepresentation is Part { ToolCall: not null } part)
+                {
+                    return part;
+                }
+
+                // RawRepresentation does not survive serialization, so a caller who persisted the
+                // history as JSON arrives here with only the properties below.
+                MEAI.AdditionalPropertiesDictionary properties = toolCall.AdditionalProperties ?? [];
+
+                var fromPropertyName =
+                    $"{typeof(MEAI.ToolCallContent)}.{nameof(MEAI.AIContent.AdditionalProperties)}";
+                var toPropertyName = $"{typeof(Part)}.{nameof(Part.ToolCall)}";
+
+                return new Part
+                {
+                    ToolCall = new ToolCall
+                    {
+                        // Not CallId: that is filled in when Gemini issued no id, and an id the server
+                        // never handed out is not an invocation echoed back unchanged.
+                        Id = properties.GetValueOrThrow<string>(
+                            GeminiToolInvocationProperties.Id, fromPropertyName, toPropertyName),
+                        ToolName = properties.GetValueOrThrow<string>(
+                            GeminiToolInvocationProperties.ToolName, fromPropertyName, toPropertyName),
+                        Arguments = properties.GetValueOrThrow<JsonElement>(
+                            GeminiToolInvocationProperties.Arguments, fromPropertyName, toPropertyName),
+                        ToolType = GetRequiredToolType(properties, fromPropertyName, toPropertyName),
+                    },
+                    ThoughtSignature = properties.GetValueOrThrow<string>(
+                        GeminiToolInvocationProperties.ThoughtSignature, fromPropertyName, toPropertyName),
+                };
+            }
+
+            static Part CreateToolResponsePart(MEAI.ToolResultContent toolResult)
+            {
+                if (toolResult.RawRepresentation is Part { ToolResponse: not null } part)
+                {
+                    return part;
+                }
+
+                MEAI.AdditionalPropertiesDictionary properties = toolResult.AdditionalProperties ?? [];
+
+                var fromPropertyName =
+                    $"{typeof(MEAI.ToolResultContent)}.{nameof(MEAI.AIContent.AdditionalProperties)}";
+                var toPropertyName = $"{typeof(Part)}.{nameof(Part.ToolResponse)}";
+
+                return new Part
+                {
+                    ToolResponse = new ToolResponse
+                    {
+                        Id = properties.GetValueOrThrow<string>(
+                            GeminiToolInvocationProperties.Id, fromPropertyName, toPropertyName),
+                        Response = properties.GetValueOrThrow<JsonElement>(
+                            GeminiToolInvocationProperties.Response, fromPropertyName, toPropertyName),
+                        ToolType = GetRequiredToolType(properties, fromPropertyName, toPropertyName),
+                    },
+                    ThoughtSignature = properties.GetValueOrThrow<string>(
+                        GeminiToolInvocationProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
             }
         }
@@ -493,6 +566,32 @@ internal static class MEAIToGeminiMapper
             ThinkingLevel = thinkingLevel,
             IncludeThoughts = includeThoughts,
         };
+    }
+
+    /// <exception cref="GeminiMappingException">
+    /// <paramref name="properties"/> carries no <see cref="GeminiToolInvocationProperties.ToolType"/>, one
+    /// that is <see cref="ToolType.Unspecified"/>, or one that is not a <see cref="ToolType"/>.
+    /// </exception>
+    private static ToolType GetRequiredToolType(
+        IReadOnlyDictionary<string, object?> properties,
+        string fromPropertyName,
+        string toPropertyName)
+    {
+        var toolType = properties.GetValueOrThrow<ToolType>(
+            GeminiToolInvocationProperties.ToolType,
+            fromPropertyName,
+            toPropertyName);
+
+        if (toolType is ToolType.Unspecified)
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName: $"{fromPropertyName}[\"{GeminiToolInvocationProperties.ToolType}\"]",
+                toPropertyName: toPropertyName,
+                reason:
+                $"Gemini needs the tool type of a server-side invocation echoed back, so {nameof(GeminiToolInvocationProperties)}.{nameof(GeminiToolInvocationProperties.ToolType)} must hold the {typeof(ToolType)} the response reported.");
+        }
+
+        return toolType;
     }
 
     private static string? GetThoughtSignature(MEAI.AIContent content)
