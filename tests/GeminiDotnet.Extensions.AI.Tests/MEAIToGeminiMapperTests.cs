@@ -1,6 +1,7 @@
 ﻿using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using Microsoft.Extensions.AI;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -1706,11 +1707,11 @@ public sealed class MEAIToGeminiMapperTests
         var properties = MaybeRoundTripThroughJson(
             new AdditionalPropertiesDictionary
             {
-                [GeminiToolInvocationProperties.Id] = "call-1",
-                [GeminiToolInvocationProperties.ToolType] = ToolType.GoogleSearchWeb,
-                [GeminiToolInvocationProperties.ToolName] = "google_search",
-                [GeminiToolInvocationProperties.Arguments] = arguments,
-                [GeminiToolInvocationProperties.ThoughtSignature] = "signature",
+                [GeminiContentProperties.Id] = "call-1",
+                [GeminiContentProperties.ToolType] = ToolType.GoogleSearchWeb,
+                [GeminiContentProperties.ToolName] = "google_search",
+                [GeminiContentProperties.Arguments] = arguments,
+                [GeminiContentProperties.ThoughtSignature] = "signature",
             },
             roundTripThroughJson);
 
@@ -1746,10 +1747,10 @@ public sealed class MEAIToGeminiMapperTests
         var properties = MaybeRoundTripThroughJson(
             new AdditionalPropertiesDictionary
             {
-                [GeminiToolInvocationProperties.Id] = "call-1",
-                [GeminiToolInvocationProperties.ToolType] = ToolType.GoogleSearchWeb,
-                [GeminiToolInvocationProperties.Response] = toolResponse,
-                [GeminiToolInvocationProperties.ThoughtSignature] = "signature",
+                [GeminiContentProperties.Id] = "call-1",
+                [GeminiContentProperties.ToolType] = ToolType.GoogleSearchWeb,
+                [GeminiContentProperties.Response] = toolResponse,
+                [GeminiContentProperties.ThoughtSignature] = "signature",
             },
             roundTripThroughJson);
 
@@ -1844,7 +1845,7 @@ public sealed class MEAIToGeminiMapperTests
             [
                 new ToolCallContent("call-1")
                 {
-                    AdditionalProperties = new() { [GeminiToolInvocationProperties.ToolType] = 42 },
+                    AdditionalProperties = new() { [GeminiContentProperties.ToolType] = 42 },
                 },
             ]),
         };
@@ -1928,6 +1929,427 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAMappedCodeExecution_ShouldRoundTripTheParts()
+    {
+        // Arrange — the mapped contents still carry the parts on RawRepresentation, so the request
+        // echoes them verbatim, thought signature included.
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(CodeExecutionResponseWithIds)!;
+        var expectedParts = response.Candidates![0].Content!.Parts;
+
+        var mapped = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", mapped.Messages, new ChatOptions());
+
+        // Assert
+        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeExecutionPersistedAsJson_ShouldRebuildTheParts()
+    {
+        // Arrange — RawRepresentation does not survive serialization, so a caller who persisted the
+        // history as JSON arrives with only Inputs, Outputs and the additional properties.
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(CodeExecutionResponseWithIds)!;
+        var mapped = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(mapped.Messages, GeminiJsonUtilities.DefaultOptions);
+        var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+        Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Equal(4, parts.Count);
+
+        var executableCode = parts[1].ExecutableCode;
+        Assert.NotNull(executableCode);
+        Assert.Equal("call_318937", executableCode.Id);
+        Assert.Equal(ExecutableCodeLanguage.Python, executableCode.Language);
+        Assert.Equal("print(sum(range(1, 11)))", executableCode.Code);
+        Assert.Equal("signature", parts[1].ThoughtSignature);
+
+        var codeExecutionResult = parts[2].CodeExecutionResult;
+        Assert.NotNull(codeExecutionResult);
+        Assert.Equal("call_318937", codeExecutionResult.Id);
+        Assert.Equal(CodeExecutionResultOutcome.Ok, codeExecutionResult.Outcome);
+        Assert.Equal("55\n", codeExecutionResult.Output);
+        Assert.Null(parts[2].ThoughtSignature);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAStreamedCodeExecution_ShouldRoundTripTheParts()
+    {
+        // Arrange — a streamed turn delivers each part in its own chunk, so the aggregated response holds
+        // one content per part with the chunk's Part still on RawRepresentation. The parts sent back must
+        // be the ones the same turn produces unstreamed, with the split prose rejoined.
+        var expectedParts = JsonSerializer.Deserialize<GenerateContentResponse>(CodeExecutionResponseWithIds)!
+            .Candidates![0].Content!.Parts;
+
+        var streamed = CreateStreamedCodeExecutionResponse();
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", streamed.Messages, new ChatOptions());
+
+        // Assert
+        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAStreamedCodeExecutionPersistedAsJson_ShouldRebuildTheParts()
+    {
+        // Arrange — aggregating the stream keeps the additional properties the rebuild reads, so a caller
+        // who persisted the streamed history as JSON sends the same parts as one who persisted an
+        // unstreamed one.
+        var expectedParts = JsonSerializer.Deserialize<GenerateContentResponse>(CodeExecutionResponseWithIds)!
+            .Candidates![0].Content!.Parts;
+
+        var streamed = CreateStreamedCodeExecutionResponse();
+
+        var json = JsonSerializer.Serialize(streamed.Messages, GeminiJsonUtilities.DefaultOptions);
+        var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+        Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
+    [Theory]
+    [InlineData(CodeExecutionResultOutcome.Ok)]
+    [InlineData(CodeExecutionResultOutcome.Failed)]
+    [InlineData(CodeExecutionResultOutcome.DeadlineExceeded)]
+    public void CreateMappedGenerateContentRequest_WithAPersistedOutcome_ShouldRebuildIt(
+        CodeExecutionResultOutcome outcome)
+    {
+        // Arrange
+        var properties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary { [GeminiContentProperties.Outcome] = outcome },
+            roundTrip: true);
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new CodeInterpreterToolResultContent("call-1")
+                {
+                    Outputs = [new TextContent("out")], AdditionalProperties = properties,
+                },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        Assert.Equal(outcome, part.CodeExecutionResult!.Outcome);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeExecutionResultCarryingNoOutcome_ShouldSendUnspecified()
+    {
+        // Arrange — Gemini accepts an unspecified outcome on an echoed part (probed 2026-09-01).
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new CodeInterpreterToolResultContent("call-1") { Outputs = [new TextContent("1")] }]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        Assert.Equal(CodeExecutionResultOutcome.Unspecified, part.CodeExecutionResult!.Outcome);
+        Assert.Equal("1", part.CodeExecutionResult.Output);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeExecutionResultCarryingNoOutputs_ShouldSendNoOutput()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new CodeInterpreterToolResultContent("call-1")]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        Assert.Null(part.CodeExecutionResult!.Output);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeInterpreterCallCarryingNoCode_ShouldThrow()
+    {
+        // Arrange — ExecutableCode.code is required.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new CodeInterpreterToolCallContent("call-1")]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var exception = Assert.Throws<GeminiMappingException>(Act);
+        Assert.Contains(nameof(CodeInterpreterToolCallContent.Inputs), exception.Message);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeInterpreterCallCarryingTwoCodeInputs_ShouldThrow()
+    {
+        // Arrange — two code strings cannot be joined without guessing the separator, so unlike two
+        // output strings they are reported rather than concatenated.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new CodeInterpreterToolCallContent("call-1")
+                {
+                    Inputs = [new TextContent("import sys"), new TextContent("print(1)")],
+                },
+            ]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var exception = Assert.Throws<GeminiMappingException>(Act);
+        Assert.Contains("more than one", exception.Message);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithCodeExecutionContentsCarryingParts_ShouldEchoThePartsOverTheirInputsAndOutputs()
+    {
+        // Arrange — the part Gemini sent is the one it needs back, whatever a consumer has since put in
+        // Inputs and Outputs, and it may hold fields the rebuild has no key for.
+        var executableCodePart = new Part
+        {
+            ExecutableCode = new ExecutableCode { Language = ExecutableCodeLanguage.Unspecified, Code = "x" },
+        };
+
+        var codeExecutionResultPart = new Part
+        {
+            CodeExecutionResult = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Failed, Output = "x" },
+        };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new CodeInterpreterToolCallContent("call-1")
+                {
+                    Inputs = [new TextContent("y")], RawRepresentation = executableCodePart,
+                },
+                new CodeInterpreterToolResultContent("call-1")
+                {
+                    Outputs = [new TextContent("y")], RawRepresentation = codeExecutionResultPart,
+                },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Equal([executableCodePart, codeExecutionResultPart], parts);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeInterpreterCallCarryingAFile_ShouldThrow()
+    {
+        // Arrange — an executableCode part has nowhere to put a file, and a turn that succeeds while the
+        // model never sees it is worse than one that fails.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new CodeInterpreterToolCallContent("call-1")
+                {
+                    Inputs = [new TextContent("print(1)"), new HostedFileContent("files/abc")],
+                },
+            ]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var exception = Assert.Throws<GeminiMappingException>(Act);
+        Assert.Contains(typeof(HostedFileContent).ToString(), exception.Message);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACodeExecutionResultCarryingData_ShouldThrow()
+    {
+        // Arrange — a codeExecutionResult part carries only an output string.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new CodeInterpreterToolResultContent("call-1")
+                {
+                    Outputs = [new DataContent(new byte[] { 1, 2, 3 }, "image/png")],
+                },
+            ]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var exception = Assert.Throws<GeminiMappingException>(Act);
+        Assert.Contains(typeof(DataContent).ToString(), exception.Message);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithTwoRebuiltCodeExecutions_ShouldMapFourPartsInOrder()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new CodeInterpreterToolCallContent("call-1")
+                {
+                    Inputs = [new DataContent("data:text/x-python;base64,YQ==")],
+                },
+                new CodeInterpreterToolResultContent("call-1") { Outputs = [new TextContent("1")] },
+                new CodeInterpreterToolCallContent("call-2") { Inputs = [new TextContent("b")] },
+                new CodeInterpreterToolResultContent("call-2") { Outputs = [new TextContent("2"), new TextContent("3")] },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Equal(4, parts.Count);
+        Assert.Equal("a", parts[0].ExecutableCode!.Code);
+        Assert.Equal("1", parts[1].CodeExecutionResult!.Output);
+        Assert.Equal("b", parts[2].ExecutableCode!.Code);
+        Assert.Equal("23", parts[3].CodeExecutionResult!.Output);
+    }
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string CodeExecutionResponseWithIds =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  { "text": "I will sum the numbers with Python." },
+                  {
+                    "executableCode": { "id": "call_318937", "language": "PYTHON", "code": "print(sum(range(1, 11)))" },
+                    "thoughtSignature": "signature"
+                  },
+                  {
+                    "codeExecutionResult": { "id": "call_318937", "outcome": "OUTCOME_OK", "output": "55\n" }
+                  },
+                  { "text": "The sum is 55." }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "modelVersion": "gemini-3.1-flash-lite",
+          "responseId": "test-code-execution-ids"
+        }
+        """;
+
+    /// <summary>
+    /// The same turn as <see cref="CodeExecutionResponseWithIds"/> as Gemini streams it: each part whole
+    /// in its own chunk, the prose split across chunk boundaries, and the call and its result correlated
+    /// by a shared id rather than by adjacency.
+    /// </summary>
+    private const string StreamedCodeExecutionChunks =
+        """
+        [
+          {
+            "candidates": [
+              { "content": { "parts": [{ "text": "I will sum the numbers " }], "role": "model" } }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-code-execution"
+          },
+          {
+            "candidates": [
+              { "content": { "parts": [{ "text": "with Python." }], "role": "model" } }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-code-execution"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "executableCode": { "id": "call_318937", "language": "PYTHON", "code": "print(sum(range(1, 11)))" },
+                      "thoughtSignature": "signature"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-code-execution"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    { "codeExecutionResult": { "id": "call_318937", "outcome": "OUTCOME_OK", "output": "55\n" } }
+                  ],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-code-execution"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": "The sum is 55." }], "role": "model" },
+                "finishReason": "STOP"
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-code-execution"
+          }
+        ]
+        """;
+
+    private static ChatResponse CreateStreamedCodeExecutionResponse()
+    {
+        var chunks = JsonSerializer.Deserialize<List<GenerateContentResponse>>(StreamedCodeExecutionChunks)!;
+
+        return chunks
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, DateTimeOffset.UtcNow))
+            .ToChatResponse();
     }
 
     private static AdditionalPropertiesDictionary MaybeRoundTripThroughJson(

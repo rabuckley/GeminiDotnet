@@ -2,6 +2,7 @@ using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
+using System.Text;
 using System.Text.Json;
 using MEAI = Microsoft.Extensions.AI;
 
@@ -291,6 +292,9 @@ internal static class MEAIToGeminiMapper
                         CreateToolCallPart(toolCall),
                     MEAI.ToolResultContent toolResult when toolResult.GetType() == typeof(MEAI.ToolResultContent) =>
                         CreateToolResponsePart(toolResult),
+                    // Both code-interpreter types are sealed, so no exact-type guard is needed.
+                    MEAI.CodeInterpreterToolCallContent codeCall => CreateExecutableCodePart(codeCall),
+                    MEAI.CodeInterpreterToolResultContent codeResult => CreateCodeExecutionResultPart(codeResult),
                     _ => ThrowUnsupportedContentException(content),
                 };
 
@@ -411,15 +415,15 @@ internal static class MEAIToGeminiMapper
                         // Not CallId: that is filled in when Gemini issued no id, and an id the server
                         // never handed out is not an invocation echoed back unchanged.
                         Id = properties.GetValueOrThrow<string>(
-                            GeminiToolInvocationProperties.Id, fromPropertyName, toPropertyName),
+                            GeminiContentProperties.Id, fromPropertyName, toPropertyName),
                         ToolName = properties.GetValueOrThrow<string>(
-                            GeminiToolInvocationProperties.ToolName, fromPropertyName, toPropertyName),
+                            GeminiContentProperties.ToolName, fromPropertyName, toPropertyName),
                         Arguments = properties.GetValueOrThrow<JsonElement>(
-                            GeminiToolInvocationProperties.Arguments, fromPropertyName, toPropertyName),
+                            GeminiContentProperties.Arguments, fromPropertyName, toPropertyName),
                         ToolType = GetRequiredToolType(properties, fromPropertyName, toPropertyName),
                     },
                     ThoughtSignature = properties.GetValueOrThrow<string>(
-                        GeminiToolInvocationProperties.ThoughtSignature, fromPropertyName, toPropertyName),
+                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
             }
 
@@ -441,14 +445,149 @@ internal static class MEAIToGeminiMapper
                     ToolResponse = new ToolResponse
                     {
                         Id = properties.GetValueOrThrow<string>(
-                            GeminiToolInvocationProperties.Id, fromPropertyName, toPropertyName),
+                            GeminiContentProperties.Id, fromPropertyName, toPropertyName),
                         Response = properties.GetValueOrThrow<JsonElement>(
-                            GeminiToolInvocationProperties.Response, fromPropertyName, toPropertyName),
+                            GeminiContentProperties.Response, fromPropertyName, toPropertyName),
                         ToolType = GetRequiredToolType(properties, fromPropertyName, toPropertyName),
                     },
                     ThoughtSignature = properties.GetValueOrThrow<string>(
-                        GeminiToolInvocationProperties.ThoughtSignature, fromPropertyName, toPropertyName),
+                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
+            }
+
+            static Part CreateExecutableCodePart(MEAI.CodeInterpreterToolCallContent codeCall)
+            {
+                // Gemini needs the code it ran echoed back, with the thought signature that led to it,
+                // so prefer the part it sent.
+                if (codeCall.RawRepresentation is Part { ExecutableCode: not null } part)
+                {
+                    return part;
+                }
+
+                // RawRepresentation does not survive serialization, so a caller who persisted the
+                // history as JSON arrives here with only Inputs and the additional properties.
+                MEAI.AdditionalPropertiesDictionary properties = codeCall.AdditionalProperties ?? [];
+
+                var fromPropertyName =
+                    $"{typeof(MEAI.CodeInterpreterToolCallContent)}.{nameof(MEAI.AIContent.AdditionalProperties)}";
+                var toPropertyName = $"{typeof(Part)}.{nameof(Part.ExecutableCode)}";
+
+                return new Part
+                {
+                    ExecutableCode = new ExecutableCode
+                    {
+                        Code = GetExecutableCode(codeCall.Inputs),
+                        // Python is the only language the tool runs and the spec calls it the default, so
+                        // nothing records the language on the way out and nothing reads it back here.
+                        Language = ExecutableCodeLanguage.Python,
+                        // Not CallId: that is filled in when Gemini issued no id, and an id the server
+                        // never handed out is not a part echoed back unchanged.
+                        Id = properties.GetValueOrThrow<string>(
+                            GeminiContentProperties.Id, fromPropertyName, toPropertyName),
+                    },
+                    ThoughtSignature = properties.GetValueOrThrow<string>(
+                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
+                };
+            }
+
+            static Part CreateCodeExecutionResultPart(MEAI.CodeInterpreterToolResultContent codeResult)
+            {
+                if (codeResult.RawRepresentation is Part { CodeExecutionResult: not null } part)
+                {
+                    return part;
+                }
+
+                MEAI.AdditionalPropertiesDictionary properties = codeResult.AdditionalProperties ?? [];
+
+                var fromPropertyName =
+                    $"{typeof(MEAI.CodeInterpreterToolResultContent)}.{nameof(MEAI.AIContent.AdditionalProperties)}";
+                var toPropertyName = $"{typeof(Part)}.{nameof(Part.CodeExecutionResult)}";
+
+                return new Part
+                {
+                    CodeExecutionResult = new CodeExecutionResult
+                    {
+                        Id = properties.GetValueOrThrow<string>(
+                            GeminiContentProperties.Id, fromPropertyName, toPropertyName),
+                        // An absent outcome reads as Unspecified, which Gemini accepts on an echoed part.
+                        Outcome = properties.GetValueOrThrow<CodeExecutionResultOutcome>(
+                            GeminiContentProperties.Outcome, fromPropertyName, toPropertyName),
+                        Output = GetCodeExecutionOutput(codeResult.Outputs),
+                    },
+                    ThoughtSignature = properties.GetValueOrThrow<string>(
+                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
+                };
+            }
+
+            // An executableCode part carries a code string and nothing else, so an input the part cannot
+            // hold is reported rather than skipped: a turn that succeeds while the model never sees the
+            // input is the failure replaying history is meant to prevent.
+            static string GetExecutableCode(IList<MEAI.AIContent>? inputs)
+            {
+                var fromPropertyName =
+                    $"{typeof(MEAI.CodeInterpreterToolCallContent)}.{nameof(MEAI.CodeInterpreterToolCallContent.Inputs)}";
+                var toPropertyName = $"{typeof(ExecutableCode)}.{nameof(ExecutableCode.Code)}";
+
+                string? code = null;
+
+                foreach (var input in inputs ?? [])
+                {
+                    var inputCode = input switch
+                    {
+                        MEAI.TextContent text => text.Text,
+                        MEAI.DataContent data when data.HasTopLevelMediaType("text") =>
+                            Encoding.UTF8.GetString(data.Data.Span),
+                        _ => null,
+                    };
+
+                    if (inputCode is null || code is not null)
+                    {
+                        GeminiMappingException.Throw(
+                            fromPropertyName: fromPropertyName,
+                            toPropertyName: toPropertyName,
+                            reason: inputCode is null
+                                ? $"An {nameof(Part.ExecutableCode)} part holds only a code string, and cannot carry an input of type {input.GetType()}."
+                                : $"An {nameof(Part.ExecutableCode)} part holds one code string, but {nameof(MEAI.CodeInterpreterToolCallContent.Inputs)} holds more than one code-bearing entry.");
+                    }
+
+                    code = inputCode;
+                }
+
+                if (code is null)
+                {
+                    GeminiMappingException.Throw(
+                        fromPropertyName: fromPropertyName,
+                        toPropertyName: toPropertyName,
+                        reason:
+                        $"{nameof(ExecutableCode.Code)} is required, but {nameof(MEAI.CodeInterpreterToolCallContent.Inputs)} holds no {typeof(MEAI.TextContent)} or text {typeof(MEAI.DataContent)} to read it from.");
+                }
+
+                return code;
+            }
+
+            // A codeExecutionResult part carries a stdout string and nothing else; same rule as above.
+            static string? GetCodeExecutionOutput(IList<MEAI.AIContent>? outputs)
+            {
+                StringBuilder? output = null;
+
+                foreach (var entry in outputs ?? [])
+                {
+                    if (entry is MEAI.TextContent text)
+                    {
+                        output ??= new StringBuilder();
+                        output.Append(text.Text);
+                        continue;
+                    }
+
+                    GeminiMappingException.Throw(
+                        fromPropertyName:
+                        $"{typeof(MEAI.CodeInterpreterToolResultContent)}.{nameof(MEAI.CodeInterpreterToolResultContent.Outputs)}",
+                        toPropertyName: $"{typeof(CodeExecutionResult)}.{nameof(CodeExecutionResult.Output)}",
+                        reason:
+                        $"A {nameof(Part.CodeExecutionResult)} part holds only an output string, and cannot carry an output of type {entry.GetType()}.");
+                }
+
+                return output?.ToString();
             }
         }
 
@@ -569,7 +708,7 @@ internal static class MEAIToGeminiMapper
     }
 
     /// <exception cref="GeminiMappingException">
-    /// <paramref name="properties"/> carries no <see cref="GeminiToolInvocationProperties.ToolType"/>, one
+    /// <paramref name="properties"/> carries no <see cref="GeminiContentProperties.ToolType"/>, one
     /// that is <see cref="ToolType.Unspecified"/>, or one that is not a <see cref="ToolType"/>.
     /// </exception>
     private static ToolType GetRequiredToolType(
@@ -578,17 +717,17 @@ internal static class MEAIToGeminiMapper
         string toPropertyName)
     {
         var toolType = properties.GetValueOrThrow<ToolType>(
-            GeminiToolInvocationProperties.ToolType,
+            GeminiContentProperties.ToolType,
             fromPropertyName,
             toPropertyName);
 
         if (toolType is ToolType.Unspecified)
         {
             GeminiMappingException.Throw(
-                fromPropertyName: $"{fromPropertyName}[\"{GeminiToolInvocationProperties.ToolType}\"]",
+                fromPropertyName: $"{fromPropertyName}[\"{GeminiContentProperties.ToolType}\"]",
                 toPropertyName: toPropertyName,
                 reason:
-                $"Gemini needs the tool type of a server-side invocation echoed back, so {nameof(GeminiToolInvocationProperties)}.{nameof(GeminiToolInvocationProperties.ToolType)} must hold the {typeof(ToolType)} the response reported.");
+                $"Gemini needs the tool type of a server-side invocation echoed back, so {nameof(GeminiContentProperties)}.{nameof(GeminiContentProperties.ToolType)} must hold the {typeof(ToolType)} the response reported.");
         }
 
         return toolType;

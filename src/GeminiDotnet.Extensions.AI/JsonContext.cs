@@ -24,6 +24,9 @@ namespace GeminiDotnet.Extensions.AI;
 [JsonSerializable(typeof(ResponseModality))]
 [JsonSerializable(typeof(IEnumerable<ResponseModality>))]
 [JsonSerializable(typeof(List<ResponseModality>))]
-// Read back out of AIContent.AdditionalProperties by GeminiToolInvocationProperties.ToolType.
+// Stored in AIContent.AdditionalProperties under GeminiContentProperties.ToolType and .Outcome. These
+// registrations let GeminiJsonUtilities.DefaultOptions both write the enums under AOT and read them back
+// through AdditionalPropertiesDictionaryExtensions.TryConvertValue<T>.
 [JsonSerializable(typeof(ToolType))]
+[JsonSerializable(typeof(CodeExecutionResultOutcome))]
 internal sealed partial class JsonContext : JsonSerializerContext;

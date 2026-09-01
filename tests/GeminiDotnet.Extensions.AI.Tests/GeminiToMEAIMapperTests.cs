@@ -59,7 +59,9 @@ public sealed class GeminiToMEAIMapperTests
             .Single();
 
         Assert.NotNull(toolResult.AdditionalProperties);
-        Assert.Equal("Ok", toolResult.AdditionalProperties["outcome"]);
+        Assert.True(toolResult.AdditionalProperties.TryGetGeminiValue(
+            GeminiContentProperties.Outcome, out CodeExecutionResultOutcome outcome));
+        Assert.Equal(CodeExecutionResultOutcome.Ok, outcome);
     }
 
     [Fact]
@@ -111,7 +113,9 @@ public sealed class GeminiToMEAIMapperTests
             .Single();
 
         Assert.NotNull(toolResult.AdditionalProperties);
-        Assert.Equal("Failed", toolResult.AdditionalProperties["outcome"]);
+        Assert.True(toolResult.AdditionalProperties.TryGetGeminiValue(
+            GeminiContentProperties.Outcome, out CodeExecutionResultOutcome outcome));
+        Assert.Equal(CodeExecutionResultOutcome.Failed, outcome);
     }
 
     [Fact]
@@ -390,6 +394,99 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal(mimeType, fileContent.MediaType);
     }
 
+    #region Code Execution Mapping Tests
+
+    [Fact]
+    public void CreateMappedChatResponse_WithCodeExecutionIds_ShouldUseTheServerIds()
+    {
+        // Arrange — live responses give the executableCode and its codeExecutionResult the same id
+        // (probed 2026-09-01), so that id, not a synthesized one, is what correlates the pair.
+        var response = ResponseWithParts(
+            new Part
+            {
+                ExecutableCode = new ExecutableCode
+                {
+                    Id = "call_318937", Language = ExecutableCodeLanguage.Python, Code = "print(1)",
+                },
+            },
+            new Part
+            {
+                CodeExecutionResult = new CodeExecutionResult
+                {
+                    Id = "call_318937", Outcome = CodeExecutionResultOutcome.Ok, Output = "1",
+                },
+            });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var call = Assert.IsType<CodeInterpreterToolCallContent>(contents[0]);
+        var codeResult = Assert.IsType<CodeInterpreterToolResultContent>(contents[1]);
+
+        Assert.Equal("call_318937", call.CallId);
+        Assert.Equal("call_318937", codeResult.CallId);
+        Assert.Equal("call_318937", call.AdditionalProperties![GeminiContentProperties.Id]);
+        Assert.Equal("call_318937", codeResult.AdditionalProperties![GeminiContentProperties.Id]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithInterleavedIdLessCodeExecutions_ShouldCorrelateInOrder()
+    {
+        // Arrange — with no ids on the wire, each result pairs with the oldest unanswered call.
+        var response = ResponseWithParts(
+            new Part { ExecutableCode = new ExecutableCode { Language = ExecutableCodeLanguage.Python, Code = "a" } },
+            new Part { ExecutableCode = new ExecutableCode { Language = ExecutableCodeLanguage.Python, Code = "b" } },
+            new Part { CodeExecutionResult = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Ok } },
+            new Part { CodeExecutionResult = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Ok } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var firstCall = Assert.IsType<CodeInterpreterToolCallContent>(contents[0]);
+        var secondCall = Assert.IsType<CodeInterpreterToolCallContent>(contents[1]);
+        var firstResult = Assert.IsType<CodeInterpreterToolResultContent>(contents[2]);
+        var secondResult = Assert.IsType<CodeInterpreterToolResultContent>(contents[3]);
+
+        Assert.NotEqual(firstCall.CallId, secondCall.CallId);
+        Assert.Equal(firstCall.CallId, firstResult.CallId);
+        Assert.Equal(secondCall.CallId, secondResult.CallId);
+        Assert.Null(firstCall.AdditionalProperties);
+        Assert.DoesNotContain(GeminiContentProperties.Id, firstResult.AdditionalProperties!.Keys);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithCodeExecutionThoughtSignature_ShouldPreserveItInAdditionalProperties()
+    {
+        // Arrange — Gemini needs the signature echoed back, and RawRepresentation does not survive JSON.
+        var response = ResponseWithParts(
+            new Part
+            {
+                ExecutableCode = new ExecutableCode { Language = ExecutableCodeLanguage.Python, Code = "print(1)" },
+                ThoughtSignature = "signature",
+            },
+            new Part
+            {
+                CodeExecutionResult = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Ok, Output = "1" },
+            });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var call = Assert.IsType<CodeInterpreterToolCallContent>(contents[0]);
+        var codeResult = Assert.IsType<CodeInterpreterToolResultContent>(contents[1]);
+
+        Assert.Equal("signature", call.AdditionalProperties![GeminiContentProperties.ThoughtSignature]);
+        Assert.DoesNotContain(GeminiContentProperties.ThoughtSignature, codeResult.AdditionalProperties!.Keys);
+    }
+
+    #endregion
+
     #region Server-Side Tool Invocation Mapping Tests
 
     [Fact]
@@ -419,12 +516,12 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal("call-1", toolCall.CallId);
 
         var properties = Assert.IsType<AdditionalPropertiesDictionary>(toolCall.AdditionalProperties);
-        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiToolInvocationProperties.ToolType]);
-        Assert.Equal("google_search", properties[GeminiToolInvocationProperties.ToolName]);
-        Assert.Equal("signature", properties[GeminiToolInvocationProperties.ThoughtSignature]);
+        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiContentProperties.ToolType]);
+        Assert.Equal("google_search", properties[GeminiContentProperties.ToolName]);
+        Assert.Equal("signature", properties[GeminiContentProperties.ThoughtSignature]);
         Assert.Equal(
             arguments.GetRawText(),
-            Assert.IsType<JsonElement>(properties[GeminiToolInvocationProperties.Arguments]).GetRawText());
+            Assert.IsType<JsonElement>(properties[GeminiContentProperties.Arguments]).GetRawText());
     }
 
     [Fact]
@@ -452,10 +549,10 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal("call-1", toolResult.CallId);
 
         var properties = Assert.IsType<AdditionalPropertiesDictionary>(toolResult.AdditionalProperties);
-        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiToolInvocationProperties.ToolType]);
+        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiContentProperties.ToolType]);
         Assert.Equal(
             toolResponse.GetRawText(),
-            Assert.IsType<JsonElement>(properties[GeminiToolInvocationProperties.Response]).GetRawText());
+            Assert.IsType<JsonElement>(properties[GeminiContentProperties.Response]).GetRawText());
     }
 
     [Fact]
@@ -521,11 +618,11 @@ public sealed class GeminiToMEAIMapperTests
         var contents = Assert.Single(result.Messages).Contents;
 
         Assert.DoesNotContain(
-            GeminiToolInvocationProperties.Id,
+            GeminiContentProperties.Id,
             Assert.IsType<ToolCallContent>(contents[0]).AdditionalProperties!.Keys);
 
         Assert.DoesNotContain(
-            GeminiToolInvocationProperties.Id,
+            GeminiContentProperties.Id,
             Assert.IsType<ToolResultContent>(contents[1]).AdditionalProperties!.Keys);
     }
 

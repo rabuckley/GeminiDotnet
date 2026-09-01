@@ -86,13 +86,11 @@ internal static class GeminiToMEAIMapper
 
         List<AIContent> contents = new(parts.Count);
 
-        // Gemini emits ExecutableCode immediately followed by CodeExecutionResult.
-        // We generate a CallId on the call and carry it forward to the result for correlation.
-        string? lastCodeInterpreterCallId = null;
-
-        // Likewise for a server-side ToolCall and the ToolResponse that answers it, whose ids are
-        // optional on the wire. Gemini can run several built-in tools in one turn, so responses are
-        // paired with calls in order rather than with whichever call came last.
+        // Gemini emits an ExecutableCode followed by the CodeExecutionResult that answers it, and a
+        // server-side ToolCall followed by its ToolResponse. Their ids are optional on the wire, and
+        // Gemini can run several tools in one turn, so an id-less response is paired with the oldest
+        // unanswered call rather than with whichever call came last.
+        Queue<string> unansweredCodeExecutionCallIds = [];
         Queue<string> unansweredToolCallIds = [];
 
         foreach (var part in parts)
@@ -124,14 +122,19 @@ internal static class GeminiToMEAIMapper
             }
             else if (part.ExecutableCode is not null)
             {
-                var callId = Guid.NewGuid().ToString();
-                lastCodeInterpreterCallId = callId;
+                var callId = part.ExecutableCode.Id ?? $"code_execution/{Guid.NewGuid()}";
+                unansweredCodeExecutionCallIds.Enqueue(callId);
                 mapped = CreateMappedCodeInterpreterToolCallContent(part, callId);
             }
             else if (part.CodeExecutionResult is not null)
             {
-                mapped = CreateMappedCodeInterpreterToolResultContent(part, lastCodeInterpreterCallId);
-                lastCodeInterpreterCallId = null;
+                unansweredCodeExecutionCallIds.TryDequeue(out var unansweredCallId);
+
+                var callId = part.CodeExecutionResult.Id
+                    ?? unansweredCallId
+                    ?? $"code_execution/{Guid.NewGuid()}";
+
+                mapped = CreateMappedCodeInterpreterToolResultContent(part, callId);
             }
             else if (part.ToolCall is not null)
             {
@@ -269,11 +272,15 @@ internal static class GeminiToMEAIMapper
                 Inputs = [new DataContent(codeBytes, mediaType)],
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = null
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiContentProperties.Id, executableCode.Id),
+                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
+                ]),
             };
         }
 
-        static CodeInterpreterToolResultContent CreateMappedCodeInterpreterToolResultContent(Part part, string? callId)
+        static CodeInterpreterToolResultContent CreateMappedCodeInterpreterToolResultContent(Part part, string callId)
         {
             Debug.Assert(part.CodeExecutionResult is not null);
 
@@ -285,14 +292,23 @@ internal static class GeminiToMEAIMapper
                 outputs.Add(new TextContent(output));
             }
 
-            return new CodeInterpreterToolResultContent(callId ?? string.Empty)
+            // Unspecified is the enum's default, not null, so it has to be dropped by hand for the
+            // "present only when Gemini reported one" contract to hold.
+            object? outcome = codeExecutionResult.Outcome is CodeExecutionResultOutcome.Unspecified
+                ? null
+                : codeExecutionResult.Outcome;
+
+            return new CodeInterpreterToolResultContent(callId)
             {
                 Outputs = outputs,
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = codeExecutionResult.Outcome is not CodeExecutionResultOutcome.Unspecified
-                    ? new() { ["outcome"] = codeExecutionResult.Outcome.ToString() }
-                    : null,
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiContentProperties.Id, codeExecutionResult.Id),
+                    new(GeminiContentProperties.Outcome, outcome),
+                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
+                ]),
             };
         }
 
@@ -308,11 +324,11 @@ internal static class GeminiToMEAIMapper
                 RawRepresentation = part,
                 AdditionalProperties = CreateMappedAdditionalProperties(
                 [
-                    new(GeminiToolInvocationProperties.Id, toolCall.Id),
-                    new(GeminiToolInvocationProperties.ToolType, toolCall.ToolType),
-                    new(GeminiToolInvocationProperties.ToolName, toolCall.ToolName),
-                    new(GeminiToolInvocationProperties.Arguments, DefinedOrNull(toolCall.Arguments)),
-                    new(GeminiToolInvocationProperties.ThoughtSignature, part.ThoughtSignature),
+                    new(GeminiContentProperties.Id, toolCall.Id),
+                    new(GeminiContentProperties.ToolType, toolCall.ToolType),
+                    new(GeminiContentProperties.ToolName, toolCall.ToolName),
+                    new(GeminiContentProperties.Arguments, DefinedOrNull(toolCall.Arguments)),
+                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
                 ]),
             };
         }
@@ -329,10 +345,10 @@ internal static class GeminiToMEAIMapper
                 RawRepresentation = part,
                 AdditionalProperties = CreateMappedAdditionalProperties(
                 [
-                    new(GeminiToolInvocationProperties.Id, toolResponse.Id),
-                    new(GeminiToolInvocationProperties.ToolType, toolResponse.ToolType),
-                    new(GeminiToolInvocationProperties.Response, DefinedOrNull(toolResponse.Response)),
-                    new(GeminiToolInvocationProperties.ThoughtSignature, part.ThoughtSignature),
+                    new(GeminiContentProperties.Id, toolResponse.Id),
+                    new(GeminiContentProperties.ToolType, toolResponse.ToolType),
+                    new(GeminiContentProperties.Response, DefinedOrNull(toolResponse.Response)),
+                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
                 ]),
             };
         }

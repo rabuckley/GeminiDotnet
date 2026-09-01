@@ -22,6 +22,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="GeminiDotnet.Extensions.AI.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\GeminiDotnet\GeminiDotnet.csproj"/>
     </ItemGroup>
 
