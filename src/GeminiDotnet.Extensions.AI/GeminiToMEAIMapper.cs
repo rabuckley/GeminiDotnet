@@ -11,20 +11,40 @@ namespace GeminiDotnet.Extensions.AI;
 
 internal static class GeminiToMEAIMapper
 {
+    /// <param name="state">
+    /// The state carried across the updates of one stream. Callers must pass the same instance for every
+    /// update, so that a call and the result answering it correlate and a grounding segment resolves
+    /// against the text the whole stream has produced.
+    /// </param>
     public static ChatResponseUpdate CreateMappedChatResponseUpdate(
         GenerateContentResponse response,
+        CandidateMappingState state,
         DateTimeOffset createdAt)
     {
         var candidate = response.Candidates is { Count: > 0 } c ? c[0] : null;
 
         // Map content parts
-        var contents = CreateMappedContents(candidate?.Content?.Parts) ?? [];
+        var contents = CreateMappedContents(candidate?.Content?.Parts, state) ?? [];
 
-        // Streaming responses carry only the grounding chunks not already sent, while
-        // GroundingSupport.GroundingChunkIndices index the accumulated list across every response.
-        // This mapper is per-update and stateless, so it cannot resolve them; citations for a
-        // streamed update therefore carry no regions.
-        AppendMappedGroundingMetadata(contents, candidate?.GroundingMetadata, groundingSupports: null);
+        // A streamed segment's offsets index every non-thought text part of the stream, not just this
+        // update's, so the text has to be accumulated before the grounding metadata that arrives with the
+        // final chunk can be resolved against it. TextReasoningContent is deliberately not counted.
+        foreach (var content in contents)
+        {
+            if (content is TextContent text)
+            {
+                state.Text.Append(text.Text);
+            }
+        }
+
+        if (candidate?.GroundingMetadata is { } groundingMetadata)
+        {
+            AppendMappedGroundingMetadata(
+                contents,
+                groundingMetadata,
+                state,
+                CitationTarget.ForStream(contents, state.Text.ToString()));
+        }
 
         // Add UsageContent for streaming aggregation (consumed by ToChatResponse())
         if (CreateMappedUsageDetails(response.UsageMetadata) is { } usageDetails)
@@ -77,7 +97,7 @@ internal static class GeminiToMEAIMapper
     /// Maps each <see cref="Part"/> to exactly one <see cref="AIContent"/>, in order, so that a
     /// <see cref="Segment.PartIndex"/> also indexes the returned list.
     /// </summary>
-    private static List<AIContent>? CreateMappedContents(IReadOnlyList<Part>? parts)
+    private static List<AIContent>? CreateMappedContents(IReadOnlyList<Part>? parts, CandidateMappingState state)
     {
         if (parts is null)
         {
@@ -87,11 +107,10 @@ internal static class GeminiToMEAIMapper
         List<AIContent> contents = new(parts.Count);
 
         // Gemini emits an ExecutableCode followed by the CodeExecutionResult that answers it, and a
-        // server-side ToolCall followed by its ToolResponse. Their ids are optional on the wire, and
-        // Gemini can run several tools in one turn, so an id-less response is paired with the oldest
-        // unanswered call rather than with whichever call came last.
-        Queue<string> unansweredCodeExecutionCallIds = [];
-        Queue<string> unansweredToolCallIds = [];
+        // server-side ToolCall followed by its ToolResponse. The state carries the unanswered calls
+        // because streaming splits a call and its result across chunks.
+        var unansweredCodeExecutionCallIds = state.UnansweredCodeExecutionCallIds;
+        var unansweredToolCallIds = state.UnansweredToolCallIds;
 
         foreach (var part in parts)
         {
@@ -387,24 +406,19 @@ internal static class GeminiToMEAIMapper
     /// search at all.
     /// </para>
     /// </remarks>
-    /// <param name="groundingSupports">
-    /// The supports locating each chunk within the candidate's parts, or <see langword="null"/> to emit
-    /// region-less citations. Streaming callers pass <see langword="null"/>, because chunk indices there are
-    /// cumulative across responses and this mapper sees one response at a time.
+    /// <param name="target">
+    /// How this candidate's segments resolve to the text they index. The whole-response and streamed forms
+    /// differ, because a streamed segment spans the whole stream rather than one part.
     /// </param>
     private static void AppendMappedGroundingMetadata(
         List<AIContent> contents,
-        GroundingMetadata? groundingMetadata,
-        IReadOnlyList<GroundingSupport>? groundingSupports)
+        GroundingMetadata groundingMetadata,
+        CandidateMappingState state,
+        CitationTarget target)
     {
-        if (groundingMetadata is null)
-        {
-            return;
-        }
-
         if (groundingMetadata.GroundingChunks is { Count: > 0 } chunks)
         {
-            AttachMappedCitationAnnotations(contents, chunks, groundingSupports);
+            AttachMappedCitationAnnotations(chunks, groundingMetadata.GroundingSupports, target);
         }
 
         if (groundingMetadata.WebSearchQueries is not { Count: > 0 } queries)
@@ -412,7 +426,11 @@ internal static class GeminiToMEAIMapper
             return;
         }
 
-        var callId = $"web-search/{Guid.NewGuid()}";
+        // A stream can deliver grounding metadata more than once. Reusing the call id lets
+        // ToChatResponse coalesce the calls into one; WebSearchToolResultContent has no coalescing pass
+        // of its own, so only the delivery that minted the id emits a result.
+        var isFirstDelivery = state.WebSearchCallId is null;
+        var callId = state.WebSearchCallId ??= $"web-search/{Guid.NewGuid()}";
 
         contents.Add(new WebSearchToolCallContent(callId)
         {
@@ -420,12 +438,107 @@ internal static class GeminiToMEAIMapper
             RawRepresentation = groundingMetadata,
         });
 
+        if (!isFirstDelivery)
+        {
+            return;
+        }
+
         // The sources live on the citation annotations, so the result carries no outputs of its own.
         contents.Add(new WebSearchToolResultContent(callId)
         {
             Outputs = null,
             RawRepresentation = groundingMetadata,
         });
+    }
+
+    /// <summary>
+    /// The content a <see cref="Segment"/>'s offsets index, and the content its citation is attached to.
+    /// </summary>
+    private readonly record struct SegmentTarget(TextContent Content, string IndexedText);
+
+    /// <summary>
+    /// How a candidate's grounding segments resolve to the text they index, and where the citations for
+    /// the chunks no support references are attached.
+    /// </summary>
+    /// <param name="Resolve">
+    /// Returns the content to annotate and the text the segment's UTF-8 byte offsets index, or
+    /// <see langword="null"/> when the segment names text this mapper cannot place.
+    /// </param>
+    /// <param name="UncitedCarrier">
+    /// Returns the content that carries the region-less citations, creating it if it does not exist yet.
+    /// </param>
+    private readonly record struct CitationTarget(
+        Func<Segment, SegmentTarget?> Resolve,
+        Func<TextContent> UncitedCarrier)
+    {
+        /// <summary>
+        /// A whole response: <see cref="Segment.PartIndex"/> selects the content the mapper produced for
+        /// that part, and the offsets index that content's own text, as the Gemini spec defines them.
+        /// </summary>
+        public static CitationTarget ForResponse(List<AIContent> contents)
+        {
+            TextContent? carrier = null;
+
+            return new(Resolve, UncitedCarrier);
+
+            SegmentTarget? Resolve(Segment segment)
+            {
+                var contentIndex = segment.PartIndex ?? 0;
+
+                // Gemini can name a part this mapper produced no text for (a thought, a function call),
+                // and nothing stops it naming one that does not exist. Neither can carry a region.
+                return (uint)contentIndex < (uint)contents.Count && contents[contentIndex] is TextContent text
+                    ? new SegmentTarget(text, text.Text)
+                    : null;
+            }
+
+            TextContent UncitedCarrier()
+            {
+                return carrier ??= contents.OfType<TextContent>().FirstOrDefault() ?? AppendCarrier(contents);
+            }
+        }
+
+        /// <summary>
+        /// A streamed update: the offsets index every non-thought text part of the stream so far, so the
+        /// annotations go on one empty carrier rather than on the fragment they happen to overlap.
+        /// </summary>
+        /// <remarks>
+        /// A carrier rather than the update's own text, because the regions index the whole stream and an
+        /// annotated fragment would also stop coalescing. A support that names a part is unresolvable:
+        /// the spec defines the offsets as part-relative, so resolving them against the joined text would
+        /// produce a region the caller could not tell was wrong. Proto3 JSON omits a zero-valued field, so
+        /// this only catches a part index of one or more; a streamed segment has never carried either. A
+        /// segment ending past the text streamed so far resolves to no region, which only a grounding
+        /// delivery before the final chunk could produce.
+        /// </remarks>
+        public static CitationTarget ForStream(List<AIContent> contents, string streamText)
+        {
+            TextContent? carrier = null;
+
+            return new(Resolve, UncitedCarrier);
+
+            SegmentTarget? Resolve(Segment segment)
+            {
+                return segment.PartIndex is null ? new SegmentTarget(UncitedCarrier(), streamText) : null;
+            }
+
+            TextContent UncitedCarrier() => carrier ??= AppendCarrier(contents);
+        }
+
+        /// <summary>
+        /// Appends the empty <see cref="TextContent"/> that carries citations with nowhere else to go.
+        /// </summary>
+        /// <remarks>
+        /// A candidate can be grounded without a text part of its own, and
+        /// <see cref="MEAIToGeminiMapper"/> skips an empty <see cref="TextContent"/>, so the carrier is
+        /// safe to feed back as history.
+        /// </remarks>
+        private static TextContent AppendCarrier(List<AIContent> contents)
+        {
+            var carrier = new TextContent(string.Empty);
+            contents.Add(carrier);
+            return carrier;
+        }
     }
 
     /// <summary>
@@ -437,30 +550,22 @@ internal static class GeminiToMEAIMapper
     /// source is real even when the span it grounds is unknown.
     /// </remarks>
     private static void AttachMappedCitationAnnotations(
-        List<AIContent> contents,
         IReadOnlyList<GroundingChunk> chunks,
-        IReadOnlyList<GroundingSupport>? groundingSupports)
+        IReadOnlyList<GroundingSupport>? groundingSupports,
+        CitationTarget target)
     {
-        Dictionary<(int ContentIndex, int ChunkIndex), CitationAnnotation> attached = [];
+        Dictionary<(TextContent Content, int ChunkIndex), CitationAnnotation> attached = [];
         HashSet<int> referencedChunks = [];
 
         foreach (var support in groundingSupports ?? [])
         {
-            if (support.Segment is not { } segment)
+            if (support.Segment is not { } segment || target.Resolve(segment) is not { } resolved)
             {
                 continue;
             }
 
-            var contentIndex = segment.PartIndex ?? 0;
-
-            // Gemini can name a part this mapper produced no text for (a thought, a function call), and
-            // nothing stops it naming one that does not exist. Neither can carry a region.
-            if ((uint)contentIndex >= (uint)contents.Count || contents[contentIndex] is not TextContent text)
-            {
-                continue;
-            }
-
-            var span = CreateMappedTextSpan(text.Text, segment);
+            var text = resolved.Content;
+            var span = CreateMappedTextSpan(resolved.IndexedText, segment);
 
             foreach (var chunkIndex in support.GroundingChunkIndices.Span)
             {
@@ -471,7 +576,7 @@ internal static class GeminiToMEAIMapper
 
                 referencedChunks.Add(chunkIndex);
 
-                if (!attached.TryGetValue((contentIndex, chunkIndex), out var annotation))
+                if (!attached.TryGetValue((text, chunkIndex), out var annotation))
                 {
                     if (CreateMappedCitationAnnotation(chunks[chunkIndex]) is not { } created)
                     {
@@ -479,7 +584,7 @@ internal static class GeminiToMEAIMapper
                     }
 
                     annotation = created;
-                    attached[(contentIndex, chunkIndex)] = annotation;
+                    attached[(text, chunkIndex)] = annotation;
                     (text.Annotations ??= []).Add(annotation);
                 }
 
@@ -516,19 +621,11 @@ internal static class GeminiToMEAIMapper
             return;
         }
 
-        var target = contents.OfType<TextContent>().FirstOrDefault();
-
-        if (target is null)
-        {
-            // A candidate can be grounded without a text part of its own. Carry the sources rather than
-            // dropping them.
-            target = new TextContent(string.Empty);
-            contents.Add(target);
-        }
+        var carrier = target.UncitedCarrier();
 
         foreach (var annotation in unreferenced)
         {
-            (target.Annotations ??= []).Add(annotation);
+            (carrier.Annotations ??= []).Add(annotation);
         }
     }
 
@@ -743,12 +840,17 @@ internal static class GeminiToMEAIMapper
 
         static ChatMessage CreateMappedChatMessage(Candidate candidateResponse)
         {
-            var contents = CreateMappedContents(candidateResponse.Content?.Parts) ?? [];
+            var state = new CandidateMappingState();
+            var contents = CreateMappedContents(candidateResponse.Content?.Parts, state) ?? [];
 
-            AppendMappedGroundingMetadata(
-                contents,
-                candidateResponse.GroundingMetadata,
-                candidateResponse.GroundingMetadata?.GroundingSupports);
+            if (candidateResponse.GroundingMetadata is { } groundingMetadata)
+            {
+                AppendMappedGroundingMetadata(
+                    contents,
+                    groundingMetadata,
+                    state,
+                    CitationTarget.ForResponse(contents));
+            }
 
             return new ChatMessage
             {
