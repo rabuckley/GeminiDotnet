@@ -721,7 +721,7 @@ public sealed class GeminiToMEAIMapperTests
         var response = ResponseWithCandidateRole(null);
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, new CandidateMappingState(), DateTimeOffset.UtcNow);
 
         // Assert
         Assert.Equal(ChatRole.Assistant, result.Role);
@@ -734,7 +734,7 @@ public sealed class GeminiToMEAIMapperTests
         var response = ResponseWithCandidateRole("model");
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, new CandidateMappingState(), DateTimeOffset.UtcNow);
 
         // Assert
         Assert.Equal(ChatRole.Assistant, result.Role);
@@ -1292,64 +1292,236 @@ public sealed class GeminiToMEAIMapperTests
         };
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, new CandidateMappingState(), DateTimeOffset.UtcNow);
 
-        // Assert — web search content appears after text but before UsageContent
+        // Assert — the citation carrier and the web search content appear after the text but before
+        // the UsageContent.
         var contents = result.Contents;
-        var text = Assert.IsType<TextContent>(contents[0]);
-        Assert.IsType<WebSearchToolCallContent>(contents[1]);
-        Assert.IsType<WebSearchToolResultContent>(contents[2]);
-        Assert.IsType<UsageContent>(contents[3]);
+        Assert.Equal("Search result summary.", Assert.IsType<TextContent>(contents[0]).Text);
+        var carrier = Assert.IsType<TextContent>(contents[1]);
+        Assert.IsType<WebSearchToolCallContent>(contents[2]);
+        Assert.IsType<WebSearchToolResultContent>(contents[3]);
+        Assert.IsType<UsageContent>(contents[4]);
 
-        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        Assert.Equal(string.Empty, carrier.Text);
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(carrier.Annotations!));
         Assert.Equal("Example", citation.Title);
+        Assert.Null(citation.AnnotatedRegions);
     }
 
     [Fact]
-    public void CreateMappedChatResponseUpdate_WithGroundingSupports_ShouldNotAttachRegions()
+    public void CreateMappedChatResponseUpdate_WithStreamedGrounding_ShouldResolveRegionsAgainstTheWholeStream()
     {
-        // Arrange — streaming segment indices are cumulative across responses, so a per-update mapper
-        // cannot place them; the citation is emitted without a region.
-        var response = new GenerateContentResponse
-        {
-            Candidates =
+        // Act
+        var result = CreateStreamedResponse(DeserializeChunks(StreamedGroundingChunks));
+
+        // Assert — every region indexes the aggregated text, across the chunk boundaries the segments
+        // straddle and past the multi-byte characters the byte offsets have to be converted around.
+        var citations = GetCitations(result);
+        Assert.Equal(3, citations.Count);
+
+        Assert.Equal([FirstGroundedSegment], GetRegionTexts(result, citations[0]));
+        Assert.Equal([FirstGroundedSegment, SecondGroundedSegment], GetRegionTexts(result, citations[1]));
+        Assert.Null(citations[2].AnnotatedRegions);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithAStreamedThought_ShouldNotIndexTheThoughtText()
+    {
+        // Arrange — a thought part does not count toward the segment offsets, so a stream that opens with
+        // one still resolves to the same spans.
+        var chunks = DeserializeChunks(StreamedGroundingChunks);
+
+        chunks.Insert(0, DeserializeChunks(
+            """
             [
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Role = "model",
-                        Parts = [new Part { Text = "Hello world." }],
-                    },
-                    GroundingMetadata = new GroundingMetadata
-                    {
-                        GroundingChunks =
-                        [
-                            new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
-                        ],
-                        GroundingSupports =
-                        [
-                            new GroundingSupport
-                            {
-                                GroundingChunkIndices = new[] { 0 },
-                                Segment = new Segment { PartIndex = 0, StartIndex = 0, EndIndex = 5 },
-                            },
-                        ],
-                    },
-                    FinishReason = CandidateFinishReason.Stop,
-                },
-            ],
-            ModelVersion = "gemini-2.0-flash",
-            ResponseId = "test-grounding-streaming-supports",
-        };
+              {
+                "candidates": [
+                  {
+                    "content": {
+                      "parts": [{ "text": "Let me check – carefully.", "thought": true }],
+                      "role": "model"
+                    }
+                  }
+                ]
+              }
+            ]
+            """)[0]);
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = CreateStreamedResponse(chunks);
 
         // Assert
-        var text = Assert.IsType<TextContent>(Assert.Single(result.Contents));
-        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        var citations = GetCitations(result);
+        Assert.Equal([FirstGroundedSegment], GetRegionTexts(result, citations[0]));
+        Assert.Equal([FirstGroundedSegment, SecondGroundedSegment], GetRegionTexts(result, citations[1]));
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithAStreamedSegmentNamingAPart_ShouldNotAttachARegion()
+    {
+        // Arrange — a streamed segment's offsets span the whole stream, so a part index contradicts what
+        // the offsets can mean and the region is dropped rather than guessed at, even though 0..5 does
+        // lie inside the streamed text.
+        var chunks = DeserializeChunks(
+            """
+            [
+              {
+                "candidates": [{ "content": { "parts": [{ "text": "Hello world." }], "role": "model" } }],
+                "responseId": "test-streamed-grounding-part-index"
+              },
+              {
+                "candidates": [
+                  {
+                    "content": { "parts": [{ "text": "" }], "role": "model" },
+                    "finishReason": "STOP",
+                    "groundingMetadata": {
+                      "groundingChunks": [{ "web": { "uri": "https://example.com", "title": "Example" } }],
+                      "groundingSupports": [
+                        {
+                          "groundingChunkIndices": [0],
+                          "segment": { "partIndex": 1, "endIndex": 5, "text": "Hello" }
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "responseId": "test-streamed-grounding-part-index"
+              }
+            ]
+            """);
+
+        // Act
+        var result = CreateStreamedResponse(chunks);
+
+        // Assert
+        var citation = Assert.Single(GetCitations(result));
+        Assert.Equal("Example", citation.Title);
         Assert.Null(citation.AnnotatedRegions);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithTwoGroundingDeliveries_ShouldEmitOneWebSearchCall()
+    {
+        // Arrange — a live stream delivers grounding metadata once, but nothing in the wire format
+        // promises that, and two calls under two ids would not coalesce.
+        var chunks = DeserializeChunks(
+            """
+            [
+              {
+                "candidates": [
+                  {
+                    "content": { "parts": [{ "text": "First." }], "role": "model" },
+                    "groundingMetadata": { "webSearchQueries": ["first query"] }
+                  }
+                ],
+                "responseId": "test-streamed-grounding-twice"
+              },
+              {
+                "candidates": [
+                  {
+                    "content": { "parts": [{ "text": "Second." }], "role": "model" },
+                    "finishReason": "STOP",
+                    "groundingMetadata": { "webSearchQueries": ["second query"] }
+                  }
+                ],
+                "responseId": "test-streamed-grounding-twice"
+              }
+            ]
+            """);
+
+        // Act
+        var result = CreateStreamedResponse(chunks);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var call = Assert.Single(contents.OfType<WebSearchToolCallContent>());
+        var toolResult = Assert.Single(contents.OfType<WebSearchToolResultContent>());
+
+        Assert.Equal(["first query", "second query"], call.Queries);
+        Assert.Equal(call.CallId, toolResult.CallId);
+    }
+
+    [Theory]
+    [InlineData(IdLessStreamedCodeExecutionChunks)]
+    [InlineData(IdLessStreamedToolInvocationChunks)]
+    public void CreateMappedChatResponseUpdate_WithAnIdLessCallAndResult_ShouldCorrelateAcrossChunks(string chunksJson)
+    {
+        // Act
+        var result = CreateStreamedResponse(DeserializeChunks(chunksJson));
+
+        // Assert — the call and the result Gemini split across two chunks share the id the mapper minted.
+        var contents = Assert.Single(result.Messages).Contents;
+        var callIds = contents.Select(GetCallId).Where(callId => callId is not null).ToList();
+
+        Assert.Equal(2, callIds.Count);
+        Assert.Equal(callIds[0], callIds[1]);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithASecondState_ShouldMintDifferentCallIds()
+    {
+        // Arrange — the correlation state belongs to one stream, so a second stream must not answer the
+        // first stream's unanswered calls or reuse its ids.
+        var chunks = DeserializeChunks(IdLessStreamedCodeExecutionChunks);
+
+        // Act
+        var first = CreateStreamedResponse(chunks);
+        var second = CreateStreamedResponse(chunks);
+
+        // Assert
+        Assert.NotEqual(GetSingleCallId(first), GetSingleCallId(second));
+
+        static string GetSingleCallId(ChatResponse response)
+        {
+            return Assert.Single(response.Messages[0].Contents.OfType<CodeInterpreterToolCallContent>()).CallId;
+        }
+    }
+
+    private static string? GetCallId(AIContent content)
+    {
+        return content switch
+        {
+            CodeInterpreterToolCallContent call => call.CallId,
+            CodeInterpreterToolResultContent toolResult => toolResult.CallId,
+            ToolCallContent call => call.CallId,
+            ToolResultContent toolResult => toolResult.CallId,
+            _ => null,
+        };
+    }
+
+    private static List<GenerateContentResponse> DeserializeChunks(string chunksJson)
+    {
+        return JsonSerializer.Deserialize<List<GenerateContentResponse>>(chunksJson)!;
+    }
+
+    private static ChatResponse CreateStreamedResponse(List<GenerateContentResponse> chunks)
+    {
+        var state = new CandidateMappingState();
+
+        return chunks
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, state, DateTimeOffset.UtcNow))
+            .ToChatResponse();
+    }
+
+    private static List<CitationAnnotation> GetCitations(ChatResponse response)
+    {
+        return Assert.Single(response.Messages).Contents
+            .SelectMany(content => content.Annotations ?? [])
+            .OfType<CitationAnnotation>()
+            .ToList();
+    }
+
+    /// <summary>
+    /// The text each of a citation's regions selects out of the aggregated response, which is what a
+    /// streamed region indexes.
+    /// </summary>
+    private static List<string> GetRegionTexts(ChatResponse response, CitationAnnotation citation)
+    {
+        return citation.AnnotatedRegions!
+            .Cast<TextSpanAnnotatedRegion>()
+            .Select(region => response.Text[region.StartIndex!.Value..region.EndIndex!.Value])
+            .ToList();
     }
 
     [Fact]
@@ -1429,7 +1601,7 @@ public sealed class GeminiToMEAIMapperTests
         var response = JsonSerializer.Deserialize<GenerateContentResponse>(StreamingResponseWithUsage)!;
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, new CandidateMappingState(), DateTimeOffset.UtcNow);
 
         // Assert
         var usageContent = result.Contents.OfType<UsageContent>().SingleOrDefault();
@@ -1446,7 +1618,7 @@ public sealed class GeminiToMEAIMapperTests
         var response = JsonSerializer.Deserialize<GenerateContentResponse>(StreamingResponseWithoutUsage)!;
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, new CandidateMappingState(), DateTimeOffset.UtcNow);
 
         // Assert
         var usageContent = result.Contents.OfType<UsageContent>().SingleOrDefault();
@@ -1460,7 +1632,7 @@ public sealed class GeminiToMEAIMapperTests
         var response = JsonSerializer.Deserialize<GenerateContentResponse>(StreamingResponseWithFullUsage)!;
 
         // Act
-        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, DateTimeOffset.UtcNow);
+        var result = GeminiToMEAIMapper.CreateMappedChatResponseUpdate(response, new CandidateMappingState(), DateTimeOffset.UtcNow);
 
         // Assert
         var usageContent = result.Contents.OfType<UsageContent>().SingleOrDefault();
@@ -1771,6 +1943,173 @@ public sealed class GeminiToMEAIMapperTests
           "modelVersion": "gemini-2.0-flash",
           "responseId": "test-response-5"
         }
+        """;
+
+
+    /// <summary>
+    /// The first two spans <see cref="StreamedGroundingChunks"/> grounds, as Gemini reported them. Both
+    /// straddle a chunk boundary, and the second lies past a multi-byte character, so the byte offsets and
+    /// the character indices differ.
+    /// </summary>
+    private const string FirstGroundedSegment =
+        "Spain is the winner of the most recent FIFA World Cup, securing their second title in the 2026 tournament";
+
+    /// <inheritdoc cref="FirstGroundedSegment"/>
+    private const string SecondGroundedSegment =
+        "They claimed the championship by defeating Argentina with a score of 1–0 after extra time in the final match";
+
+    /// <summary>
+    /// A recorded Google Search stream (2026-09-02, <c>gemini-3.1-flash-lite</c>), trimmed to its first
+    /// four text chunks and its final chunk. The grounding metadata arrives once, with the finish reason,
+    /// and its segment offsets index every text chunk of the stream at once. Chunk 2 is cited by no
+    /// support.
+    /// </summary>
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string StreamedGroundingChunks =
+        """
+        [
+          {
+            "candidates": [{ "content": { "parts": [{ "text": "Spain is" }], "role": "model" } }],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-grounding"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "text": " the winner of the most recent FIFA World Cup, securing their second title in the" }],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-grounding"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "text": " 2026 tournament. They claimed the championship by defeating Argentina with" }],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-grounding"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "text": " a score of 1–0 after extra time in the final match.\n\n" }],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-grounding"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": "", "thoughtSignature": "signature" }], "role": "model" },
+                "finishReason": "STOP",
+                "groundingMetadata": {
+                  "groundingChunks": [
+                    { "web": { "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEdM8RD5ss3G440", "title": "wikipedia.org" } },
+                    { "web": { "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFAX7IvE3SrxHGy", "title": "wikipedia.org" } },
+                    { "web": { "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF1mRH2iNoVrOwX", "title": "topendsports.com" } }
+                  ],
+                  "groundingSupports": [
+                    {
+                      "groundingChunkIndices": [0, 1],
+                      "segment": {
+                        "endIndex": 105,
+                        "text": "Spain is the winner of the most recent FIFA World Cup, securing their second title in the 2026 tournament"
+                      }
+                    },
+                    {
+                      "groundingChunkIndices": [1],
+                      "segment": {
+                        "startIndex": 107,
+                        "endIndex": 217,
+                        "text": "They claimed the championship by defeating Argentina with a score of 1–0 after extra time in the final match"
+                      }
+                    }
+                  ],
+                  "webSearchQueries": ["who won the most recent Super Bowl", "who won the most recent FIFA World Cup"]
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "test-streamed-grounding"
+          }
+        ]
+        """;
+
+    /// <summary>
+    /// A streamed code execution with the ids Gemini normally sends omitted, so that the call and the
+    /// result can only be correlated by the order they arrived in.
+    /// </summary>
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string IdLessStreamedCodeExecutionChunks =
+        """
+        [
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "executableCode": { "language": "PYTHON", "code": "print(sum(range(1, 11)))" } }],
+                  "role": "model"
+                }
+              }
+            ],
+            "responseId": "test-streamed-id-less-code-execution"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "codeExecutionResult": { "outcome": "OUTCOME_OK", "output": "55\n" } }],
+                  "role": "model"
+                },
+                "finishReason": "STOP"
+              }
+            ],
+            "responseId": "test-streamed-id-less-code-execution"
+          }
+        ]
+        """;
+
+    /// <inheritdoc cref="IdLessStreamedCodeExecutionChunks"/>
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string IdLessStreamedToolInvocationChunks =
+        """
+        [
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "toolCall": { "toolType": "GOOGLE_SEARCH_WEB", "args": { "queries": ["a query"] } } }],
+                  "role": "model"
+                }
+              }
+            ],
+            "responseId": "test-streamed-id-less-tool-invocation"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "toolResponse": { "toolType": "GOOGLE_SEARCH_WEB", "response": { "search_suggestions": "chips" } } }],
+                  "role": "model"
+                },
+                "finishReason": "STOP"
+              }
+            ],
+            "responseId": "test-streamed-id-less-tool-invocation"
+          }
+        ]
         """;
 
     #endregion

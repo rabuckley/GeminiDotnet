@@ -2346,9 +2346,10 @@ public sealed class MEAIToGeminiMapperTests
     private static ChatResponse CreateStreamedCodeExecutionResponse()
     {
         var chunks = JsonSerializer.Deserialize<List<GenerateContentResponse>>(StreamedCodeExecutionChunks)!;
+        var state = new CandidateMappingState();
 
         return chunks
-            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, DateTimeOffset.UtcNow))
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, state, DateTimeOffset.UtcNow))
             .ToChatResponse();
     }
 

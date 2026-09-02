@@ -311,6 +311,51 @@ public sealed class GeminiChatClientTests
     }
 
     [Fact]
+    public async Task GetStreamingResponseAsync_WithHostedWebSearchTool_ShouldAttachCitationRegions()
+    {
+        // Arrange — Gemini delivers a streamed grounding segment as byte offsets into the text of the
+        // whole stream, so the regions are only resolvable once the updates are aggregated.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        IChatClient client = new GeminiChatClient(new GeminiClientOptions { ApiKey = _apiKey, ModelId = Model });
+
+        var options = new ChatOptions { Tools = [new HostedWebSearchTool()] };
+
+        // Act
+        var response = await client
+            .GetStreamingResponseAsync(
+                "Who won the most recent FIFA World Cup, and who won the most recent Super Bowl?",
+                options,
+                cancellationToken)
+            .ToChatResponseAsync(cancellationToken);
+
+        // Assert
+        _output.WriteLine(response.Text);
+
+        var citations = response.Messages
+            .SelectMany(m => m.Contents)
+            .SelectMany(c => c.Annotations ?? [])
+            .OfType<CitationAnnotation>()
+            .ToList();
+
+        Assert.NotEmpty(citations);
+
+        // The model sometimes grounds an answer without citing a span of it, so the regions are checked
+        // where they exist rather than counted.
+        var regions = citations
+            .SelectMany(citation => citation.AnnotatedRegions ?? [])
+            .OfType<TextSpanAnnotatedRegion>();
+
+        foreach (var region in regions)
+        {
+            Assert.NotNull(region.StartIndex);
+            Assert.NotNull(region.EndIndex);
+            Assert.InRange(region.StartIndex.Value, 0, region.EndIndex.Value - 1);
+            Assert.InRange(region.EndIndex.Value, region.StartIndex.Value + 1, response.Text.Length);
+        }
+    }
+
+    [Fact]
     public async Task GetResponseAsync_WithHostedFileSearchTool_ShouldGroundTheAnswerInTheStore()
     {
         // Arrange — no store fixture exists, so this test owns the whole lifecycle.
