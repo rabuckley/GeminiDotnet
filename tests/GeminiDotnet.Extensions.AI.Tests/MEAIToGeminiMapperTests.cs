@@ -1264,6 +1264,225 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void WebSearchContentCarryingItsGroundingMetadata_ShouldBeSkippedInReverseMapping()
+    {
+        // Arrange — a synthesized pair carries the GroundingMetadata it was built from, which is no more
+        // echoable than no raw representation at all. The tool type property, not the raw representation,
+        // is what tells a real invocation apart.
+        const string callId = "web-search/test-id";
+        var groundingMetadata = new GroundingMetadata { WebSearchQueries = ["test query"] };
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.Assistant,
+            [
+                new TextContent("Here are the results."),
+                new WebSearchToolCallContent(callId)
+                {
+                    Queries = ["test query"], RawRepresentation = groundingMetadata,
+                },
+                new WebSearchToolResultContent(callId) { RawRepresentation = groundingMetadata },
+            ]),
+        ];
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        // Assert
+        var content = Assert.Single(request.Contents);
+        var part = Assert.Single(content.Parts!);
+        Assert.Equal("Here are the results.", part.Text);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAWebSearchInvocationCarryingItsParts_ShouldEchoThem()
+    {
+        // Arrange — a WebSearch* pair Gemini actually reported is a server-side invocation it needs back.
+        var callPart = new Part
+        {
+            ToolCall = new ToolCall
+            {
+                Id = "call-1",
+                ToolType = ToolType.GoogleSearchWeb,
+                Arguments = JsonSerializer.Deserialize<JsonElement>("""{"queries":["weather in London"]}"""),
+            },
+            ThoughtSignature = "call-signature",
+        };
+
+        var responsePart = new Part
+        {
+            ToolResponse = new ToolResponse
+            {
+                Id = "call-1",
+                ToolType = ToolType.GoogleSearchWeb,
+                Response = JsonSerializer.Deserialize<JsonElement>("""{"search_suggestions":"chips"}"""),
+            },
+            ThoughtSignature = "response-signature",
+        };
+
+        var toolType = new AdditionalPropertiesDictionary
+        {
+            [GeminiContentProperties.ToolType] = ToolType.GoogleSearchWeb,
+        };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new WebSearchToolCallContent("call-1")
+                {
+                    Queries = ["weather in London"],
+                    RawRepresentation = callPart,
+                    AdditionalProperties = toolType,
+                },
+                new WebSearchToolResultContent("call-1")
+                {
+                    RawRepresentation = responsePart, AdditionalProperties = toolType,
+                },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Collection(
+            parts,
+            part => Assert.Same(callPart, part),
+            part => Assert.Same(responsePart, part));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAWebSearchInvocationCarryingOnlyProperties_ShouldRebuildIt(
+        bool roundTripThroughJson)
+    {
+        // Arrange — RawRepresentation does not survive serialization, so a caller who persisted the
+        // history as JSON arrives with only the additional properties.
+        var arguments = JsonSerializer.Deserialize<JsonElement>("""{"queries":["weather in London"]}""");
+        var response = JsonSerializer.Deserialize<JsonElement>("""{"search_suggestions":"chips"}""");
+
+        var callProperties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary
+            {
+                [GeminiContentProperties.Id] = "call-1",
+                [GeminiContentProperties.ToolType] = ToolType.GoogleSearchWeb,
+                [GeminiContentProperties.Arguments] = arguments,
+                [GeminiContentProperties.ThoughtSignature] = "call-signature",
+            },
+            roundTripThroughJson);
+
+        var resultProperties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary
+            {
+                [GeminiContentProperties.Id] = "call-1",
+                [GeminiContentProperties.ToolType] = ToolType.GoogleSearchWeb,
+                [GeminiContentProperties.Response] = response,
+                [GeminiContentProperties.ThoughtSignature] = "response-signature",
+            },
+            roundTripThroughJson);
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new WebSearchToolCallContent("call-1")
+                {
+                    Queries = ["weather in London"], AdditionalProperties = callProperties,
+                },
+                new WebSearchToolResultContent("call-1") { AdditionalProperties = resultProperties },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Equal(2, parts.Count);
+
+        var callPart = parts[0];
+        Assert.Equal("call-signature", callPart.ThoughtSignature);
+        Assert.NotNull(callPart.ToolCall);
+        Assert.Equal("call-1", callPart.ToolCall.Id);
+        Assert.Equal(ToolType.GoogleSearchWeb, callPart.ToolCall.ToolType);
+        Assert.Equal(arguments.GetRawText(), callPart.ToolCall.Arguments.GetRawText());
+
+        var responsePart = parts[1];
+        Assert.Equal("response-signature", responsePart.ThoughtSignature);
+        Assert.NotNull(responsePart.ToolResponse);
+        Assert.Equal("call-1", responsePart.ToolResponse.Id);
+        Assert.Equal(ToolType.GoogleSearchWeb, responsePart.ToolResponse.ToolType);
+        Assert.Equal(response.GetRawText(), responsePart.ToolResponse.Response.GetRawText());
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAMappedGoogleSearch_ShouldRoundTripOnlyTheParts()
+    {
+        // Arrange — the grounding metadata alongside the invocation describes the same search, and has no
+        // part behind it, so the next turn carries the invocation and nothing else.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part
+                            {
+                                ToolCall = new ToolCall
+                                {
+                                    Id = "call-1",
+                                    ToolType = ToolType.GoogleSearchWeb,
+                                    Arguments = JsonSerializer.Deserialize<JsonElement>(
+                                        """{"queries":["weather in London"]}"""),
+                                },
+                                ThoughtSignature = "call-signature",
+                            },
+                            new Part
+                            {
+                                ToolResponse = new ToolResponse
+                                {
+                                    Id = "call-1",
+                                    ToolType = ToolType.GoogleSearchWeb,
+                                    Response = JsonSerializer.Deserialize<JsonElement>(
+                                        """{"search_suggestions":"chips"}"""),
+                                },
+                            },
+                        ],
+                    },
+                    GroundingMetadata = new GroundingMetadata
+                    {
+                        WebSearchQueries = ["weather in London"],
+                        GroundingChunks =
+                        [
+                            new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                        ],
+                    },
+                },
+            ],
+        };
+
+        var expectedParts = response.Candidates[0].Content!.Parts;
+
+        var mapped = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", mapped.Messages, new ChatOptions());
+
+        // Assert
+        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
+    [Fact]
     public void HostedMcpServerTool_ShouldMapToMcpServer()
     {
         // Arrange

@@ -356,6 +356,65 @@ public sealed class GeminiChatClientTests
     }
 
     [Fact]
+    public async Task GetStreamingResponseAsync_WithServerSideToolInvocations_ShouldReportOneWebSearch()
+    {
+        // Arrange — with includeServerSideToolInvocations on, Gemini reports a search twice: as a
+        // GOOGLE_SEARCH_WEB toolCall/toolResponse pair, and again as groundingMetadata.webSearchQueries.
+        // The invocation is the record that reaches the caller, and it has to be echoable as history.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        IChatClient client = new GeminiChatClient(new GeminiClientOptions { ApiKey = _apiKey, ModelId = Model });
+
+        var options = new ChatOptions
+        {
+            Tools = [new HostedWebSearchTool()],
+            // The flag has no ChatOptions equivalent. A raw ToolConfiguration replaces the mapped one
+            // outright, which this turn needs nothing from; Model and Contents are required members, and
+            // an empty Contents leaves the messages above to be mapped as usual.
+            RawRepresentationFactory = _ => new GenerateContentRequest
+            {
+                Model = Model,
+                Contents = [],
+                ToolConfiguration = new ToolConfiguration { IncludeServerSideToolInvocations = true },
+            },
+        };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User, "Who won the most recent FIFA World Cup?"),
+        };
+
+        // Act
+        var response = await client
+            .GetStreamingResponseAsync(messages, options, cancellationToken)
+            .ToChatResponseAsync(cancellationToken);
+
+        // Assert
+        _output.WriteLine(response.Text);
+
+        var contents = response.Messages.SelectMany(m => m.Contents).ToList();
+        var call = Assert.Single(contents.OfType<WebSearchToolCallContent>());
+        var searchResult = Assert.Single(contents.OfType<WebSearchToolResultContent>());
+
+        Assert.Equal(call.CallId, searchResult.CallId);
+        Assert.DoesNotContain("web-search/", call.CallId);
+        Assert.NotEmpty(call.Queries ?? []);
+
+        Assert.NotEmpty(contents.SelectMany(c => c.Annotations ?? []).OfType<CitationAnnotation>());
+
+        // The invocation Gemini reported has to be accepted back as history.
+        messages.AddMessages(response);
+        messages.Add(new ChatMessage(ChatRole.User, "Which country did they beat in the final?"));
+
+        var second = await client
+            .GetStreamingResponseAsync(messages, options, cancellationToken)
+            .ToChatResponseAsync(cancellationToken);
+
+        _output.WriteLine(second.Text);
+        Assert.NotEmpty(second.Text);
+    }
+
+    [Fact]
     public async Task GetResponseAsync_WithHostedFileSearchTool_ShouldGroundTheAnswerInTheStore()
     {
         // Arrange — no store fixture exists, so this test owns the whole lifecycle.

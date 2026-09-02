@@ -500,8 +500,8 @@ public sealed class GeminiToMEAIMapperTests
             ToolCall = new ToolCall
             {
                 Id = "call-1",
-                ToolName = "google_search",
-                ToolType = ToolType.GoogleSearchWeb,
+                ToolName = "url_context",
+                ToolType = ToolType.UrlContext,
                 Arguments = arguments,
             },
             ThoughtSignature = "signature",
@@ -516,8 +516,8 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal("call-1", toolCall.CallId);
 
         var properties = Assert.IsType<AdditionalPropertiesDictionary>(toolCall.AdditionalProperties);
-        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiContentProperties.ToolType]);
-        Assert.Equal("google_search", properties[GeminiContentProperties.ToolName]);
+        Assert.Equal(ToolType.UrlContext, properties[GeminiContentProperties.ToolType]);
+        Assert.Equal("url_context", properties[GeminiContentProperties.ToolName]);
         Assert.Equal("signature", properties[GeminiContentProperties.ThoughtSignature]);
         Assert.Equal(
             arguments.GetRawText(),
@@ -535,7 +535,7 @@ public sealed class GeminiToMEAIMapperTests
             ToolResponse = new ToolResponse
             {
                 Id = "call-1",
-                ToolType = ToolType.GoogleSearchWeb,
+                ToolType = ToolType.UrlContext,
                 Response = toolResponse,
             },
         });
@@ -549,7 +549,7 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal("call-1", toolResult.CallId);
 
         var properties = Assert.IsType<AdditionalPropertiesDictionary>(toolResult.AdditionalProperties);
-        Assert.Equal(ToolType.GoogleSearchWeb, properties[GeminiContentProperties.ToolType]);
+        Assert.Equal(ToolType.UrlContext, properties[GeminiContentProperties.ToolType]);
         Assert.Equal(
             toolResponse.GetRawText(),
             Assert.IsType<JsonElement>(properties[GeminiContentProperties.Response]).GetRawText());
@@ -582,9 +582,9 @@ public sealed class GeminiToMEAIMapperTests
         // Arrange — Gemini can run several built-in tools in one turn and report the responses after
         // the calls, so each response has to pair with its own call, not with whichever came last.
         var response = ResponseWithParts(
-            new Part { ToolCall = new ToolCall { ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.FileSearch } },
             new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
-            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.FileSearch } },
             new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } });
 
         // Act
@@ -632,8 +632,8 @@ public sealed class GeminiToMEAIMapperTests
         // Arrange — Segment.PartIndex indexes the mapped contents, so the 1:1 order must hold.
         var response = ResponseWithParts(
             new Part { Text = "Let me look that up." },
-            new Part { ToolCall = new ToolCall { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } },
-            new Part { ToolResponse = new ToolResponse { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolCall = new ToolCall { Id = "call-1", ToolType = ToolType.UrlContext } },
+            new Part { ToolResponse = new ToolResponse { Id = "call-1", ToolType = ToolType.UrlContext } },
             new Part { Text = "It is raining." });
 
         // Act
@@ -661,6 +661,444 @@ public sealed class GeminiToMEAIMapperTests
         // Assert
         Assert.Throws<GeminiMappingException>(Act);
     }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAGoogleSearchInvocation_ShouldMapToTheWebSearchPair()
+    {
+        // Arrange — the invocation parts are the better record of a search than the pair synthesized from
+        // groundingMetadata: they carry the id Gemini issued and the thought signature that led to it.
+        var arguments = JsonSerializer.Deserialize<JsonElement>("""{"queries":["weather in London"]}""");
+        var toolResponse = JsonSerializer.Deserialize<JsonElement>("""{"search_suggestions":"<html>"}""");
+
+        var response = ResponseWithParts(
+            new Part
+            {
+                ToolCall = new ToolCall
+                {
+                    Id = "call-1",
+                    ToolName = "google_search",
+                    ToolType = ToolType.GoogleSearchWeb,
+                    Arguments = arguments,
+                },
+                ThoughtSignature = "call-signature",
+            },
+            new Part
+            {
+                ToolResponse = new ToolResponse
+                {
+                    Id = "call-1",
+                    ToolType = ToolType.GoogleSearchWeb,
+                    Response = toolResponse,
+                },
+                ThoughtSignature = "response-signature",
+            });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var call = Assert.IsType<WebSearchToolCallContent>(contents[0]);
+        var searchResult = Assert.IsType<WebSearchToolResultContent>(contents[1]);
+
+        Assert.Equal("call-1", call.CallId);
+        Assert.Equal("call-1", searchResult.CallId);
+        Assert.Equal(["weather in London"], call.Queries);
+
+        // The sources live on the citation annotations and the raw response on the properties below.
+        Assert.Null(searchResult.Outputs);
+
+        var callProperties = Assert.IsType<AdditionalPropertiesDictionary>(call.AdditionalProperties);
+        Assert.Equal(ToolType.GoogleSearchWeb, callProperties[GeminiContentProperties.ToolType]);
+        Assert.Equal("google_search", callProperties[GeminiContentProperties.ToolName]);
+        Assert.Equal("call-signature", callProperties[GeminiContentProperties.ThoughtSignature]);
+        Assert.Equal(
+            arguments.GetRawText(),
+            Assert.IsType<JsonElement>(callProperties[GeminiContentProperties.Arguments]).GetRawText());
+
+        var resultProperties = Assert.IsType<AdditionalPropertiesDictionary>(searchResult.AdditionalProperties);
+        Assert.Equal(ToolType.GoogleSearchWeb, resultProperties[GeminiContentProperties.ToolType]);
+        Assert.Equal("response-signature", resultProperties[GeminiContentProperties.ThoughtSignature]);
+        Assert.Equal(
+            toolResponse.GetRawText(),
+            Assert.IsType<JsonElement>(resultProperties[GeminiContentProperties.Response]).GetRawText());
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"queries":"weather in London"}""")]
+    [InlineData("""{"queries":[1]}""")]
+    public void CreateMappedChatResponse_WithAGoogleSearchInvocationWithoutQueries_ShouldReportNoQueries(
+        string argumentsJson)
+    {
+        // Arrange — args.queries is the only place the invocation states what was searched for, and a
+        // future revision could drop or rename it. An unreadable value is reported as none rather than
+        // failing the response.
+        var response = ResponseWithParts(new Part
+        {
+            ToolCall = new ToolCall
+            {
+                Id = "call-1",
+                ToolType = ToolType.GoogleSearchWeb,
+                Arguments = JsonSerializer.Deserialize<JsonElement>(argumentsJson),
+            },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var call = Assert.IsType<WebSearchToolCallContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Null(call.Queries);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAQuerylessInvocationAndGrounding_ShouldReportTheInvocationAlone()
+    {
+        // Arrange — the invocation is the complete record of the search. webSearchQueries is cumulative
+        // across the turn, so it cannot be attributed to this call and is not reported under its id.
+        var response = CreateGroundedResponse(
+            new GroundingMetadata { WebSearchQueries = ["weather in London"] },
+            new Part { ToolCall = new ToolCall { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolResponse = new ToolResponse { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        AssertReportsTheInvocationAlone(Assert.Single(result.Messages).Contents);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithAQuerylessStreamedInvocation_ShouldReportTheInvocationAlone()
+    {
+        // Act
+        var result = CreateStreamedResponse(DeserializeChunks(QuerylessStreamedSearchChunks));
+
+        // Assert — the invocation's pair is the whole report; the grounding chunk synthesizes nothing.
+        AssertReportsTheInvocationAlone(Assert.Single(result.Messages).Contents);
+    }
+
+    private static void AssertReportsTheInvocationAlone(IList<AIContent> contents)
+    {
+        var call = Assert.Single(contents.OfType<WebSearchToolCallContent>());
+
+        Assert.Equal("call-1", call.CallId);
+        Assert.Null(call.Queries);
+        Assert.Equal("call-1", Assert.Single(contents.OfType<WebSearchToolResultContent>()).CallId);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithSeveralStreamedSearches_ShouldReportEachInvocationOnce()
+    {
+        // Act — chunks trimmed from a live gemini-3.1-flash-lite stream: two invocations in one chunk,
+        // then webSearchQueries listing both in the other order.
+        var result = CreateStreamedResponse(DeserializeChunks(SeveralStreamedSearchesChunks));
+
+        // Assert — each invocation is reported under its own id with its own query, and the cumulative
+        // queries synthesize no third call that would misattribute them to one of the two.
+        var contents = Assert.Single(result.Messages).Contents;
+        var calls = contents.OfType<WebSearchToolCallContent>().OrderBy(call => call.CallId).ToList();
+        var results = contents.OfType<WebSearchToolResultContent>().OrderBy(toolResult => toolResult.CallId).ToList();
+
+        Assert.Equal(["call_1795936", "call_1795940"], calls.Select(call => call.CallId));
+        Assert.Equal(["current population of Tokyo"], calls[0].Queries);
+        Assert.Equal(["current population of Delhi"], calls[1].Queries);
+        Assert.Equal(["call_1795936", "call_1795940"], results.Select(toolResult => toolResult.CallId));
+
+        Assert.NotEmpty(GetCitations(result));
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAGoogleSearchInvocationAndGrounding_ShouldReportOnePair()
+    {
+        // Arrange — groundingMetadata repeats the queries the invocation already carries, so reporting
+        // both would show one search twice, under two ids.
+        var response = CreateGroundedResponse(
+            new GroundingMetadata
+            {
+                WebSearchQueries = ["weather in London"],
+                GroundingChunks =
+                [
+                    new GroundingChunk { Web = new Web { Uri = "https://example.com", Title = "Example" } },
+                ],
+            },
+            new Part
+            {
+                ToolCall = new ToolCall
+                {
+                    Id = "call-1",
+                    ToolType = ToolType.GoogleSearchWeb,
+                    Arguments = JsonSerializer.Deserialize<JsonElement>("""{"queries":["weather in London"]}"""),
+                },
+            },
+            new Part { ToolResponse = new ToolResponse { Id = "call-1", ToolType = ToolType.GoogleSearchWeb } },
+            new Part { Text = "It is raining." });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var call = Assert.Single(contents.OfType<WebSearchToolCallContent>());
+
+        Assert.Equal("call-1", call.CallId);
+        Assert.Equal(["weather in London"], call.Queries);
+        Assert.Equal("call-1", Assert.Single(contents.OfType<WebSearchToolResultContent>()).CallId);
+
+        // The citations still land on the grounded text.
+        var text = Assert.Single(contents.OfType<TextContent>());
+        Assert.Equal("Example", Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!)).Title);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithAStreamedGoogleSearch_ShouldRoundTripOnePair()
+    {
+        // Arrange
+        var chunks = DeserializeChunks(StreamedSearchChunks);
+        var expectedParts = chunks
+            .SelectMany(chunk => chunk.Candidates![0].Content!.Parts!)
+            .Where(part => part.ToolCall is not null || part.ToolResponse is not null)
+            .ToList();
+
+        // Act
+        var result = CreateStreamedResponse(chunks);
+
+        // Assert — one search, reported once. The assertion is on the parts a next turn would send, not
+        // on which content instances survive coalescing.
+        var contents = Assert.Single(result.Messages).Contents;
+        Assert.Single(contents.OfType<WebSearchToolCallContent>());
+        Assert.Single(contents.OfType<WebSearchToolResultContent>());
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", result.Messages, new ChatOptions());
+        var parts = Assert.Single(request.Contents).Parts!;
+
+        Assert.Equal(expectedParts, parts.Where(part => part.ToolCall is not null || part.ToolResponse is not null));
+    }
+
+    private const string StreamedSearchChunks =
+        """
+        [
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "toolCall": {
+                        "id": "call-1",
+                        "toolType": "GOOGLE_SEARCH_WEB",
+                        "args": { "queries": ["weather in London"] }
+                      },
+                      "thoughtSignature": "call-signature"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ],
+            "responseId": "test-streamed-search"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "toolResponse": {
+                        "id": "call-1",
+                        "toolType": "GOOGLE_SEARCH_WEB",
+                        "response": { "search_suggestions": "chips" }
+                      },
+                      "thoughtSignature": "response-signature"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ],
+            "responseId": "test-streamed-search"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": "It is raining." }], "role": "model" },
+                "finishReason": "STOP",
+                "groundingMetadata": { "webSearchQueries": ["weather in London"] }
+              }
+            ],
+            "responseId": "test-streamed-search"
+          }
+        ]
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string SeveralStreamedSearchesChunks =
+        """
+        [
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "thoughtSignature": "EvABCu0BCAIS",
+                      "toolCall": {
+                        "toolType": "GOOGLE_SEARCH_WEB",
+                        "args": { "queries": ["current population of Tokyo"] },
+                        "id": "call_1795936"
+                      }
+                    },
+                    {
+                      "thoughtSignature": "EnwKeggCEnYB",
+                      "toolCall": {
+                        "toolType": "GOOGLE_SEARCH_WEB",
+                        "args": { "queries": ["current population of Delhi"] },
+                        "id": "call_1795940"
+                      }
+                    }
+                  ],
+                  "role": "model"
+                },
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "XoCYauJay5f-4w_fkL2IBw"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "thoughtSignature": "EoI7Cv86CAIS",
+                      "toolResponse": {
+                        "toolType": "GOOGLE_SEARCH_WEB",
+                        "response": { "search_suggestions": "<style>.container {}</style>" },
+                        "id": "call_1795936"
+                      }
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "XoCYauJay5f-4w_fkL2IBw"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "thoughtSignature": "EvhcCvVcCAIS",
+                      "toolResponse": {
+                        "toolType": "GOOGLE_SEARCH_WEB",
+                        "response": { "search_suggestions": "<style>.container {}</style>" },
+                        "id": "call_1795940"
+                      }
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "XoCYauJay5f-4w_fkL2IBw"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": "Tokyo has about 37 million people." }], "role": "model" },
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "XoCYauJay5f-4w_fkL2IBw"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": " Delhi has about 33 million." }], "role": "model" },
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "XoCYauJay5f-4w_fkL2IBw"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": "" }], "role": "model" },
+                "finishReason": "STOP",
+                "index": 0,
+                "groundingMetadata": {
+                  "searchEntryPoint": { "renderedContent": "<style>.container {}</style>" },
+                  "groundingChunks": [
+                    {
+                      "web": {
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHw",
+                        "title": "nippon.com"
+                      }
+                    },
+                    {
+                      "web": {
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEv",
+                        "title": "wikipedia.org"
+                      }
+                    }
+                  ],
+                  "groundingSupports": [
+                    {
+                      "segment": { "startIndex": 0, "endIndex": 34, "text": "Tokyo has about 37 million people." },
+                      "groundingChunkIndices": [0]
+                    },
+                    {
+                      "segment": { "startIndex": 35, "endIndex": 62, "text": "Delhi has about 33 million." },
+                      "groundingChunkIndices": [1]
+                    }
+                  ],
+                  "webSearchQueries": ["current population of Delhi", "current population of Tokyo"]
+                }
+              }
+            ],
+            "modelVersion": "gemini-3.1-flash-lite",
+            "responseId": "XoCYauJay5f-4w_fkL2IBw"
+          }
+        ]
+        """;
+
+    private const string QuerylessStreamedSearchChunks =
+        """
+        [
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "toolCall": { "id": "call-1", "toolType": "GOOGLE_SEARCH_WEB" } }],
+                  "role": "model"
+                }
+              }
+            ],
+            "responseId": "test-streamed-queryless-search"
+          },
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [{ "toolResponse": { "id": "call-1", "toolType": "GOOGLE_SEARCH_WEB" } }],
+                  "role": "model"
+                },
+                "finishReason": "STOP",
+                "groundingMetadata": { "webSearchQueries": ["weather in London"] }
+              }
+            ],
+            "responseId": "test-streamed-queryless-search"
+          }
+        ]
+        """;
 
     private static GenerateContentResponse ResponseWithParts(params Part[] parts) => new()
     {
@@ -1403,8 +1841,8 @@ public sealed class GeminiToMEAIMapperTests
     [Fact]
     public void CreateMappedChatResponseUpdate_WithTwoGroundingDeliveries_ShouldEmitOneWebSearchCall()
     {
-        // Arrange — a live stream delivers grounding metadata once, but nothing in the wire format
-        // promises that, and two calls under two ids would not coalesce.
+        // Arrange — the live API delivers grounding metadata once, in the final chunk. Nothing in the wire
+        // format promises that, so a later delivery is treated as a repeat and adds nothing.
         var chunks = DeserializeChunks(
             """
             [
@@ -1438,7 +1876,7 @@ public sealed class GeminiToMEAIMapperTests
         var call = Assert.Single(contents.OfType<WebSearchToolCallContent>());
         var toolResult = Assert.Single(contents.OfType<WebSearchToolResultContent>());
 
-        Assert.Equal(["first query", "second query"], call.Queries);
+        Assert.Equal(["first query"], call.Queries);
         Assert.Equal(call.CallId, toolResult.CallId);
     }
 
