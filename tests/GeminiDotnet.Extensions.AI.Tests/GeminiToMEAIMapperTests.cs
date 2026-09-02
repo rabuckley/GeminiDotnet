@@ -1221,6 +1221,41 @@ public sealed class GeminiToMEAIMapperTests
     }
 
     [Fact]
+    public void CreateMappedChatResponse_WithASegmentStartingAtZero_ShouldAttachARegion()
+    {
+        // Arrange — Gemini serializes proto3 JSON, so a segment that starts at the beginning of the part
+        // arrives with no startIndex at all rather than with a zero.
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(
+            """
+            {
+              "candidates": [
+                {
+                  "content": { "parts": [{ "text": "Hello world." }], "role": "model" },
+                  "groundingMetadata": {
+                    "groundingChunks": [{ "web": { "uri": "https://example.com", "title": "Example" } }],
+                    "groundingSupports": [
+                      { "groundingChunkIndices": [0], "segment": { "endIndex": 5, "text": "Hello" } }
+                    ]
+                  },
+                  "finishReason": "STOP"
+                }
+              ],
+              "responseId": "test-grounding-zero-start"
+            }
+            """)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        var citation = Assert.IsType<CitationAnnotation>(Assert.Single(text.Annotations!));
+        var region = Assert.IsType<TextSpanAnnotatedRegion>(Assert.Single(citation.AnnotatedRegions!));
+
+        Assert.Equal("Hello", text.Text[region.StartIndex!.Value..region.EndIndex!.Value]);
+    }
+
+    [Fact]
     public void CreateMappedChatResponseUpdate_WithGroundingMetadata_ShouldAppendBeforeUsageContent()
     {
         // Arrange

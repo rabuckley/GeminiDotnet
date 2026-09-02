@@ -687,10 +687,15 @@ internal static class GeminiToMEAIMapper
     /// </summary>
     private static (int StartIndex, int EndIndex)? CreateMappedTextSpan(string text, Segment segment)
     {
-        if (segment.StartIndex is not { } startByte || segment.EndIndex is not { } endByte)
+        // Gemini serializes proto3 JSON, which omits a zero-valued field, so a segment that starts at the
+        // beginning of the text arrives without a StartIndex at all. An absent EndIndex is a zero-length
+        // span, which describes nothing.
+        if (segment.EndIndex is not { } endByte)
         {
             return null;
         }
+
+        var startByte = segment.StartIndex ?? 0;
 
         if (startByte < 0 || endByte < startByte || endByte > Encoding.UTF8.GetByteCount(text))
         {
