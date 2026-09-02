@@ -38,10 +38,10 @@ public static class GeminiAdditionalProperties
     /// <see cref="HostedFileSearchTool"/> itself, not from <see cref="ChatOptions.AdditionalProperties"/>.
     /// </para>
     /// <para>
-    /// The value must be a <see cref="string"/>, or a <see cref="JsonElement"/> holding one, as a host
-    /// that round-trips its settings through JSON delivers. A value of any other type throws a
-    /// <see cref="GeminiMappingException"/>; it is not dropped, because a request that silently loses
-    /// its filter still succeeds, grounded on the documents the filter was written to exclude.
+    /// The value must be a <see cref="string"/>, or a <see cref="JsonElement"/> holding one as read by
+    /// <see cref="AdditionalPropertiesDictionaryExtensions.TryGetGeminiValue{T}"/>. A value of any other
+    /// type throws a <see cref="GeminiMappingException"/>; it is not dropped, because a request that
+    /// silently loses its filter still succeeds, grounded on the documents the filter was written to exclude.
     /// </para>
     /// </remarks>
     /// <example>

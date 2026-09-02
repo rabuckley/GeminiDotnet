@@ -4,6 +4,7 @@ using GeminiDotnet.V1Beta.FileSearchStores;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;
 using System.Text;
+using System.Text.Json;
 
 namespace GeminiDotnet.Extensions.AI;
 
@@ -431,6 +432,110 @@ public sealed class GeminiChatClientTests
 
         Assert.NotNull(toolUseTokens);
         Assert.True(toolUseTokens > 0, $"Expected the MCP server to be invoked, got {toolUseTokens} tool-use tokens.");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task GetResponseAsync_WithHostedCodeInterpreterTool_ShouldAcceptTheResponseAsHistory(
+        bool persistHistoryAsJson)
+    {
+        return AssertCodeExecutionIsAcceptedAsHistoryAsync(
+            persistHistoryAsJson,
+            (client, messages, options, cancellationToken) =>
+                client.GetResponseAsync(messages, options, cancellationToken));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task GetStreamingResponseAsync_WithHostedCodeInterpreterTool_ShouldAcceptTheResponseAsHistory(
+        bool persistHistoryAsJson)
+    {
+        // A streamed turn delivers the executableCode and codeExecutionResult parts in separate chunks, so
+        // aggregating the stream has to leave both echoable.
+        return AssertCodeExecutionIsAcceptedAsHistoryAsync(
+            persistHistoryAsJson,
+            (client, messages, options, cancellationToken) => client
+                .GetStreamingResponseAsync(messages, options, cancellationToken)
+                .ToChatResponseAsync(cancellationToken));
+    }
+
+    private async Task AssertCodeExecutionIsAcceptedAsHistoryAsync(
+        bool persistHistoryAsJson,
+        Func<IChatClient, IList<ChatMessage>, ChatOptions, CancellationToken, Task<ChatResponse>> getResponseAsync)
+    {
+        // Arrange — Gemini needs the executableCode and codeExecutionResult parts echoed back on the next
+        // turn. With the parts still on RawRepresentation they are echoed verbatim; persisted as JSON they
+        // are rebuilt from Inputs, Outputs and the additional properties.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var clientOptions = new GeminiClientOptions { ApiKey = _apiKey, ModelId = Model };
+        using var requests = new RequestRecordingHandler();
+        using var httpClient = new HttpClient(requests) { BaseAddress = clientOptions.Endpoint };
+        httpClient.DefaultRequestHeaders.Add("x-goog-api-key", clientOptions.ApiKey);
+
+        IChatClient client = new GeminiChatClient(new GeminiClient(httpClient, clientOptions.ModelId));
+
+        var options = new ChatOptions { Tools = [new HostedCodeInterpreterTool()] };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User,
+                "Run Python code to compute the sum of the integers from 1 to 1000, then reply with only the number."),
+        };
+
+        var first = await getResponseAsync(client, messages, options, cancellationToken);
+        _output.WriteLine(first.Text);
+
+        Assert.Contains(first.Messages.SelectMany(m => m.Contents), c => c is CodeInterpreterToolCallContent);
+
+        messages.AddMessages(first);
+
+        if (persistHistoryAsJson)
+        {
+            var json = JsonSerializer.Serialize(messages, GeminiJsonUtilities.DefaultOptions);
+            messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+            Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+        }
+
+        messages.Add(new ChatMessage(ChatRole.User,
+            "Divide the number you just computed by 2 and reply with only the result, no code and no commas."));
+
+        // Act
+        var second = await getResponseAsync(client, messages, options, cancellationToken);
+        _output.WriteLine(second.Text);
+
+        // Assert — the first reply already states the number, so a right answer alone would not show the
+        // code parts were sent. The second request has to carry them, and Gemini has to accept it.
+        var echoed = JsonSerializer.Deserialize<GenerateContentRequest>(requests.Bodies[^1])!;
+        var echoedParts = echoed.Contents.SelectMany(c => c.Parts ?? []).ToList();
+
+        Assert.Contains(echoedParts, p => p.ExecutableCode is not null);
+        Assert.Contains(echoedParts, p => p.CodeExecutionResult is not null);
+        Assert.Contains("250250", second.Text.Replace(",", "").Replace(" ", ""));
+    }
+
+    private sealed class RequestRecordingHandler : DelegatingHandler
+    {
+        public RequestRecordingHandler() : base(new HttpClientHandler())
+        {
+        }
+
+        public List<string> Bodies { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (request.Content is not null)
+            {
+                Bodies.Add(await request.Content.ReadAsStringAsync(cancellationToken));
+            }
+
+            return await base.SendAsync(request, cancellationToken);
+        }
     }
 
     private static async Task<string> UploadDocumentAsync(
