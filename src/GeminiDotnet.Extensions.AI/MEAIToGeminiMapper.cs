@@ -19,7 +19,10 @@ internal static class MEAIToGeminiMapper
         Content? systemInstruction = null;
         List<Content>? contents = null;
 
-        if (rawRepresentation?.Contents is null)
+        // GenerateContentRequest.Contents is required, so a caller reaching for the raw representation to
+        // set one other field has to give it a value. An empty list is the only one they can give that
+        // says nothing, and the API rejects a request with no contents anyway, so it means "map them".
+        if (rawRepresentation?.Contents is not { Count: > 0 })
         {
             contents = chatMessages.TryGetNonEnumeratedCount(out var count)
                 ? new List<Content>(count)
@@ -68,7 +71,7 @@ internal static class MEAIToGeminiMapper
             GenerationConfiguration =
                 rawRepresentation?.GenerationConfiguration ?? CreateMappedGenerationConfiguration(options),
             CachedContent = rawRepresentation?.CachedContent,
-            Contents = rawRepresentation?.Contents ?? contents!,
+            Contents = rawRepresentation?.Contents is { Count: > 0 } rawContents ? rawContents : contents!,
             Tools = tools,
             ToolConfiguration = rawRepresentation?.ToolConfiguration ?? CreateMappedToolConfiguration(options, tools),
             SafetySettings = rawRepresentation?.SafetySettings,

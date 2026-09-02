@@ -746,6 +746,33 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void CreateMappedGenerateContentRequest_WithAnEmptyRawContents_ShouldMapTheMessages()
+    {
+        // Arrange — Contents is a required member, so a caller reaching for the raw representation to set
+        // one other field has to give it a value, and an empty list is the only one that says nothing.
+        List<ChatMessage> messages = [new(ChatRole.User, "Goodbye!")];
+
+        var rawRepresentation = new GenerateContentRequest
+        {
+            Model = "model",
+            Contents = [],
+            ToolConfiguration = new ToolConfiguration { IncludeServerSideToolInvocations = true },
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            model: "model",
+            messages,
+            options: new ChatOptions(),
+            rawRepresentation);
+
+        // Assert
+        var content = Assert.Single(request.Contents);
+        Assert.Equal("Goodbye!", Assert.Single(content.Parts!).Text);
+        Assert.Same(rawRepresentation.ToolConfiguration, request.ToolConfiguration);
+    }
+
+    [Fact]
     public void CreateMappedBatchEmbeddingRequest_CreatesOneRequestPerInputValue()
     {
         // Arrange
