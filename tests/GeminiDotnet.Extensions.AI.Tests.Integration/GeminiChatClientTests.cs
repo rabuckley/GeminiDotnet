@@ -263,6 +263,61 @@ public sealed class GeminiChatClientTests
                 reasoningContent => Assert.NotNull(reasoningContent.ProtectedData)));
     }
 
+    [Fact]
+    public async Task GetResponseAsync_WithFunctionCallPersistedAsJson_ShouldReplayTheThoughtSignature()
+    {
+        // Arrange — Gemini 3 attaches a thoughtSignature to the functionCall part and expects it echoed
+        // back. RawRepresentation does not survive JSON, so the replay has to come from the property.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        IChatClient client = new GeminiChatClient(new GeminiClientOptions
+        {
+            ApiKey = _apiKey,
+            ModelId = Model,
+        });
+
+        [Description("Gets the current weather")]
+        static string GetCurrentWeather(string location) => $"It's raining in {location}.";
+
+        var tool = AIFunctionFactory.Create(GetCurrentWeather, nameof(GetCurrentWeather));
+
+        var options = new ChatOptions
+        {
+            Tools = [tool],
+            ToolMode = ChatToolMode.RequireAny,
+            Reasoning = new ReasoningOptions { Effort = ReasoningEffort.High },
+        };
+
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, "Should I wear a rain coat in London today? Use the function to check the weather.")
+        ];
+
+        var response = await client.GetResponseAsync(messages, options, cancellationToken);
+
+        var functionCall = Assert.Single(response.Messages.SelectMany(m => m.Contents).OfType<FunctionCallContent>());
+        Assert.NotNull(functionCall.AdditionalProperties);
+        Assert.NotNull(functionCall.AdditionalProperties[GeminiContentProperties.ThoughtSignature]);
+
+        messages.AddRange(response.Messages);
+
+        var json = JsonSerializer.Serialize(messages, GeminiJsonUtilities.DefaultOptions);
+        messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+        Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+
+        var result = await tool.InvokeAsync(new AIFunctionArguments(functionCall.Arguments), cancellationToken);
+        messages.Add(new ChatMessage(ChatRole.Tool, [new FunctionResultContent(functionCall.CallId, result)]));
+
+        // Act
+        options.ToolMode = ChatToolMode.Auto;
+        var followUp = await client.GetResponseAsync(messages, options, cancellationToken);
+
+        // Assert — Gemini accepted the replayed history and answered.
+        _output.WriteLine(followUp.Text);
+        Assert.False(string.IsNullOrWhiteSpace(followUp.Text));
+    }
+
     record WeatherInfo(string Location, DateOnly Date, string Summary);
 
     [Fact]

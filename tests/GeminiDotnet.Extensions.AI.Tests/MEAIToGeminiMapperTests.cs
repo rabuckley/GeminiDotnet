@@ -1984,6 +1984,125 @@ public sealed class MEAIToGeminiMapperTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAFunctionCallCarryingOnlyProperties_ShouldRebuildTheSignature(
+        bool roundTripThroughJson)
+    {
+        // Arrange — RawRepresentation does not survive serialization, so a caller who persisted the
+        // history as JSON arrives with only the additional properties. When a raw part is present it
+        // still wins, since it is what Gemini actually sent.
+        var properties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary { [GeminiContentProperties.ThoughtSignature] = "signature" },
+            roundTripThroughJson);
+
+        var arguments = new Dictionary<string, object?> { ["city"] = "Paris" };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new FunctionCallContent("call-1", "get_weather", arguments) { AdditionalProperties = properties },
+                new FunctionCallContent("call-2", "get_weather", arguments)
+                {
+                    AdditionalProperties = properties,
+                    RawRepresentation = new Part { ThoughtSignature = "raw-signature" },
+                },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Equal(2, parts.Count);
+
+        Assert.Equal("signature", parts[0].ThoughtSignature);
+        Assert.NotNull(parts[0].FunctionCall);
+        Assert.Equal("call-1", parts[0].FunctionCall!.Id);
+        Assert.Equal("get_weather", parts[0].FunctionCall!.Name);
+        Assert.Equal("Paris", parts[0].FunctionCall!.Arguments.GetProperty("city").GetString());
+
+        Assert.Equal("raw-signature", parts[1].ThoughtSignature);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAFunctionCallSignatureOfTheWrongType_ShouldThrow()
+    {
+        // Arrange — an absent signature is legitimate, but a value the mapper cannot read as a string
+        // must not be dropped silently: the API would reject the replay with an opaque error.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new FunctionCallContent("call-1", "get_weather", new Dictionary<string, object?>())
+                {
+                    AdditionalProperties = new AdditionalPropertiesDictionary
+                    {
+                        [GeminiContentProperties.ThoughtSignature] = 42,
+                    },
+                },
+            ]),
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var exception = Assert.Throws<GeminiMappingException>(Act);
+        Assert.Contains(GeminiContentProperties.ThoughtSignature, exception.Message);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithAFunctionCallPersistedAsJson_ShouldRebuildTheSignature()
+    {
+        // Arrange — the ordinary function-calling path: Gemini returns a signed functionCall, the caller
+        // persists the history as JSON, and the replayed part must carry the same signature.
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(
+            """
+            {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "functionCall": { "id": "call-1", "name": "get_weather", "args": { "city": "Paris" } },
+                        "thoughtSignature": "signature"
+                      }
+                    ]
+                  },
+                  "finishReason": "STOP"
+                }
+              ]
+            }
+            """)!;
+
+        var mapped = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(mapped.Messages, GeminiJsonUtilities.DefaultOptions);
+        var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+        Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        var part = Assert.Single(parts);
+
+        Assert.Equal("signature", part.ThoughtSignature);
+        Assert.NotNull(part.FunctionCall);
+        Assert.Equal("call-1", part.FunctionCall.Id);
+        Assert.Equal("get_weather", part.FunctionCall.Name);
+        Assert.Equal("Paris", part.FunctionCall.Arguments.GetProperty("city").GetString());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void CreateMappedGenerateContentRequest_WithAToolResultCarryingOnlyProperties_ShouldRebuildThePart(
         bool roundTripThroughJson)
     {

@@ -485,6 +485,41 @@ public sealed class GeminiToMEAIMapperTests
         Assert.DoesNotContain(GeminiContentProperties.ThoughtSignature, codeResult.AdditionalProperties!.Keys);
     }
 
+    [Theory]
+    [InlineData("signature")]
+    [InlineData(null)]
+    public void CreateMappedChatResponse_WithFunctionCallThoughtSignature_ShouldPreserveItInAdditionalProperties(
+        string? thoughtSignature)
+    {
+        // Arrange — Gemini 3 wants the signature echoed back on the follow-up functionCall part, and
+        // RawRepresentation does not survive JSON. A call without one keeps AdditionalProperties null.
+        var response = ResponseWithParts(new Part
+        {
+            FunctionCall = new FunctionCall
+            {
+                Id = "call-1",
+                Name = "get_weather",
+                Arguments = JsonSerializer.SerializeToElement(new Dictionary<string, object> { ["city"] = "Paris" }),
+            },
+            ThoughtSignature = thoughtSignature,
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var functionCall = Assert.IsType<FunctionCallContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+
+        if (thoughtSignature is null)
+        {
+            Assert.Null(functionCall.AdditionalProperties);
+        }
+        else
+        {
+            Assert.Equal(thoughtSignature, functionCall.AdditionalProperties![GeminiContentProperties.ThoughtSignature]);
+        }
+    }
+
     #endregion
 
     #region Server-Side Tool Invocation Mapping Tests

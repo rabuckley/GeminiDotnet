@@ -371,6 +371,11 @@ internal static class MEAIToGeminiMapper
                         Id = functionCall.CallId, Name = functionCall.Name, Arguments = arguments
                     },
                     ThoughtSignature = GetThoughtSignature(functionCall)
+                        ?? functionCall.AdditionalProperties?.GetValueOrThrow<string>(
+                            GeminiContentProperties.ThoughtSignature,
+                            fromPropertyName:
+                            $"{typeof(MEAI.FunctionCallContent)}.{nameof(MEAI.AIContent.AdditionalProperties)}",
+                            toPropertyName: $"{typeof(Part)}.{nameof(Part.ThoughtSignature)}"),
                 };
             }
 

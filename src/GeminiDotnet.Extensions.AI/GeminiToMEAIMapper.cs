@@ -255,7 +255,10 @@ internal static class GeminiToMEAIMapper
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = null,
+                AdditionalProperties = CreateMappedAdditionalProperties(
+                [
+                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
+                ]),
                 Exception = null,
                 // When the part is a thought, the model is reasoning about calling a
                 // function rather than requesting it. Mark it as informational only.

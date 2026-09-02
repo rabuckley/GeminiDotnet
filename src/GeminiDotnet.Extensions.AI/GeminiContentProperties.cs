@@ -55,7 +55,7 @@ public static class GeminiContentProperties
 
     /// <summary>
     /// Key for the opaque signature of the thought that led to the part, as a <see cref="string"/>. Read
-    /// from <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
+    /// from <see cref="FunctionCallContent"/>, <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
     /// <see cref="WebSearchToolCallContent"/>, <see cref="WebSearchToolResultContent"/>,
     /// <see cref="CodeInterpreterToolCallContent"/> and <see cref="CodeInterpreterToolResultContent"/>,
     /// and present only when Gemini reported one. Live responses put the signature of a code execution on
