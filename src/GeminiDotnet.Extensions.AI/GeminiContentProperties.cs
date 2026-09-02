@@ -31,12 +31,21 @@ namespace GeminiDotnet.Extensions.AI;
 /// whose resolver knows the <see cref="V1Beta"/> types; the options of
 /// <see cref="AIJsonUtilities.DefaultOptions"/> alone cannot write them.
 /// </para>
+/// <para>
+/// These entries also tell the two kinds of web search content apart. A
+/// <see cref="WebSearchToolCallContent"/> or <see cref="WebSearchToolResultContent"/> carrying them is a
+/// Google Search invocation Gemini reported, and is echoed back on the next turn; one without them was
+/// synthesized from <see cref="V1Beta.GroundingMetadata"/>, has no part behind it, and is dropped. A
+/// pipeline that strips <see cref="AIContent.AdditionalProperties"/>, or a history the caller rebuilds
+/// from its own store without them, therefore loses the search from the next turn without an error.
+/// </para>
 /// </remarks>
 public static class GeminiContentProperties
 {
     /// <summary>
     /// Key for the identifier Gemini issued for the part, as a <see cref="string"/>. Read from
     /// <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
+    /// <see cref="WebSearchToolCallContent"/>, <see cref="WebSearchToolResultContent"/>,
     /// <see cref="CodeInterpreterToolCallContent"/> and <see cref="CodeInterpreterToolResultContent"/>,
     /// and present only when Gemini issued one. <see cref="ToolCallContent.CallId"/> is not a substitute:
     /// it always holds a value, synthesized to correlate the pair when Gemini issued none, and a
@@ -47,6 +56,7 @@ public static class GeminiContentProperties
     /// <summary>
     /// Key for the opaque signature of the thought that led to the part, as a <see cref="string"/>. Read
     /// from <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
+    /// <see cref="WebSearchToolCallContent"/>, <see cref="WebSearchToolResultContent"/>,
     /// <see cref="CodeInterpreterToolCallContent"/> and <see cref="CodeInterpreterToolResultContent"/>,
     /// and present only when Gemini reported one. Live responses put the signature of a code execution on
     /// the <see cref="Part.ExecutableCode"/> part, so it is normally the call content that carries it.
@@ -54,28 +64,37 @@ public static class GeminiContentProperties
     public const string ThoughtSignature = "thoughtSignature";
 
     /// <summary>
-    /// Key for the kind of tool that was invoked, as a <see cref="V1Beta.ToolType"/>. Read from both
-    /// <see cref="ToolCallContent"/> and <see cref="ToolResultContent"/>, and required on both: Gemini
-    /// rejects an invocation echoed back without it. See the remarks on this class for the serialization
-    /// requirement under Native AOT.
+    /// Key for the kind of tool that was invoked, as a <see cref="V1Beta.ToolType"/>. Read from
+    /// <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
+    /// <see cref="WebSearchToolCallContent"/> and <see cref="WebSearchToolResultContent"/>, and required
+    /// on all four: Gemini rejects an invocation echoed back without it. See the remarks on this class
+    /// for the serialization requirement under Native AOT.
     /// </summary>
     public const string ToolType = "toolType";
 
     /// <summary>
     /// Key for the name of the tool that was invoked, as a <see cref="string"/>. Read from
-    /// <see cref="ToolCallContent"/>, and present only when Gemini reported one.
+    /// <see cref="ToolCallContent"/> and <see cref="WebSearchToolCallContent"/>, and present only when
+    /// Gemini reported one.
     /// </summary>
     public const string ToolName = "toolName";
 
     /// <summary>
     /// Key for the arguments the tool was invoked with, as a <see cref="JsonElement"/>. Read from
-    /// <see cref="ToolCallContent"/>, and present only when Gemini reported any.
+    /// <see cref="ToolCallContent"/> and <see cref="WebSearchToolCallContent"/>, and present only when
+    /// Gemini reported any.
     /// </summary>
+    /// <remarks>
+    /// <see cref="WebSearchToolCallContent.Queries"/> holds the strings of this value's <c>queries</c>
+    /// array, and is <see langword="null"/> when Gemini reported no such array.
+    /// </remarks>
     public const string Arguments = "args";
 
     /// <summary>
     /// Key for the output the tool produced, as a <see cref="JsonElement"/>. Read from
-    /// <see cref="ToolResultContent"/>, and present only when Gemini reported one.
+    /// <see cref="ToolResultContent"/> and <see cref="WebSearchToolResultContent"/>, and present only when
+    /// Gemini reported one. <see cref="WebSearchToolResultContent.Outputs"/> is always
+    /// <see langword="null"/>: the sources behind a search live on the citation annotations.
     /// </summary>
     public const string Response = "response";
 

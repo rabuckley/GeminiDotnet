@@ -264,9 +264,11 @@ internal static class MEAIToGeminiMapper
 
             foreach (var content in contents)
             {
-                // Web search content is synthesized from GroundingMetadata during response
-                // mapping and has no corresponding Gemini Part representation.
-                if (content is MEAI.WebSearchToolCallContent or MEAI.WebSearchToolResultContent)
+                // A WebSearch* pair synthesized from GroundingMetadata has no Part behind it and nothing
+                // to echo. One mapped from a GOOGLE_SEARCH_WEB invocation carries the tool type Gemini
+                // reported, and Gemini needs the invocation back.
+                if (content is MEAI.WebSearchToolCallContent or MEAI.WebSearchToolResultContent
+                    && content.AdditionalProperties?.ContainsKey(GeminiContentProperties.ToolType) is not true)
                     continue;
 
                 // Empty text carries nothing, and a null one leaves a part with no field set, which
@@ -284,10 +286,13 @@ internal static class MEAIToGeminiMapper
                     MEAI.HostedFileContent fileContent => CreateHostedFileDataPart(fileContent),
                     MEAI.FunctionCallContent functionCall => CreateFunctionCallPart(functionCall),
                     MEAI.FunctionResultContent functionResult => CreateFunctionResponsePart(functionResult),
-                    // Every hosted-tool content type derives from ToolCallContent or ToolResultContent,
-                    // so these arms match the exact type: a pattern on the base type would swallow the
-                    // subclasses this mapper does not support and send Gemini a wrong part instead of
-                    // reporting them below.
+                    // Both web-search types are sealed, so no exact-type guard is needed.
+                    MEAI.WebSearchToolCallContent webSearchCall => CreateToolCallPart(webSearchCall),
+                    MEAI.WebSearchToolResultContent webSearchResult => CreateToolResponsePart(webSearchResult),
+                    // Every other hosted-tool content type also derives from ToolCallContent or
+                    // ToolResultContent, so these arms match the exact type: a pattern on the base type
+                    // would swallow the subclasses this mapper does not support (McpServerToolCallContent
+                    // and so on) and send Gemini a wrong part instead of reporting them below.
                     MEAI.ToolCallContent toolCall when toolCall.GetType() == typeof(MEAI.ToolCallContent) =>
                         CreateToolCallPart(toolCall),
                     MEAI.ToolResultContent toolResult when toolResult.GetType() == typeof(MEAI.ToolResultContent) =>

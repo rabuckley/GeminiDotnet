@@ -159,7 +159,16 @@ internal static class GeminiToMEAIMapper
             {
                 var callId = part.ToolCall.Id ?? $"{part.ToolCall.ToolType}/{Guid.NewGuid()}";
                 unansweredToolCallIds.Enqueue(callId);
-                mapped = CreateMappedToolCallContent(part, callId);
+
+                if (part.ToolCall.ToolType is ToolType.GoogleSearchWeb)
+                {
+                    state.HasReportedWebSearch = true;
+                    mapped = CreateMappedWebSearchToolCallContent(part, callId);
+                }
+                else
+                {
+                    mapped = CreateMappedToolCallContent(part, callId);
+                }
             }
             else if (part.ToolResponse is not null)
             {
@@ -169,7 +178,9 @@ internal static class GeminiToMEAIMapper
                     ?? unansweredCallId
                     ?? $"{part.ToolResponse.ToolType}/{Guid.NewGuid()}";
 
-                mapped = CreateMappedToolResultContent(part, callId);
+                mapped = part.ToolResponse.ToolType is ToolType.GoogleSearchWeb
+                    ? CreateMappedWebSearchToolResultContent(part, callId)
+                    : CreateMappedToolResultContent(part, callId);
             }
             else
             {
@@ -335,20 +346,11 @@ internal static class GeminiToMEAIMapper
         {
             Debug.Assert(part.ToolCall is not null);
 
-            var toolCall = part.ToolCall!;
-
             return new ToolCallContent(callId)
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateMappedAdditionalProperties(
-                [
-                    new(GeminiContentProperties.Id, toolCall.Id),
-                    new(GeminiContentProperties.ToolType, toolCall.ToolType),
-                    new(GeminiContentProperties.ToolName, toolCall.ToolName),
-                    new(GeminiContentProperties.Arguments, DefinedOrNull(toolCall.Arguments)),
-                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
-                ]),
+                AdditionalProperties = CreateToolCallProperties(part.ToolCall!, part.ThoughtSignature),
             };
         }
 
@@ -356,20 +358,93 @@ internal static class GeminiToMEAIMapper
         {
             Debug.Assert(part.ToolResponse is not null);
 
-            var toolResponse = part.ToolResponse!;
-
             return new ToolResultContent(callId)
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateMappedAdditionalProperties(
-                [
-                    new(GeminiContentProperties.Id, toolResponse.Id),
-                    new(GeminiContentProperties.ToolType, toolResponse.ToolType),
-                    new(GeminiContentProperties.Response, DefinedOrNull(toolResponse.Response)),
-                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
-                ]),
+                AdditionalProperties = CreateToolResponseProperties(part.ToolResponse!, part.ThoughtSignature),
             };
+        }
+
+        static WebSearchToolCallContent CreateMappedWebSearchToolCallContent(Part part, string callId)
+        {
+            Debug.Assert(part.ToolCall is not null);
+
+            var toolCall = part.ToolCall!;
+
+            return new WebSearchToolCallContent(callId)
+            {
+                Queries = ReadQueries(toolCall.Arguments),
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = CreateToolCallProperties(toolCall, part.ThoughtSignature),
+            };
+        }
+
+        static WebSearchToolResultContent CreateMappedWebSearchToolResultContent(Part part, string callId)
+        {
+            Debug.Assert(part.ToolResponse is not null);
+
+            return new WebSearchToolResultContent(callId)
+            {
+                // The sources live on the citation annotations, and the raw response is kept on the
+                // AdditionalProperties, so the result carries no outputs of its own.
+                Outputs = null,
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = CreateToolResponseProperties(part.ToolResponse!, part.ThoughtSignature),
+            };
+        }
+
+        static AdditionalPropertiesDictionary? CreateToolCallProperties(ToolCall toolCall, string? thoughtSignature)
+        {
+            return CreateMappedAdditionalProperties(
+            [
+                new(GeminiContentProperties.Id, toolCall.Id),
+                new(GeminiContentProperties.ToolType, toolCall.ToolType),
+                new(GeminiContentProperties.ToolName, toolCall.ToolName),
+                new(GeminiContentProperties.Arguments, DefinedOrNull(toolCall.Arguments)),
+                new(GeminiContentProperties.ThoughtSignature, thoughtSignature),
+            ]);
+        }
+
+        static AdditionalPropertiesDictionary? CreateToolResponseProperties(
+            ToolResponse toolResponse,
+            string? thoughtSignature)
+        {
+            return CreateMappedAdditionalProperties(
+            [
+                new(GeminiContentProperties.Id, toolResponse.Id),
+                new(GeminiContentProperties.ToolType, toolResponse.ToolType),
+                new(GeminiContentProperties.Response, DefinedOrNull(toolResponse.Response)),
+                new(GeminiContentProperties.ThoughtSignature, thoughtSignature),
+            ]);
+        }
+
+        // The strings of the invocation's queries argument, or null when Gemini reported no such array of
+        // strings.
+        static List<string>? ReadQueries(JsonElement arguments)
+        {
+            if (arguments.ValueKind is not JsonValueKind.Object
+                || !arguments.TryGetProperty("queries", out var queries)
+                || queries.ValueKind is not JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var mapped = new List<string>(queries.GetArrayLength());
+
+            foreach (var query in queries.EnumerateArray())
+            {
+                if (query.ValueKind is not JsonValueKind.String)
+                {
+                    return null;
+                }
+
+                mapped.Add(query.GetString()!);
+            }
+
+            return mapped;
         }
 
         static object? DefinedOrNull(JsonElement element)
@@ -405,6 +480,13 @@ internal static class GeminiToMEAIMapper
     /// dynamic-retrieval score — so a file search that matched nothing is indistinguishable from no file
     /// search at all.
     /// </para>
+    /// <para>
+    /// A pair is synthesized from <see cref="GroundingMetadata.WebSearchQueries"/> only when no web search
+    /// has been reported for the candidate yet. A <c>GOOGLE_SEARCH_WEB</c> invocation is the complete
+    /// record of a search, and the queries are cumulative across every search of the turn and not in
+    /// invocation order, so they cannot be attributed to one call; once any search has been reported, by
+    /// an invocation or by an earlier grounding delivery, a later delivery adds nothing.
+    /// </para>
     /// </remarks>
     /// <param name="target">
     /// How this candidate's segments resolve to the text they index. The whole-response and streamed forms
@@ -421,27 +503,20 @@ internal static class GeminiToMEAIMapper
             AttachMappedCitationAnnotations(chunks, groundingMetadata.GroundingSupports, target);
         }
 
-        if (groundingMetadata.WebSearchQueries is not { Count: > 0 } queries)
+        if (groundingMetadata.WebSearchQueries is not { Count: > 0 } queries || state.HasReportedWebSearch)
         {
             return;
         }
 
-        // A stream can deliver grounding metadata more than once. Reusing the call id lets
-        // ToChatResponse coalesce the calls into one; WebSearchToolResultContent has no coalescing pass
-        // of its own, so only the delivery that minted the id emits a result.
-        var isFirstDelivery = state.WebSearchCallId is null;
-        var callId = state.WebSearchCallId ??= $"web-search/{Guid.NewGuid()}";
+        state.HasReportedWebSearch = true;
+
+        var callId = $"web-search/{Guid.NewGuid()}";
 
         contents.Add(new WebSearchToolCallContent(callId)
         {
             Queries = [.. queries],
             RawRepresentation = groundingMetadata,
         });
-
-        if (!isFirstDelivery)
-        {
-            return;
-        }
 
         // The sources live on the citation annotations, so the result carries no outputs of its own.
         contents.Add(new WebSearchToolResultContent(callId)

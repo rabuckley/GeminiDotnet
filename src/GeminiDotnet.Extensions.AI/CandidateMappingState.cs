@@ -19,7 +19,11 @@ namespace GeminiDotnet.Extensions.AI;
 /// accumulate for the chunks themselves. What has to be carried is the text the supports index: a
 /// streamed <see cref="V1Beta.Segment"/> gives UTF-8 byte offsets into the concatenation of every
 /// non-thought text part of the whole stream, with <see cref="V1Beta.Segment.PartIndex"/> absent.
-/// Thought parts and tool invocation parts do not count toward those offsets.
+/// Thought parts and tool invocation parts do not count toward those offsets. The same probe showed Gemini
+/// running several <c>GOOGLE_SEARCH_WEB</c> invocations in one turn, as two <c>toolCall</c> parts in one
+/// chunk or as one call/response pair after another, and that
+/// <see cref="V1Beta.GroundingMetadata.WebSearchQueries"/> is cumulative across every search of the turn
+/// and not in invocation order.
 /// </para>
 /// <para>
 /// A <see cref="TextSpanAnnotatedRegion"/> therefore means two things. On a whole response it sits on the
@@ -53,9 +57,12 @@ internal sealed class CandidateMappingState
     public StringBuilder Text { get; } = new();
 
     /// <summary>
-    /// The call id minted for the first <see cref="V1Beta.GroundingMetadata"/> carrying web search
-    /// queries, so that a later delivery in the same stream coalesces onto the same
-    /// <see cref="WebSearchToolCallContent"/>.
+    /// Whether a web search has been reported for this candidate.
     /// </summary>
-    public string? WebSearchCallId { get; set; }
+    /// <remarks>
+    /// Set when a <c>GOOGLE_SEARCH_WEB</c> <see cref="V1Beta.Part.ToolCall"/> is mapped, and when a pair is
+    /// synthesized from <see cref="V1Beta.GroundingMetadata.WebSearchQueries"/>.
+    /// <see cref="GeminiToMEAIMapper"/> reads it to synthesize at most one pair per candidate.
+    /// </remarks>
+    public bool HasReportedWebSearch { get; set; }
 }
