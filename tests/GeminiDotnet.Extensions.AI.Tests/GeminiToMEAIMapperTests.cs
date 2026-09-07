@@ -687,14 +687,85 @@ public sealed class GeminiToMEAIMapperTests
     [Fact]
     public void CreateMappedChatResponse_WithAnUnrecognisedPart_ShouldThrowGeminiMappingException()
     {
-        // Arrange — a part carrying only a thought signature has no field this mapper reads.
+        var response = ResponseWithParts(
+            new Part { MediaResolution = new MediaResolution { Level = MediaResolutionLevel.MediaResolutionLow } });
+
+        void Act() => GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithASignatureOnlyPart_ShouldMapToAnEmptyReasoningContent()
+    {
         var response = ResponseWithParts(new Part { ThoughtSignature = "signature" });
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        var reasoning = Assert.IsType<TextReasoningContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal(string.Empty, reasoning.Text);
+        Assert.Equal("signature", reasoning.ProtectedData);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAThoughtOnlyPart_ShouldMapToAnEmptyReasoningContent()
+    {
+        var response = ResponseWithParts(new Part { Thought = true });
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        var reasoning = Assert.IsType<TextReasoningContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal(string.Empty, reasoning.Text);
+        Assert.Null(reasoning.ProtectedData);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithANonThoughtOnlyPart_ShouldThrow()
+    {
+        var response = ResponseWithParts(new Part { Thought = false });
 
         // Act
         void Act() => GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
 
         // Assert
         Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithASignatureOnANonThoughtPart_ShouldKeepTheSignature()
+    {
+        var response = ResponseWithParts(new Part { Thought = false, ThoughtSignature = "signature" });
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        var reasoning = Assert.IsType<TextReasoningContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal("signature", reasoning.ProtectedData);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithAStreamedSignatureAfterAThought_ShouldKeepTheSignature()
+    {
+        // M.E.AI must preserve the trailing signature when it merges the reasoning fragments.
+        var chunks = DeserializeChunks(
+            """
+            [
+              {
+                "candidates": [{ "content": { "parts": [{ "text": "Let me ", "thought": true }], "role": "model" } }]
+              },
+              {
+                "candidates": [{ "content": { "parts": [{ "text": "check.", "thought": true }], "role": "model" } }]
+              },
+              {
+                "candidates": [{ "content": { "parts": [{ "thoughtSignature": "signature" }], "role": "model" } }]
+              }
+            ]
+            """);
+
+        var result = CreateStreamedResponse(chunks);
+
+        var reasoning = Assert.IsType<TextReasoningContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal("Let me check.", reasoning.Text);
+        Assert.Equal("signature", reasoning.ProtectedData);
     }
 
     [Fact]

@@ -2802,6 +2802,32 @@ public sealed class MEAIToGeminiMapperTests
             });
     }
 
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithASignatureOnlyPart_ShouldSendBackTheSignatureAlone()
+    {
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts = [new Part { Text = "The answer is 42." }, new Part { ThoughtSignature = "signature" }],
+                    },
+                },
+            ],
+        };
+
+        var expectedParts = response.Candidates[0].Content!.Parts;
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -2878,6 +2904,38 @@ public sealed class MEAIToGeminiMapperTests
             text => Assert.Equal("text", text.ThoughtSignature),
             thought => Assert.Equal("thought", thought.ThoughtSignature),
             signedTwice => Assert.Equal("protected", signedTwice.ThoughtSignature));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithASignedStream_ShouldSendTheSignatureBack(bool persistAsJson)
+    {
+        // The signature annotation must prevent M.E.AI from merging the signed text part.
+        var chunks = new[]
+        {
+            StreamedChunk(new Part { Text = "The answer" }),
+            StreamedChunk(new Part { Text = " is 42." }),
+            StreamedChunk(new Part { Text = "", ThoughtSignature = "signature" }),
+        };
+
+        var state = new CandidateMappingState();
+
+        var messages = chunks
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, state, DateTimeOffset.UtcNow))
+            .ToChatResponse()
+            .Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Equal(
+            [new Part { Text = "The answer is 42." }, new Part { Text = "", ThoughtSignature = "signature" }],
+            Assert.Single(request.Contents).Parts);
     }
 
     [Theory]
@@ -2960,6 +3018,30 @@ public sealed class MEAIToGeminiMapperTests
             Assert.Single(request.Contents).Parts);
     }
 
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithACoalescedThoughtRun_ShouldSendTheThoughtText()
+    {
+        // Stream aggregation discards the raw parts, so replay must reconstruct the thought.
+        var chunks = new[]
+        {
+            StreamedChunk(new Part { Thought = true }),
+            StreamedChunk(new Part { Thought = true, Text = "Let me think." }),
+        };
+
+        var state = new CandidateMappingState();
+
+        var messages = chunks
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, state, DateTimeOffset.UtcNow))
+            .ToChatResponse()
+            .Messages;
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Equal(
+            [new Part { Thought = true, Text = "Let me think." }],
+            Assert.Single(request.Contents).Parts);
+    }
+
     private static GenerateContentResponse StreamedChunk(params Part[] parts) => new()
     {
         Candidates = [new Candidate { Content = new Content { Role = "model", Parts = parts } }],
@@ -2969,6 +3051,92 @@ public sealed class MEAIToGeminiMapperTests
     {
         var json = JsonSerializer.Serialize(messages, GeminiJsonUtilities.DefaultOptions);
         return JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithTextLessThoughtParts_ShouldReplayBareSignatures(
+        bool persistAsJson)
+    {
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part { Thought = true, ThoughtSignature = "thought" },
+                            new Part { ThoughtSignature = "bare" },
+                        ],
+                    },
+                },
+            ],
+        };
+
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Equal(
+            [
+                new Part { ThoughtSignature = "thought" },
+                new Part { ThoughtSignature = "bare" },
+            ],
+            Assert.Single(request.Contents).Parts);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithASignatureOnlyContent_ShouldRebuildThePart(
+        bool roundTripThroughJson)
+    {
+        // Persisted history has no RawRepresentation; ProtectedData must suffice for replay.
+        var content = new TextReasoningContent(string.Empty) { ProtectedData = "signature" };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [roundTripThroughJson ? RoundTripThroughJson(content) : content]),
+        };
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        Assert.Equal("signature", part.ThoughtSignature);
+
+        Assert.Null(part.Thought);
+
+        Assert.Null(part.Text);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public void CreateMappedGenerateContentRequest_WithAnEmptyReasoningContent_ShouldSkipIt(string? text)
+    {
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant, [new TextReasoningContent(text)]),
+        };
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Empty(request.Contents);
+    }
+
+    private static AIContent RoundTripThroughJson(AIContent content)
+    {
+        return JsonSerializer.Deserialize<AIContent>(JsonSerializer.Serialize(content))!;
     }
 
     #endregion
