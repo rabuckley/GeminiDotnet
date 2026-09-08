@@ -27,7 +27,8 @@ public sealed record Environment
     /// Required. Output only. The ID of the environment.
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Id { get; init; }
 
     /// <summary>
     /// Output only. The time at which the environment was last accessed in ISO 8601 format

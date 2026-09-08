@@ -21,7 +21,8 @@ public sealed record AudioTranscription
     /// Required. The transcription text of this audio segment.
     /// </summary>
     [JsonPropertyName("text")]
-    public required string Text { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Text { get; init; }
 
     /// <summary>
     /// Optional. Detailed word-level transcriptions and timing details.

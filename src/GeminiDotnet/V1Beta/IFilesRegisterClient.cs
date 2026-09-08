@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.FilesRegister;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IFilesRegisterClient
+public partial interface IFilesRegisterClient
 {
     /// <summary>
     /// Registers a Google Cloud Storage files with FileService. The user is

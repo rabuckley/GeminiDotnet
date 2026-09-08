@@ -11,6 +11,7 @@ public sealed record RegisterFilesRequest
     /// Required. The Google Cloud Storage URIs to register. Example: <c>gs://bucket/object</c>.
     /// </summary>
     [JsonPropertyName("uris")]
-    public required IReadOnlyList<string> Uris { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<string>? Uris { get; init; }
 }
 

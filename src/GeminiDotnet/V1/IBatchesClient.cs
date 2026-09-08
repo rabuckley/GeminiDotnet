@@ -1,7 +1,7 @@
 
 namespace GeminiDotnet.V1;
 
-public interface IBatchesClient
+public partial interface IBatchesClient
 {
     /// <summary>
     /// Lists operations that match the specified filter in the request. If the

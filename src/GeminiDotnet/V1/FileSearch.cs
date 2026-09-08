@@ -13,7 +13,8 @@ public sealed record FileSearch
     /// Example: <c>fileSearchStores/my-file-search-store-123</c>
     /// </summary>
     [JsonPropertyName("fileSearchStoreNames")]
-    public required IReadOnlyList<string> FileSearchStoreNames { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<string>? FileSearchStoreNames { get; init; }
 
     /// <summary>
     /// Optional. Metadata filter to apply to the semantic retrieval documents and chunks.

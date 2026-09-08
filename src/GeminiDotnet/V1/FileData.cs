@@ -11,7 +11,8 @@ public sealed record FileData
     /// Required. URI.
     /// </summary>
     [JsonPropertyName("fileUri")]
-    public required string FileUri { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? FileUri { get; init; }
 
     /// <summary>
     /// Optional. The IANA standard MIME type of the source data.

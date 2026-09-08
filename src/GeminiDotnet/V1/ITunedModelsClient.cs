@@ -2,7 +2,7 @@ using GeminiDotnet.V1.TunedModels;
 
 namespace GeminiDotnet.V1;
 
-public interface ITunedModelsClient
+public partial interface ITunedModelsClient
 {
     /// <summary>
     /// Enqueues a batch of <c>EmbedContent</c> requests for batch processing.

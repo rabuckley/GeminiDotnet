@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.Environments;
 
 namespace GeminiDotnet.V1Beta;
 
-internal sealed class EnvironmentsClient : IEnvironmentsClient
+internal sealed partial class EnvironmentsClient : IEnvironmentsClient
 {
     private readonly IGeminiRequester _requester;
     

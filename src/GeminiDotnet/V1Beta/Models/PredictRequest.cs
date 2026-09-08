@@ -12,7 +12,8 @@ public sealed record PredictRequest
     /// Required. The instances that are the input to the prediction call.
     /// </summary>
     [JsonPropertyName("instances")]
-    public required ReadOnlyMemory<JsonElement> Instances { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReadOnlyMemory<JsonElement> Instances { get; init; }
 
     /// <summary>
     /// Optional. The parameters that govern the prediction call.

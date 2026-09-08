@@ -12,6 +12,7 @@ public sealed record TransferOwnershipRequest
     /// to.
     /// </summary>
     [JsonPropertyName("emailAddress")]
-    public required string EmailAddress { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? EmailAddress { get; init; }
 }
 

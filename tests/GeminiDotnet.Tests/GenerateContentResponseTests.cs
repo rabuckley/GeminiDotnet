@@ -29,6 +29,7 @@ public sealed class GenerateContentResponseTests
         yield return VideoExampleResponse;
         yield return GoogleSearchExampleResponse;
         yield return UrlContextResponse;
+        yield return McpToolCallResponse;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
@@ -495,6 +496,53 @@ public sealed class GenerateContentResponseTests
           },
           "modelVersion": "gemini-2.5-flash",
           "responseId": "bvq7aInSLPn9nsEP3MKX6A4"
+        }
+        """;
+
+    /// <summary>
+    /// A remote MCP tool call carries a <c>toolName</c> and no <c>toolType</c>, because the enum has no
+    /// member that can name one. The spec lists <c>toolType</c> as required, which is the proto
+    /// <c>Required.</c> annotation rather than a promise about the wire.
+    /// </summary>
+    [Fact]
+    public void Deserialize_WithAnMcpToolCall_ShouldReadTheToolName()
+    {
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(McpToolCallResponse);
+
+        var toolCall = Assert.Single(response!.Candidates!).Content!.Parts!.Single().ToolCall;
+
+        Assert.NotNull(toolCall);
+        Assert.Equal("weather:get_weather", toolCall.ToolName);
+        Assert.Equal("call_318937", toolCall.Id);
+        Assert.Equal(ToolType.Unspecified, toolCall.ToolType);
+    }
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string McpToolCallResponse =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "toolCall": {
+                      "args": {
+                        "location": "London"
+                      },
+                      "id": "call_318937",
+                      "toolName": "weather:get_weather"
+                    }
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0
+            }
+          ],
+          "modelVersion": "gemini-3.1-flash-lite",
+          "responseId": "mcp-tool-call-example"
         }
         """;
 }

@@ -25,6 +25,7 @@ public sealed record WordInfo
     /// Required. Transcript of the word.
     /// </summary>
     [JsonPropertyName("word")]
-    public required string Word { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Word { get; init; }
 }
 

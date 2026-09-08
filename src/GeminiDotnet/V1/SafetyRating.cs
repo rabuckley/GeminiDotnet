@@ -23,12 +23,14 @@ public sealed record SafetyRating
     /// Required. The category for this rating.
     /// </summary>
     [JsonPropertyName("category")]
-    public required HarmCategory Category { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public HarmCategory Category { get; init; }
 
     /// <summary>
     /// Required. The probability of harm for this content.
     /// </summary>
     [JsonPropertyName("probability")]
-    public required SafetyRatingProbability Probability { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SafetyRatingProbability Probability { get; init; }
 }
 

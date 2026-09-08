@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.TunedModels;
 
 namespace GeminiDotnet.V1Beta;
 
-internal sealed class TunedModelsClient : ITunedModelsClient
+internal sealed partial class TunedModelsClient : ITunedModelsClient
 {
     private readonly IGeminiRequester _requester;
     

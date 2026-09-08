@@ -1,6 +1,6 @@
 namespace GeminiDotnet.V1;
 
-internal sealed class DynamicClient : IDynamicClient
+internal sealed partial class DynamicClient : IDynamicClient
 {
     private readonly IGeminiRequester _requester;
     

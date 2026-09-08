@@ -11,7 +11,8 @@ public sealed record TuningExample
     /// Required. The expected model output.
     /// </summary>
     [JsonPropertyName("output")]
-    public required string Output { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Output { get; init; }
 
     /// <summary>
     /// Optional. Text model input.

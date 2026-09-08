@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.GeneratedFiles;
 
 namespace GeminiDotnet.V1Beta;
 
-internal sealed class GeneratedFilesClient : IGeneratedFilesClient
+internal sealed partial class GeneratedFilesClient : IGeneratedFilesClient
 {
     private readonly IGeminiRequester _requester;
     

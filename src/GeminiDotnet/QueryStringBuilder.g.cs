@@ -9,7 +9,7 @@ namespace GeminiDotnet;
 
 /// <summary>
 /// Builds the query-string portion of a request path. A null value omits the pair entirely;
-/// the first appended pair contributes the leading '?', subsequent pairs '&'. Names are
+/// the first appended pair contributes the leading '?', subsequent pairs '&amp;'. Names are
 /// spec-supplied literals and are appended verbatim; values are escaped.
 /// </summary>
 internal sealed class QueryStringBuilder

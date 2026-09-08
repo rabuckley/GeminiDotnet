@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.FileSearchStores;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IFileSearchStoresClient
+public partial interface IFileSearchStoresClient
 {
     /// <summary>
     /// Lists all <c>FileSearchStores</c> owned by the user.

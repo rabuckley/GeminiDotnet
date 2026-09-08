@@ -12,6 +12,7 @@ public sealed record InlinedEmbedContentRequests
     /// Required. The requests to be processed in the batch.
     /// </summary>
     [JsonPropertyName("requests")]
-    public required IReadOnlyList<InlinedEmbedContentRequest> Requests { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<InlinedEmbedContentRequest>? Requests { get; init; }
 }
 

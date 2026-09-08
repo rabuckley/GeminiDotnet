@@ -27,7 +27,7 @@ public enum ConditionOperation
     LessEqual,
 
     /// <summary>
-    /// Supported by numeric & string.
+    /// Supported by numeric &amp; string.
     /// </summary>
     [JsonStringEnumMemberName("EQUAL")]
     Equal,
@@ -45,7 +45,7 @@ public enum ConditionOperation
     Greater,
 
     /// <summary>
-    /// Supported by numeric & string.
+    /// Supported by numeric &amp; string.
     /// </summary>
     [JsonStringEnumMemberName("NOT_EQUAL")]
     NotEqual,

@@ -15,7 +15,8 @@ public sealed record ExecutableCode
     /// Required. The code to be executed.
     /// </summary>
     [JsonPropertyName("code")]
-    public required string Code { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Code { get; init; }
 
     /// <summary>
     /// Optional. Unique identifier of the <see cref="V1.ExecutableCode"/> part.
@@ -29,6 +30,7 @@ public sealed record ExecutableCode
     /// Required. Programming language of the <see cref="Code"/>.
     /// </summary>
     [JsonPropertyName("language")]
-    public required ExecutableCodeLanguage Language { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ExecutableCodeLanguage Language { get; init; }
 }
 

@@ -2,7 +2,7 @@ using GeminiDotnet.V1.CachedContents;
 
 namespace GeminiDotnet.V1;
 
-internal sealed class CachedContentsClient : ICachedContentsClient
+internal sealed partial class CachedContentsClient : ICachedContentsClient
 {
     private readonly IGeminiRequester _requester;
     

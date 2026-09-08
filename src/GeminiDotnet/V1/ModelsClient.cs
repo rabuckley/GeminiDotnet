@@ -1,8 +1,14 @@
+using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using GeminiDotnet.V1.Models;
 
 namespace GeminiDotnet.V1;
 
-internal sealed class ModelsClient : IModelsClient
+internal sealed partial class ModelsClient : IModelsClient
 {
     private readonly IGeminiRequester _requester;
     

@@ -2,7 +2,7 @@ using GeminiDotnet.V1.CachedContents;
 
 namespace GeminiDotnet.V1;
 
-public interface ICachedContentsClient
+public partial interface ICachedContentsClient
 {
     /// <summary>
     /// Lists CachedContents.

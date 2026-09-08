@@ -250,7 +250,7 @@ internal static class GeminiToMEAIMapper
 
             var fileData = part.FileData!;
 
-            return new HostedFileContent(fileData.FileUri)
+            return new HostedFileContent(fileData.FileUri!) // Let M.E.AI throw.
             {
                 MediaType = fileData.MimeType,
                 RawRepresentation = part,
@@ -302,7 +302,7 @@ internal static class GeminiToMEAIMapper
             var args = functionCall.Arguments.Deserialize(JsonContext.Default.IDictionaryStringObject)
                 ?? new Dictionary<string, object?>();
 
-            return new FunctionCallContent(callId, functionCall.Name, args)
+            return new FunctionCallContent(callId, functionCall.Name!, args) // Let M.E.AI throw.
             {
                 Annotations = null,
                 RawRepresentation = part,
@@ -346,7 +346,9 @@ internal static class GeminiToMEAIMapper
                 _ => "text/plain",
             };
 
-            var codeBytes = System.Text.Encoding.UTF8.GetBytes(executableCode.Code);
+            // proto3 omits a string field at its default, so an empty program arrives as no
+            // "code" at all rather than as "".
+            var codeBytes = System.Text.Encoding.UTF8.GetBytes(executableCode.Code ?? "");
 
             return new CodeInterpreterToolCallContent(callId)
             {

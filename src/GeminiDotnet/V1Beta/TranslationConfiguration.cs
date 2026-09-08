@@ -21,6 +21,7 @@ public sealed record TranslationConfiguration
     /// codes (e.g. "en", "es", "fr").
     /// </summary>
     [JsonPropertyName("targetLanguageCode")]
-    public required string TargetLanguageCode { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? TargetLanguageCode { get; init; }
 }
 

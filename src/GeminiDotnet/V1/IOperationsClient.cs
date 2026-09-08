@@ -1,7 +1,7 @@
 
 namespace GeminiDotnet.V1;
 
-public interface IOperationsClient
+public partial interface IOperationsClient
 {
     /// <summary>
     /// Lists operations that match the specified filter in the request. If the

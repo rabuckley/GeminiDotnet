@@ -45,7 +45,8 @@ public sealed record CachedContent
     /// Format: <c>models/{model}</c>
     /// </summary>
     [JsonPropertyName("model")]
-    public required string Model { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Model { get; init; }
 
     /// <summary>
     /// Output only. Identifier. The resource name referring to the cached content.

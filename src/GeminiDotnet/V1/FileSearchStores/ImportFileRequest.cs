@@ -27,6 +27,7 @@ public sealed record ImportFileRequest
     /// Example: <c>files/abc-123</c>
     /// </summary>
     [JsonPropertyName("fileName")]
-    public required string FileName { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? FileName { get; init; }
 }
 

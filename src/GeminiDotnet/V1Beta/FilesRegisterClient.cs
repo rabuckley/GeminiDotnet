@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.FilesRegister;
 
 namespace GeminiDotnet.V1Beta;
 
-internal sealed class FilesRegisterClient : IFilesRegisterClient
+internal sealed partial class FilesRegisterClient : IFilesRegisterClient
 {
     private readonly IGeminiRequester _requester;
     

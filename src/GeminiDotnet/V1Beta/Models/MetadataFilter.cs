@@ -17,12 +17,14 @@ public sealed record MetadataFilter
     /// <see cref="V1Beta.Models.Condition"/>s are joined by logical ORs.
     /// </summary>
     [JsonPropertyName("conditions")]
-    public required IReadOnlyList<Condition> Conditions { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<Condition>? Conditions { get; init; }
 
     /// <summary>
     /// Required. The key of the metadata to filter on.
     /// </summary>
     [JsonPropertyName("key")]
-    public required string Key { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Key { get; init; }
 }
 

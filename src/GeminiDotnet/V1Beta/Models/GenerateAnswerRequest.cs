@@ -11,7 +11,8 @@ public sealed record GenerateAnswerRequest
     /// Required. Style in which answers should be returned.
     /// </summary>
     [JsonPropertyName("answerStyle")]
-    public required GenerateAnswerRequestAnswerStyle AnswerStyle { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public GenerateAnswerRequestAnswerStyle AnswerStyle { get; init; }
 
     /// <summary>
     /// Required. The content of the current conversation with the <see cref="V1Beta.Models.Model"/>. For single-turn
@@ -21,7 +22,8 @@ public sealed record GenerateAnswerRequest
     /// Note: <c>GenerateAnswer</c> only supports queries in English.
     /// </summary>
     [JsonPropertyName("contents")]
-    public required IReadOnlyList<Content> Contents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<Content>? Contents { get; init; }
 
     /// <summary>
     /// Passages provided inline with the request.

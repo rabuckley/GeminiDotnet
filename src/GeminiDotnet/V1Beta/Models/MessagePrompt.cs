@@ -49,6 +49,7 @@ public sealed record MessagePrompt
     /// will be truncated: The oldest items will be dropped from <see cref="Messages"/>.
     /// </summary>
     [JsonPropertyName("messages")]
-    public required IReadOnlyList<Message> Messages { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<Message>? Messages { get; init; }
 }
 

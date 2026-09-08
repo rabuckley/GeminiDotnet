@@ -180,6 +180,7 @@ public sealed record Schema
     /// Required. Data type.
     /// </summary>
     [JsonPropertyName("type")]
-    public required Type Type { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Type Type { get; init; }
 }
 

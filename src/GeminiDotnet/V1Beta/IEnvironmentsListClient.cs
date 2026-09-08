@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.EnvironmentsList;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IEnvironmentsListClient
+public partial interface IEnvironmentsListClient
 {
     /// <summary>
     /// Lists environments.

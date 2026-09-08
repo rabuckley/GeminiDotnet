@@ -13,7 +13,8 @@ public sealed record Model
     /// * <c>gemini-1.5-flash</c>
     /// </summary>
     [JsonPropertyName("baseModelId")]
-    public required string BaseModelId { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? BaseModelId { get; init; }
 
     /// <summary>
     /// A short description of the model.
@@ -55,7 +56,8 @@ public sealed record Model
     /// * <c>models/gemini-1.5-flash-001</c>
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Name { get; init; }
 
     /// <summary>
     /// Maximum number of output tokens available for this model.
@@ -121,6 +123,7 @@ public sealed record Model
     /// This represents the major version (<c>1.0</c> or <c>1.5</c>)
     /// </summary>
     [JsonPropertyName("version")]
-    public required string Version { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Version { get; init; }
 }
 

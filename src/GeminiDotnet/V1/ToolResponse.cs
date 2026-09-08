@@ -31,6 +31,7 @@ public sealed record ToolResponse
     /// corresponding <see cref="V1.ToolCall"/>.
     /// </summary>
     [JsonPropertyName("toolType")]
-    public required ToolType ToolType { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ToolType ToolType { get; init; }
 }
 

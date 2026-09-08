@@ -39,6 +39,7 @@ public sealed record ToolCall
     /// Required. The type of tool that was called.
     /// </summary>
     [JsonPropertyName("toolType")]
-    public required ToolType ToolType { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ToolType ToolType { get; init; }
 }
 

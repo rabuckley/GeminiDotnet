@@ -13,12 +13,14 @@ public sealed record SafetySetting
     /// Required. The category for this setting.
     /// </summary>
     [JsonPropertyName("category")]
-    public required HarmCategory Category { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public HarmCategory Category { get; init; }
 
     /// <summary>
     /// Required. Controls the probability threshold at which harm is blocked.
     /// </summary>
     [JsonPropertyName("threshold")]
-    public required SafetySettingThreshold Threshold { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SafetySettingThreshold Threshold { get; init; }
 }
 

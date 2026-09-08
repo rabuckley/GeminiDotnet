@@ -14,7 +14,7 @@ public sealed class GeminiToMEAIMapperTests
     {
         // Arrange
         var response = JsonSerializer.Deserialize<GenerateContentResponse>(PythonCodeExecutionExampleResponse)!;
-        var actualContent = response.Candidates[0].Content;
+        var actualContent = response.Candidates![0].Content!;
 
         // Act
         var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
@@ -23,7 +23,7 @@ public sealed class GeminiToMEAIMapperTests
         var contents = Assert.Single(result.Messages).Contents;
 
         var text1 = Assert.IsType<TextContent>(contents[0]);
-        Assert.Equal(actualContent.Parts[0].Text, text1.Text);
+        Assert.Equal(actualContent.Parts![0].Text, text1.Text);
 
         var toolCall = Assert.IsType<CodeInterpreterToolCallContent>(contents[1]);
         Assert.NotNull(toolCall.CallId);
@@ -1318,7 +1318,7 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Single(contents.OfType<WebSearchToolResultContent>());
 
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", result.Messages, new ChatOptions());
-        var parts = Assert.Single(request.Contents).Parts!;
+        var parts = Assert.Single(request.Contents!).Parts!;
 
         Assert.Equal(expectedParts, parts.Where(part => part.ToolCall is not null || part.ToolResponse is not null));
     }

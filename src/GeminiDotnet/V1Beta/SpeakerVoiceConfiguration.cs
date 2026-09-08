@@ -11,7 +11,8 @@ public sealed record SpeakerVoiceConfiguration
     /// Required. The name of the speaker to use. Should be the same as in the prompt.
     /// </summary>
     [JsonPropertyName("speaker")]
-    public required string Speaker { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Speaker { get; init; }
 
     /// <summary>
     /// Required. The configuration for the voice to use.
