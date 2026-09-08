@@ -3134,6 +3134,28 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Empty(request.Contents);
     }
 
+    [Theory]
+    [InlineData(GeminiAdditionalProperties.ThinkingConfiguration)]
+    [InlineData(GeminiAdditionalProperties.ResponseModalities)]
+    [InlineData(GeminiAdditionalProperties.ImageConfiguration)]
+    public void CreateMappedGenerateContentRequest_WithAMistypedGenerationConfigurationValue_ShouldThrow(string key)
+    {
+        // Arrange
+        var options = new ChatOptions
+        {
+            AdditionalProperties = new AdditionalPropertiesDictionary { [key] = "mistyped" },
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            [new ChatMessage(ChatRole.User, "Transcribe this.")],
+            options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
     private static AIContent RoundTripThroughJson(AIContent content)
     {
         return JsonSerializer.Deserialize<AIContent>(JsonSerializer.Serialize(content))!;

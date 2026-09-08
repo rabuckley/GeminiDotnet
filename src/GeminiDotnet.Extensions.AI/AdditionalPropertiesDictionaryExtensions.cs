@@ -54,16 +54,6 @@ public static class AdditionalPropertiesDictionaryExtensions
         return false;
     }
 
-    internal static T? GetValueOrDefault<T>(
-        this IReadOnlyDictionary<string, object?> dictionary,
-        string key)
-    {
-        return dictionary.TryGetValue(key, out var value) && value is not null
-            && TryConvertValue<T>(value, out var converted)
-            ? converted
-            : default;
-    }
-
     /// <summary>
     /// Reads the value stored under <paramref name="key"/>, reporting a value of the wrong type rather
     /// than dropping it. Use this where the caller cannot see that the value went missing.
