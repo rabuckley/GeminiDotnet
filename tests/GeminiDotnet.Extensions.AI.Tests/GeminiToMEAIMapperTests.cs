@@ -695,6 +695,242 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Throws<GeminiMappingException>(Act);
     }
 
+    #region Audio Transcription and Thought-Only Part Tests
+
+    [Fact]
+    public void CreateMappedChatResponse_WithATranscribedTextPart_ShouldAnnotateTheWholeText()
+    {
+        // Arrange
+        const string transcript = "Hello world.";
+
+        var response = ResponseWithParts(new Part
+        {
+            Text = transcript,
+            AudioTranscription = new AudioTranscription
+            {
+                Text = transcript,
+                Words =
+                [
+                    new WordInfo { Word = "Hello", StartOffset = "0s", EndOffset = "0.400s" },
+                    new WordInfo { Word = "world.", StartOffset = "0.400s", EndOffset = "0.700s" },
+                ],
+            },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal(transcript, text.Text);
+
+        var transcription = GetTranscription(text);
+        Assert.Equal(transcript, transcription.Text);
+        Assert.Equal(["Hello", "world."], transcription.Words!.Select(word => word.Word));
+
+        var region = Assert.IsType<TextSpanAnnotatedRegion>(
+            Assert.Single(Assert.Single(text.Annotations!).AnnotatedRegions!));
+        Assert.Equal(0, region.StartIndex);
+        Assert.Equal(transcript.Length, region.EndIndex);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithATextPartTranscribingOtherAudio_ShouldAnnotateWithoutARegion()
+    {
+        // Arrange
+        var response = ResponseWithParts(new Part
+        {
+            Text = "The recording says:",
+            AudioTranscription = new AudioTranscription { Text = "Hello world.", SpeakerLabel = "spk:0" },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal("The recording says:", text.Text);
+
+        var annotation = Assert.Single(text.Annotations!);
+        Assert.Null(annotation.AnnotatedRegions);
+        Assert.Equal("Hello world.", GetTranscription(text).Text);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithATranscribedAudioPart_ShouldAnnotateWithoutARegion()
+    {
+        // Arrange
+        var response = ResponseWithParts(new Part
+        {
+            InlineData = new Blob { MimeType = "audio/wav", Data = new byte[] { 1, 2, 3 } },
+            AudioTranscription = new AudioTranscription { Text = "Hello world.", SpeakerLabel = "spk:0" },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var data = Assert.IsType<DataContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal("audio/wav", data.MediaType);
+
+        var annotation = Assert.Single(data.Annotations!);
+        Assert.Null(annotation.AnnotatedRegions);
+        Assert.Equal("spk:0", GetTranscription(data).SpeakerLabel);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithATranscriptionOnlyPart_ShouldMapTheTranscriptAsTheText()
+    {
+        // Arrange
+        var response = ResponseWithParts(new Part
+        {
+            AudioTranscription = new AudioTranscription { Text = "Hello world.", SpeakerLabel = "spk:0" },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var text = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal("Hello world.", text.Text);
+        Assert.Equal("spk:0", GetTranscription(text).SpeakerLabel);
+
+        var region = Assert.IsType<TextSpanAnnotatedRegion>(
+            Assert.Single(Assert.Single(text.Annotations!).AnnotatedRegions!));
+        Assert.Equal(0, region.StartIndex);
+        Assert.Equal("Hello world.".Length, region.EndIndex);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithATranscribedFunctionCall_ShouldKeepBothTheSignatureAndTheTranscript()
+    {
+        // Arrange
+        var response = ResponseWithParts(new Part
+        {
+            FunctionCall = new FunctionCall
+            {
+                Id = "call-1",
+                Name = "get_weather",
+                Arguments = JsonSerializer.Deserialize<JsonElement>("""{"city":"London"}"""),
+            },
+            ThoughtSignature = "signature",
+            AudioTranscription = new AudioTranscription { Text = "What is the weather?" },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var call = Assert.IsType<FunctionCallContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+
+        Assert.True(call.AdditionalProperties!.TryGetGeminiValue(
+            GeminiContentProperties.ThoughtSignature,
+            out string? signature));
+        Assert.Equal("signature", signature);
+
+        Assert.Equal("What is the weather?", GetTranscription(call).Text);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithANullTranscript_ShouldMapTheRestOfTheResponse()
+    {
+        // Arrange
+        var response = JsonSerializer.Deserialize<GenerateContentResponse>(
+            """
+            {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [{ "audioTranscription": { "text": null, "speakerLabel": "spk:0" } }]
+                  }
+                }
+              ]
+            }
+            """)!;
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var content = Assert.IsType<TextContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal(string.Empty, content.Text);
+        Assert.Equal("spk:0", GetTranscription(content).SpeakerLabel);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithDiarizedParts_ShouldMapOneContentPerSpeakerTurn()
+    {
+        // Arrange
+        var response = ResponseWithParts(
+            TranscribedPart("The meeting starts at 9:00 tomorrow morning.", "spk:0"),
+            TranscribedPart("That works for me. I will bring the report.", "spk:1"),
+            TranscribedPart("Great. See you then.", "spk:0"));
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+
+        Assert.Equal(3, contents.Count);
+        Assert.Equal(
+            ["spk:0", "spk:1", "spk:0"],
+            contents.Select(content => GetTranscription(content).SpeakerLabel));
+        Assert.Equal(
+            ["The meeting starts at 9:00 tomorrow morning.", "That works for me. I will bring the report.", "Great. See you then."],
+            contents.Cast<TextContent>().Select(content => content.Text));
+    }
+
+    [Fact]
+    public void CreateMappedChatResponseUpdate_WithADiarizedStream_ShouldNotCoalesceTheSpeakerTurns()
+    {
+        // Arrange
+        var chunks = DeserializeChunks(StreamedDiarizedTranscriptionChunks);
+
+        // Act
+        var result = CreateStreamedResponse(chunks);
+
+        // Assert
+        var transcribed = Assert.Single(result.Messages).Contents
+            .OfType<TextContent>()
+            .Where(content => content.Annotations is not null)
+            .ToList();
+
+        Assert.Equal(3, transcribed.Count);
+        Assert.Equal(
+            ["spk:0", "spk:1", "spk:0"],
+            transcribed.Select(content => GetTranscription(content).SpeakerLabel));
+
+        Assert.Equal(string.Concat(transcribed.Select(content => content.Text)), result.Text);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAThoughtTranscriptionOnlyPart_ShouldMapToReasoningWithTheSignature()
+    {
+        // Arrange
+        var response = ResponseWithParts(new Part
+        {
+            Thought = true,
+            ThoughtSignature = "signature",
+            AudioTranscription = new AudioTranscription { Text = "Hello world.", SpeakerLabel = "spk:0" },
+        });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var reasoning = Assert.IsType<TextReasoningContent>(Assert.Single(Assert.Single(result.Messages).Contents));
+        Assert.Equal("Hello world.", reasoning.Text);
+        Assert.Equal("signature", reasoning.ProtectedData);
+        Assert.Equal("spk:0", GetTranscription(reasoning).SpeakerLabel);
+
+        var region = Assert.IsType<TextSpanAnnotatedRegion>(
+            Assert.Single(Assert.Single(reasoning.Annotations!).AnnotatedRegions!));
+        Assert.Equal(0, region.StartIndex);
+        Assert.Equal("Hello world.".Length, region.EndIndex);
+    }
+
     [Fact]
     public void CreateMappedChatResponse_WithASignatureOnlyPart_ShouldMapToAnEmptyReasoningContent()
     {
@@ -767,6 +1003,83 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Equal("Let me check.", reasoning.Text);
         Assert.Equal("signature", reasoning.ProtectedData);
     }
+
+    private static Part TranscribedPart(string text, string speakerLabel) => new()
+    {
+        Text = text,
+        AudioTranscription = new AudioTranscription { Text = text, SpeakerLabel = speakerLabel },
+    };
+
+    private static AudioTranscription GetTranscription(AIContent content)
+    {
+        var annotation = Assert.Single(
+            content.Annotations!,
+            annotation => annotation.AdditionalProperties?.ContainsKey(
+                GeminiContentProperties.AudioTranscription) is true);
+
+        Assert.True(annotation.AdditionalProperties!.TryGetGeminiValue(
+            GeminiContentProperties.AudioTranscription,
+            out AudioTranscription? transcription));
+
+        return transcription;
+    }
+
+    /// <summary>
+    /// A diarized transcription stream, captured from <c>gemini-3.5-transcribe</c> on 2026-09-03. Every
+    /// speaker segment arrives as its own part carrying both the text and the transcription, and the
+    /// terminal chunk carries an empty text alongside the finish reason.
+    /// </summary>
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string StreamedDiarizedTranscriptionChunks =
+        """
+        [
+          {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "text": "The meeting starts at 9:00 tomorrow morning.",
+                      "audioTranscription": {
+                        "text": "The meeting starts at 9:00 tomorrow morning.",
+                        "speakerLabel": "spk:0"
+                      }
+                    },
+                    {
+                      "text": "That works for me. I will bring the report.",
+                      "audioTranscription": {
+                        "text": "That works for me. I will bring the report.",
+                        "speakerLabel": "spk:1"
+                      }
+                    },
+                    {
+                      "text": "Great. See you then.",
+                      "audioTranscription": { "text": "Great. See you then.", "speakerLabel": "spk:0" }
+                    }
+                  ],
+                  "role": "model"
+                },
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3.5-transcribe",
+            "responseId": "test-streamed-diarized-transcription"
+          },
+          {
+            "candidates": [
+              {
+                "content": { "parts": [{ "text": "" }], "role": "model" },
+                "finishReason": "STOP",
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3.5-transcribe",
+            "responseId": "test-streamed-diarized-transcription"
+          }
+        ]
+        """;
+
+    #endregion
 
     [Fact]
     public void CreateMappedChatResponse_WithAGoogleSearchInvocation_ShouldMapToTheWebSearchPair()

@@ -788,6 +788,71 @@ public sealed class GeminiChatClientTests
         return file.Name;
     }
 
+    [Fact]
+    public async Task GetResponseAsync_WithAudioTranscription_ShouldAnnotateTheTranscribedText()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        IChatClient client = new GeminiChatClient(new GeminiClientOptions
+        {
+            ApiKey = _apiKey, ModelId = TestConfiguration.TranscriptionModel,
+        });
+
+        var audio = await File.ReadAllBytesAsync(
+            Path.Combine(AppContext.BaseDirectory, "Assets", "hello-world.wav"),
+            cancellationToken);
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User,
+            [
+                new DataContent(audio, "audio/wav"),
+                new TextContent("Transcribe this audio."),
+            ]),
+        };
+
+        var options = new ChatOptions
+        {
+            AdditionalProperties = new AdditionalPropertiesDictionary
+            {
+                [GeminiAdditionalProperties.AudioTranscriptionConfiguration] =
+                    new AudioTranscriptionConfiguration { WordTimestamp = true },
+            },
+        };
+
+        // Act
+        var response = await client.GetResponseAsync(messages, options, cancellationToken);
+
+        // Assert
+        _output.WriteLine(response.Text);
+        Assert.NotEmpty(response.Text);
+
+        var transcription = response.Messages
+            .SelectMany(message => message.Contents)
+            .SelectMany(content => content.Annotations ?? [])
+            .Select(annotation => annotation.AdditionalProperties?.TryGetGeminiValue(
+                GeminiContentProperties.AudioTranscription,
+                out AudioTranscription? value) is true
+                ? value
+                : null)
+            .FirstOrDefault(value => value is not null);
+
+        Assert.NotNull(transcription);
+        Assert.NotEmpty(transcription.Text);
+        Assert.NotNull(transcription.Words);
+        Assert.NotEmpty(transcription.Words);
+
+        foreach (var word in transcription.Words)
+        {
+            Assert.NotEmpty(word.Word);
+            Assert.NotNull(word.StartOffset);
+            Assert.NotNull(word.EndOffset);
+            Assert.EndsWith("s", word.StartOffset);
+            Assert.EndsWith("s", word.EndOffset);
+        }
+    }
+
     private static async Task ImportDocumentAsync(
         GeminiClient client,
         string storeId,

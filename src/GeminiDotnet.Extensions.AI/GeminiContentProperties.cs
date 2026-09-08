@@ -5,8 +5,9 @@ using System.Text.Json;
 namespace GeminiDotnet.Extensions.AI;
 
 /// <summary>
-/// Keys for Gemini <see cref="Part"/> metadata carried in <see cref="AIContent.AdditionalProperties"/>
-/// or, for signed text, <see cref="AIAnnotation.AdditionalProperties"/>.
+/// Keys for what a Gemini <see cref="Part"/> says that the mapped <see cref="AIContent"/> has no property
+/// for, carried in <see cref="AIContent.AdditionalProperties"/> or, where a member says so, in
+/// <see cref="AIAnnotation.AdditionalProperties"/> on an annotation over the content.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -71,6 +72,60 @@ public static class GeminiContentProperties
     /// none.
     /// </remarks>
     public const string ThoughtSignature = "thoughtSignature";
+
+    /// <summary>
+    /// Key for the transcription Gemini reported alongside the part, as a
+    /// <see cref="V1Beta.AudioTranscription"/>, carried in
+    /// <see cref="AIAnnotation.AdditionalProperties"/> on an annotation over the content. It holds the
+    /// speaker label when diarization was asked for, and the word timings when word timestamps were.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The annotation covers the transcribed span only where the content's text is the transcript, which
+    /// is the part that carried nothing but its transcription. A part that carried text of its own is
+    /// annotated without a region, because none of its text is the transcript.
+    /// </para>
+    /// <para>
+    /// The annotation's <see cref="AIAnnotation.RawRepresentation"/> holds the whole <see cref="Part"/>,
+    /// so the typed <see cref="V1Beta.AudioTranscription"/> is reachable through it as well; this entry
+    /// exists because that property is dropped when a response is serialized.
+    /// <see cref="Part.AudioTranscription"/> is output only, so a transcription is never sent back to
+    /// Gemini.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// Each speaker turn is its own content, so one loop over the aggregated response reaches every
+    /// segment with the label that belongs to it:
+    /// <code>
+    /// List&lt;ChatResponseUpdate&gt; updates = [];
+    ///
+    /// await foreach (var update in client.GetStreamingResponseAsync(messages, options))
+    /// {
+    ///     updates.Add(update);
+    /// }
+    ///
+    /// foreach (var content in updates.ToChatResponse().Messages.SelectMany(message =&gt; message.Contents))
+    /// {
+    ///     if (content is not TextContent text)
+    ///     {
+    ///         continue;
+    ///     }
+    ///
+    ///     // A grounded content carries citation annotations too, so pick the annotation by its key. A
+    ///     // region says the content's text is the transcript, so only then is it the speaker's words.
+    ///     foreach (var annotation in text.Annotations ?? [])
+    ///     {
+    ///         if (annotation.AnnotatedRegions is not null
+    ///             &amp;&amp; annotation.AdditionalProperties?.TryGetGeminiValue(
+    ///                 GeminiContentProperties.AudioTranscription, out AudioTranscription? transcription) is true)
+    ///         {
+    ///             Console.WriteLine($"{transcription.SpeakerLabel}: {text.Text}");
+    ///         }
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    public const string AudioTranscription = "audioTranscription";
 
     /// <summary>
     /// Key for the kind of tool that was invoked, as a <see cref="V1Beta.ToolType"/>. Read from

@@ -30,4 +30,6 @@ namespace GeminiDotnet.Extensions.AI;
 // through AdditionalPropertiesDictionaryExtensions.TryConvertValue<T>.
 [JsonSerializable(typeof(ToolType))]
 [JsonSerializable(typeof(CodeExecutionResultOutcome))]
+// Stored in AIAnnotation.AdditionalProperties.
+[JsonSerializable(typeof(AudioTranscription))]
 internal sealed partial class JsonContext : JsonSerializerContext;

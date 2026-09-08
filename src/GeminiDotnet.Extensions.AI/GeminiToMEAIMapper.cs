@@ -103,9 +103,8 @@ internal static class GeminiToMEAIMapper
 
         foreach (var part in parts)
         {
-            // Each Part should have exactly one property set. Using else-if makes
-            // the mutual exclusivity explicit and prevents silent overwrites if a Part
-            // ever has multiple properties populated.
+            // The data oneof determines the content type. Thought metadata and transcription can
+            // accompany any data field or appear without one.
             AIContent mapped;
 
             if (part.Text is not null)
@@ -115,7 +114,7 @@ internal static class GeminiToMEAIMapper
                     state.Text.Append(part.Text);
                 }
 
-                mapped = CreateMappedTextContent(part);
+                mapped = CreateMappedTextContent(part, part.Text);
             }
             else if (part.InlineData is not null)
             {
@@ -176,6 +175,13 @@ internal static class GeminiToMEAIMapper
                     ? CreateMappedWebSearchToolResultContent(part, callId)
                     : CreateMappedToolResultContent(part, callId);
             }
+            else if (part.AudioTranscription is not null)
+            {
+                // System.Text.Json enforces the required property's presence, but permits null.
+                var transcript = part.AudioTranscription.Text ?? string.Empty;
+
+                mapped = CreateMappedTextContent(part, transcript);
+            }
             else if (part.ThoughtSignature is not null || part.Thought is true)
             {
                 mapped = CreateMappedSignatureContent(part);
@@ -187,10 +193,43 @@ internal static class GeminiToMEAIMapper
 
             // Recorded here rather than in each arm, so a new part kind cannot forget to.
             mapped.AttachThoughtSignature(part.ThoughtSignature);
+            AttachAudioTranscription(mapped, part);
+
             contents.Add(mapped);
         }
 
         return contents;
+
+        static void AttachAudioTranscription(AIContent mapped, Part part)
+        {
+            if (part.AudioTranscription is not { } transcription)
+            {
+                return;
+            }
+
+            // ToChatResponse does not coalesce annotated content, so each speaker segment keeps its
+            // label and word timings. A region is valid only when the content's text is the transcript.
+            var mappedText = mapped switch
+            {
+                TextContent text => text.Text,
+                TextReasoningContent reasoning => reasoning.Text,
+                _ => null,
+            };
+
+            var annotation = new AIAnnotation
+            {
+                AnnotatedRegions = mappedText is { Length: > 0 } && mappedText == transcription.Text
+                    ? [new TextSpanAnnotatedRegion { StartIndex = 0, EndIndex = mappedText.Length }]
+                    : null,
+                RawRepresentation = part,
+                AdditionalProperties = new()
+                {
+                    [GeminiContentProperties.AudioTranscription] = transcription,
+                },
+            };
+
+            (mapped.Annotations ??= []).Add(annotation);
+        }
 
         static DataContent CreateMappedDataContent(Part part)
         {
@@ -231,11 +270,11 @@ internal static class GeminiToMEAIMapper
             };
         }
 
-        static AIContent CreateMappedTextContent(Part part)
+        static AIContent CreateMappedTextContent(Part part, string text)
         {
             if (part.Thought is true)
             {
-                return new TextReasoningContent(part.Text)
+                return new TextReasoningContent(text)
                 {
                     Annotations = null,
                     RawRepresentation = part,
@@ -244,7 +283,7 @@ internal static class GeminiToMEAIMapper
                 };
             }
 
-            return new TextContent(part.Text)
+            return new TextContent(text)
             {
                 Annotations = null,
                 RawRepresentation = part,

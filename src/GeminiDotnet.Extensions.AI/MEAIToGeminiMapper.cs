@@ -359,6 +359,7 @@ internal static class MEAIToGeminiMapper
             static Part CreateTextPart(MEAI.TextContent textContent)
             {
                 // Preserve the text content type on replay. A null Text maps back to reasoning content.
+                // Part.audioTranscription is output only.
                 return new Part { Text = textContent.Text ?? string.Empty };
             }
 
