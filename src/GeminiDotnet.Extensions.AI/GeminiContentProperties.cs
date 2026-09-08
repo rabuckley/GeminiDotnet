@@ -5,9 +5,8 @@ using System.Text.Json;
 namespace GeminiDotnet.Extensions.AI;
 
 /// <summary>
-/// Keys for what a Gemini <see cref="Part"/> says that the mapped <see cref="AIContent"/> has no property
-/// for, carried in <see cref="AIContent.AdditionalProperties"/> or, where a member says so, in
-/// <see cref="AIAnnotation.AdditionalProperties"/> on an annotation over the content.
+/// Keys for Gemini <see cref="Part"/> metadata stored in <see cref="AIContent.AdditionalProperties"/>
+/// or <see cref="AIAnnotation.AdditionalProperties"/>, as specified by each member.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -74,28 +73,22 @@ public static class GeminiContentProperties
     public const string ThoughtSignature = "thoughtSignature";
 
     /// <summary>
-    /// Key for the transcription Gemini reported alongside the part, as a
-    /// <see cref="V1Beta.AudioTranscription"/>, carried in
-    /// <see cref="AIAnnotation.AdditionalProperties"/> on an annotation over the content. It holds the
-    /// speaker label when diarization was asked for, and the word timings when word timestamps were.
+    /// Key for the <see cref="V1Beta.AudioTranscription"/> stored in
+    /// <see cref="AIAnnotation.AdditionalProperties"/> on the mapped content.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The annotation covers the transcribed span only where the content's text is the transcript, which
-    /// is the part that carried nothing but its transcription. A part that carried text of its own is
-    /// annotated without a region, because none of its text is the transcript.
+    /// The annotation covers the entire text when the content has nonempty text equal to the transcript.
+    /// Otherwise, it has no region. Speaker labels and word timings are included when requested.
     /// </para>
     /// <para>
-    /// The annotation's <see cref="AIAnnotation.RawRepresentation"/> holds the whole <see cref="Part"/>,
-    /// so the typed <see cref="V1Beta.AudioTranscription"/> is reachable through it as well; this entry
-    /// exists because that property is dropped when a response is serialized.
-    /// <see cref="Part.AudioTranscription"/> is output only, so a transcription is never sent back to
-    /// Gemini.
+    /// Use <see cref="GeminiContentExtensions.GetAudioTranscription"/> to read the transcription,
+    /// including after JSON serialization. <see cref="Part.AudioTranscription"/> is output only and is
+    /// omitted when the content is sent back to Gemini.
     /// </para>
     /// </remarks>
     /// <example>
-    /// Each speaker turn is its own content, so one loop over the aggregated response reaches every
-    /// segment with the label that belongs to it:
+    /// Streaming aggregation preserves each speaker segment as a separate content:
     /// <code>
     /// List&lt;ChatResponseUpdate&gt; updates = [];
     ///
@@ -106,21 +99,9 @@ public static class GeminiContentProperties
     ///
     /// foreach (var content in updates.ToChatResponse().Messages.SelectMany(message =&gt; message.Contents))
     /// {
-    ///     if (content is not TextContent text)
+    ///     if (content is TextContent text &amp;&amp; text.GetAudioTranscription() is { } transcription)
     ///     {
-    ///         continue;
-    ///     }
-    ///
-    ///     // A grounded content carries citation annotations too, so pick the annotation by its key. A
-    ///     // region says the content's text is the transcript, so only then is it the speaker's words.
-    ///     foreach (var annotation in text.Annotations ?? [])
-    ///     {
-    ///         if (annotation.AnnotatedRegions is not null
-    ///             &amp;&amp; annotation.AdditionalProperties?.TryGetGeminiValue(
-    ///                 GeminiContentProperties.AudioTranscription, out AudioTranscription? transcription) is true)
-    ///         {
-    ///             Console.WriteLine($"{transcription.SpeakerLabel}: {text.Text}");
-    ///         }
+    ///         Console.WriteLine($"{transcription.SpeakerLabel}: {text.Text}");
     ///     }
     /// }
     /// </code>

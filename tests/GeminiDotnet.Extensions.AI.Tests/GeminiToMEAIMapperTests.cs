@@ -1012,22 +1012,50 @@ public sealed class GeminiToMEAIMapperTests
 
     private static AudioTranscription GetTranscription(AIContent content)
     {
-        var annotation = Assert.Single(
-            content.Annotations!,
-            annotation => annotation.AdditionalProperties?.ContainsKey(
-                GeminiContentProperties.AudioTranscription) is true);
-
-        Assert.True(annotation.AdditionalProperties!.TryGetGeminiValue(
-            GeminiContentProperties.AudioTranscription,
-            out AudioTranscription? transcription));
-
+        var transcription = content.GetAudioTranscription();
+        Assert.NotNull(transcription);
         return transcription;
     }
 
+    [Fact]
+    public void GetAudioTranscription_AfterAJsonRoundTrip_ShouldReadTheTranscription()
+    {
+        // Arrange
+        var response = ResponseWithParts(TranscribedPart("Hello world.", "spk:0"));
+        var content = Assert.Single(Assert.Single(
+            GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages).Contents);
+
+        var json = JsonSerializer.Serialize(content, GeminiJsonUtilities.DefaultOptions);
+        var roundTripped = JsonSerializer.Deserialize<AIContent>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+        // Act
+        var transcription = roundTripped.GetAudioTranscription();
+
+        // Assert
+        Assert.NotNull(transcription);
+        Assert.Equal("spk:0", transcription.SpeakerLabel);
+        Assert.Null(new TextContent("untranscribed").GetAudioTranscription());
+    }
+
+    [Fact]
+    public void GetAudioTranscription_WithAMistypedValue_ShouldThrow()
+    {
+        var content = new TextContent("Hello world.")
+        {
+            Annotations =
+            [
+                new AIAnnotation
+                {
+                    AdditionalProperties = new() { [GeminiContentProperties.AudioTranscription] = "spk:0" },
+                },
+            ],
+        };
+
+        Assert.Throws<GeminiMappingException>(() => content.GetAudioTranscription());
+    }
+
     /// <summary>
-    /// A diarized transcription stream, captured from <c>gemini-3.5-transcribe</c> on 2026-09-03. Every
-    /// speaker segment arrives as its own part carrying both the text and the transcription, and the
-    /// terminal chunk carries an empty text alongside the finish reason.
+    /// A diarized transcription stream captured from <c>gemini-3.5-transcribe</c> on 2026-09-03.
     /// </summary>
     [StringSyntax(StringSyntaxAttribute.Json)]
     private const string StreamedDiarizedTranscriptionChunks =
