@@ -23,19 +23,8 @@ internal static class GeminiToMEAIMapper
     {
         var candidate = response.Candidates is { Count: > 0 } c ? c[0] : null;
 
-        // Map content parts
+        // Accumulate non-thought Part.text before resolving grounding offsets across the stream.
         var contents = CreateMappedContents(candidate?.Content?.Parts, state) ?? [];
-
-        // A streamed segment's offsets index every non-thought text part of the stream, not just this
-        // update's, so the text has to be accumulated before the grounding metadata that arrives with the
-        // final chunk can be resolved against it. TextReasoningContent is deliberately not counted.
-        foreach (var content in contents)
-        {
-            if (content is TextContent text)
-            {
-                state.Text.Append(text.Text);
-            }
-        }
 
         if (candidate?.GroundingMetadata is { } groundingMetadata)
         {
@@ -121,6 +110,11 @@ internal static class GeminiToMEAIMapper
 
             if (part.Text is not null)
             {
+                if (part.Thought is not true)
+                {
+                    state.Text.Append(part.Text);
+                }
+
                 mapped = CreateMappedTextContent(part);
             }
             else if (part.InlineData is not null)
