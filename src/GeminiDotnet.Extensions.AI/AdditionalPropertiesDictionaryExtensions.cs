@@ -31,7 +31,7 @@ public static class AdditionalPropertiesDictionaryExtensions
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="properties"/> is <see langword="null"/>.</exception>
     /// <remarks>
-    /// <see cref="AdditionalPropertiesDictionary.TryGetValue{T}"/> does not read through a
+    /// <see cref="AdditionalPropertiesDictionary{TValue}.TryGetValue{T}"/> does not read through a
     /// <see cref="JsonElement"/>, so after a round trip through JSON it reports every Gemini value as absent.
     /// This method deserializes a <see cref="JsonElement"/> with <see cref="GeminiJsonUtilities.DefaultOptions"/>,
     /// so under Native AOT it reads back any type those options can write.
