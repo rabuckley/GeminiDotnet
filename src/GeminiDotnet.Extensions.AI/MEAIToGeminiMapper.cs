@@ -284,10 +284,11 @@ internal static class MEAIToGeminiMapper
                 if (content is MEAI.TextContent { Text: null or "" } && thoughtSignature is null)
                     continue;
 
-                var mapped = content switch
+                Part? mapped = content switch
                 {
                     MEAI.TextContent textContent => CreateTextPart(textContent),
-                    MEAI.TextReasoningContent textReasoningContent => CreateTextReasoningPart(textReasoningContent),
+                    MEAI.TextReasoningContent textReasoningContent =>
+                        CreateTextReasoningPart(textReasoningContent, thoughtSignature),
                     MEAI.DataContent dataContent => CreateInlineDataPart(dataContent),
                     MEAI.UriContent uriContent => CreateFileDataPart(uriContent),
                     MEAI.HostedFileContent fileContent => CreateHostedFileDataPart(fileContent),
@@ -309,6 +310,9 @@ internal static class MEAIToGeminiMapper
                     MEAI.CodeInterpreterToolResultContent codeResult => CreateCodeExecutionResultPart(codeResult),
                     _ => ThrowUnsupportedContentException(content),
                 };
+
+                if (mapped is null)
+                    continue;
 
                 // Restored here rather than in each arm, so a new content type cannot forget to. An arm
                 // that echoes the part Gemini sent already carries it and keeps its instance.
@@ -332,8 +336,7 @@ internal static class MEAIToGeminiMapper
 
             static Part CreateTextPart(MEAI.TextContent textContent)
             {
-                // Null text reaches here only signed, and the API rejects a part holding nothing but a
-                // signature.
+                // Preserve the text content type on replay. A null Text maps back to reasoning content.
                 return new Part { Text = textContent.Text ?? string.Empty };
             }
 
@@ -739,9 +742,24 @@ internal static class MEAIToGeminiMapper
         return toolType;
     }
 
-    private static Part CreateTextReasoningPart(MEAI.TextReasoningContent content)
+    /// <summary>
+    /// Returns <see langword="null"/> when the content has neither text nor a signature.
+    /// </summary>
+    /// <param name="thoughtSignature">
+    /// The signature to preserve. The caller must attach it to the returned part.
+    /// </param>
+    private static Part? CreateTextReasoningPart(MEAI.TextReasoningContent content, string? thoughtSignature)
     {
-        return new Part { Thought = true, Text = content.Text };
+        // Null omits the text field from JSON; an empty string would still be sent.
+        var text = content.Text is null or "" ? null : content.Text;
+
+        // A thought flag alone is not valid request data.
+        if (text is null && thoughtSignature is null)
+        {
+            return null;
+        }
+
+        return new Part { Thought = text is not null ? true : null, Text = text };
     }
 
     private static Part CreateHostedFileDataPart(MEAI.HostedFileContent fileContent)

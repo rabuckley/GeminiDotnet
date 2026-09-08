@@ -182,6 +182,10 @@ internal static class GeminiToMEAIMapper
                     ? CreateMappedWebSearchToolResultContent(part, callId)
                     : CreateMappedToolResultContent(part, callId);
             }
+            else if (part.ThoughtSignature is not null || part.Thought is true)
+            {
+                mapped = CreateMappedSignatureContent(part);
+            }
             else
             {
                 mapped = ThrowUnrecognisedPart();
@@ -218,6 +222,18 @@ internal static class GeminiToMEAIMapper
                 MediaType = fileData.MimeType,
                 RawRepresentation = part,
                 AdditionalProperties = null,
+            };
+        }
+
+        // Reasoning content preserves the signature through serialization and stream coalescing.
+        static TextReasoningContent CreateMappedSignatureContent(Part part)
+        {
+            return new TextReasoningContent(string.Empty)
+            {
+                Annotations = null,
+                RawRepresentation = part,
+                AdditionalProperties = null,
+                ProtectedData = null,
             };
         }
 
