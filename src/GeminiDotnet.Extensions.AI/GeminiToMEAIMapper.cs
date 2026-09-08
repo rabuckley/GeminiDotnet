@@ -187,6 +187,8 @@ internal static class GeminiToMEAIMapper
                 mapped = ThrowUnrecognisedPart();
             }
 
+            // Recorded here rather than in each arm, so a new part kind cannot forget to.
+            mapped.AttachThoughtSignature(part.ThoughtSignature);
             contents.Add(mapped);
         }
 
@@ -228,7 +230,7 @@ internal static class GeminiToMEAIMapper
                     Annotations = null,
                     RawRepresentation = part,
                     AdditionalProperties = null,
-                    ProtectedData = part.ThoughtSignature,
+                    ProtectedData = null,
                 };
             }
 
@@ -236,7 +238,7 @@ internal static class GeminiToMEAIMapper
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = null
+                AdditionalProperties = null,
             };
         }
 
@@ -255,10 +257,7 @@ internal static class GeminiToMEAIMapper
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateMappedAdditionalProperties(
-                [
-                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
-                ]),
+                AdditionalProperties = null,
                 Exception = null,
                 // When the part is a thought, the model is reasoning about calling a
                 // function rather than requesting it. Mark it as informational only.
@@ -308,7 +307,6 @@ internal static class GeminiToMEAIMapper
                 AdditionalProperties = CreateMappedAdditionalProperties(
                 [
                     new(GeminiContentProperties.Id, executableCode.Id),
-                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
                 ]),
             };
         }
@@ -340,7 +338,6 @@ internal static class GeminiToMEAIMapper
                 [
                     new(GeminiContentProperties.Id, codeExecutionResult.Id),
                     new(GeminiContentProperties.Outcome, outcome),
-                    new(GeminiContentProperties.ThoughtSignature, part.ThoughtSignature),
                 ]),
             };
         }
@@ -353,7 +350,7 @@ internal static class GeminiToMEAIMapper
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateToolCallProperties(part.ToolCall!, part.ThoughtSignature),
+                AdditionalProperties = CreateToolCallProperties(part.ToolCall!),
             };
         }
 
@@ -365,7 +362,7 @@ internal static class GeminiToMEAIMapper
             {
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateToolResponseProperties(part.ToolResponse!, part.ThoughtSignature),
+                AdditionalProperties = CreateToolResponseProperties(part.ToolResponse!),
             };
         }
 
@@ -380,7 +377,7 @@ internal static class GeminiToMEAIMapper
                 Queries = ReadQueries(toolCall.Arguments),
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateToolCallProperties(toolCall, part.ThoughtSignature),
+                AdditionalProperties = CreateToolCallProperties(toolCall),
             };
         }
 
@@ -395,11 +392,11 @@ internal static class GeminiToMEAIMapper
                 Outputs = null,
                 Annotations = null,
                 RawRepresentation = part,
-                AdditionalProperties = CreateToolResponseProperties(part.ToolResponse!, part.ThoughtSignature),
+                AdditionalProperties = CreateToolResponseProperties(part.ToolResponse!),
             };
         }
 
-        static AdditionalPropertiesDictionary? CreateToolCallProperties(ToolCall toolCall, string? thoughtSignature)
+        static AdditionalPropertiesDictionary? CreateToolCallProperties(ToolCall toolCall)
         {
             return CreateMappedAdditionalProperties(
             [
@@ -407,20 +404,16 @@ internal static class GeminiToMEAIMapper
                 new(GeminiContentProperties.ToolType, toolCall.ToolType),
                 new(GeminiContentProperties.ToolName, toolCall.ToolName),
                 new(GeminiContentProperties.Arguments, DefinedOrNull(toolCall.Arguments)),
-                new(GeminiContentProperties.ThoughtSignature, thoughtSignature),
             ]);
         }
 
-        static AdditionalPropertiesDictionary? CreateToolResponseProperties(
-            ToolResponse toolResponse,
-            string? thoughtSignature)
+        static AdditionalPropertiesDictionary? CreateToolResponseProperties(ToolResponse toolResponse)
         {
             return CreateMappedAdditionalProperties(
             [
                 new(GeminiContentProperties.Id, toolResponse.Id),
                 new(GeminiContentProperties.ToolType, toolResponse.ToolType),
                 new(GeminiContentProperties.Response, DefinedOrNull(toolResponse.Response)),
-                new(GeminiContentProperties.ThoughtSignature, thoughtSignature),
             ]);
         }
 
@@ -608,7 +601,7 @@ internal static class GeminiToMEAIMapper
         /// </summary>
         /// <remarks>
         /// A candidate can be grounded without a text part of its own, and
-        /// <see cref="MEAIToGeminiMapper"/> skips an empty <see cref="TextContent"/>, so the carrier is
+        /// <see cref="MEAIToGeminiMapper"/> skips an unsigned empty <see cref="TextContent"/>, so the carrier is
         /// safe to feed back as history.
         /// </remarks>
         private static TextContent AppendCarrier(List<AIContent> contents)

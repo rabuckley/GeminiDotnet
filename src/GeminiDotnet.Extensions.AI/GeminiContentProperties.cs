@@ -5,16 +5,17 @@ using System.Text.Json;
 namespace GeminiDotnet.Extensions.AI;
 
 /// <summary>
-/// Keys for the fields of a Gemini <see cref="Part"/> that the mapped <see cref="AIContent"/> has no
-/// property for, carried in <see cref="AIContent.AdditionalProperties"/>.
+/// Keys for Gemini <see cref="Part"/> metadata carried in <see cref="AIContent.AdditionalProperties"/>
+/// or, for signed text, <see cref="AIAnnotation.AdditionalProperties"/>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Gemini requires the parts it generated for a server-side tool run, a <see cref="Part.ToolCall"/> with
 /// its <see cref="Part.ToolResponse"/> or a <see cref="Part.ExecutableCode"/> with its
 /// <see cref="Part.CodeExecutionResult"/>, to be sent back unchanged on every later turn. The typed
-/// <see cref="Part"/> is on <see cref="AIContent.RawRepresentation"/> and is echoed verbatim when it
+/// <see cref="Part"/> on <see cref="AIContent.RawRepresentation"/> supplies the tool fields when it
 /// survives; these entries rebuild the part when it does not, as after a round trip through JSON.
+/// A recorded <see cref="ThoughtSignature"/> takes precedence over the raw part's signature.
 /// </para>
 /// <para>
 /// After such a round trip each value arrives as a <see cref="JsonElement"/> holding it. Read it with
@@ -55,12 +56,20 @@ public static class GeminiContentProperties
 
     /// <summary>
     /// Key for the opaque signature of the thought that led to the part, as a <see cref="string"/>. Read
-    /// from <see cref="FunctionCallContent"/>, <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
-    /// <see cref="WebSearchToolCallContent"/>, <see cref="WebSearchToolResultContent"/>,
-    /// <see cref="CodeInterpreterToolCallContent"/> and <see cref="CodeInterpreterToolResultContent"/>,
-    /// and present only when Gemini reported one. Live responses put the signature of a code execution on
-    /// the <see cref="Part.ExecutableCode"/> part, so it is normally the call content that carries it.
+    /// from every <see cref="AIContent"/> and present only when Gemini reported one. Live responses put
+    /// the signature of a code execution on the <see cref="Part.ExecutableCode"/> part, so it is normally
+    /// the call content that carries it.
     /// </summary>
+    /// <remarks>
+    /// A mapped <see cref="TextContent"/> carries its signature under this key in the
+    /// <see cref="AIAnnotation.AdditionalProperties"/> of a plain <see cref="AIAnnotation"/>, never a
+    /// <see cref="CitationAnnotation"/>. A consumer reading citations should match on that type rather
+    /// than on <see cref="AIAnnotation.AnnotatedRegions"/>, which a citation can also lack. A mapped
+    /// <see cref="TextReasoningContent"/> carries its signature in
+    /// <see cref="TextReasoningContent.ProtectedData"/>. On both types that slot is read first, and this
+    /// key in the content's own <see cref="AIContent.AdditionalProperties"/> only when the slot holds
+    /// none.
+    /// </remarks>
     public const string ThoughtSignature = "thoughtSignature";
 
     /// <summary>

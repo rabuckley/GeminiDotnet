@@ -274,10 +274,14 @@ internal static class MEAIToGeminiMapper
                     && content.AdditionalProperties?.ContainsKey(GeminiContentProperties.ToolType) is not true)
                     continue;
 
-                // Empty text carries nothing, and a null one leaves a part with no field set, which
-                // the API rejects. Response mapping produces an empty text content as a carrier for
-                // citations that ground no span, so a response fed back as history would otherwise fail.
-                if (content is MEAI.TextContent { Text: null or "" })
+                var thoughtSignature = content.GetThoughtSignature();
+
+                // Unsigned empty or null text carries nothing, and response mapping produces an empty
+                // text content as a carrier for citations that ground no span, so a response fed back as
+                // history would otherwise echo the carrier. A signed one stays: a streamed text-only
+                // answer can end with its signature on an empty text part, and Gemini needs that part
+                // back.
+                if (content is MEAI.TextContent { Text: null or "" } && thoughtSignature is null)
                     continue;
 
                 var mapped = content switch
@@ -306,7 +310,11 @@ internal static class MEAIToGeminiMapper
                     _ => ThrowUnsupportedContentException(content),
                 };
 
-                parts.Add(mapped);
+                // Restored here rather than in each arm, so a new content type cannot forget to. An arm
+                // that echoes the part Gemini sent already carries it and keeps its instance.
+                parts.Add(mapped.ThoughtSignature == thoughtSignature
+                    ? mapped
+                    : mapped with { ThoughtSignature = thoughtSignature });
             }
 
             return parts;
@@ -324,7 +332,9 @@ internal static class MEAIToGeminiMapper
 
             static Part CreateTextPart(MEAI.TextContent textContent)
             {
-                return new Part { Text = textContent.Text };
+                // Null text reaches here only signed, and the API rejects a part holding nothing but a
+                // signature.
+                return new Part { Text = textContent.Text ?? string.Empty };
             }
 
             static Part CreateInlineDataPart(MEAI.DataContent dataContent)
@@ -341,7 +351,6 @@ internal static class MEAIToGeminiMapper
                 return new Part
                 {
                     InlineData = new Blob { Data = dataContent.Data, MimeType = dataContent.MediaType },
-                    ThoughtSignature = GetThoughtSignature(dataContent),
                 };
             }
 
@@ -354,7 +363,6 @@ internal static class MEAIToGeminiMapper
                     {
                         FileUri = uriContent.Uri.ToString(), MimeType = uriContent.MediaType,
                     },
-                    ThoughtSignature = GetThoughtSignature(uriContent),
                 };
             }
 
@@ -370,12 +378,6 @@ internal static class MEAIToGeminiMapper
                     {
                         Id = functionCall.CallId, Name = functionCall.Name, Arguments = arguments
                     },
-                    ThoughtSignature = GetThoughtSignature(functionCall)
-                        ?? functionCall.AdditionalProperties?.GetValueOrThrow<string>(
-                            GeminiContentProperties.ThoughtSignature,
-                            fromPropertyName:
-                            $"{typeof(MEAI.FunctionCallContent)}.{nameof(MEAI.AIContent.AdditionalProperties)}",
-                            toPropertyName: $"{typeof(Part)}.{nameof(Part.ThoughtSignature)}"),
                 };
             }
 
@@ -400,7 +402,6 @@ internal static class MEAIToGeminiMapper
                         Response = JsonSerializer.SerializeToElement(response,
                             JsonContext.Default.IDictionaryStringObject)
                     },
-                    ThoughtSignature = GetThoughtSignature(functionResult)
                 };
             }
 
@@ -435,8 +436,6 @@ internal static class MEAIToGeminiMapper
                             GeminiContentProperties.Arguments, fromPropertyName, toPropertyName),
                         ToolType = GetRequiredToolType(properties, fromPropertyName, toPropertyName),
                     },
-                    ThoughtSignature = properties.GetValueOrThrow<string>(
-                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
             }
 
@@ -463,8 +462,6 @@ internal static class MEAIToGeminiMapper
                             GeminiContentProperties.Response, fromPropertyName, toPropertyName),
                         ToolType = GetRequiredToolType(properties, fromPropertyName, toPropertyName),
                     },
-                    ThoughtSignature = properties.GetValueOrThrow<string>(
-                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
             }
 
@@ -498,8 +495,6 @@ internal static class MEAIToGeminiMapper
                         Id = properties.GetValueOrThrow<string>(
                             GeminiContentProperties.Id, fromPropertyName, toPropertyName),
                     },
-                    ThoughtSignature = properties.GetValueOrThrow<string>(
-                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
             }
 
@@ -527,8 +522,6 @@ internal static class MEAIToGeminiMapper
                             GeminiContentProperties.Outcome, fromPropertyName, toPropertyName),
                         Output = GetCodeExecutionOutput(codeResult.Outputs),
                     },
-                    ThoughtSignature = properties.GetValueOrThrow<string>(
-                        GeminiContentProperties.ThoughtSignature, fromPropertyName, toPropertyName),
                 };
             }
 
@@ -746,14 +739,9 @@ internal static class MEAIToGeminiMapper
         return toolType;
     }
 
-    private static string? GetThoughtSignature(MEAI.AIContent content)
-    {
-        return (content.RawRepresentation as Part)?.ThoughtSignature;
-    }
-
     private static Part CreateTextReasoningPart(MEAI.TextReasoningContent content)
     {
-        return new Part { Thought = true, Text = content.Text, ThoughtSignature = content.ProtectedData };
+        return new Part { Thought = true, Text = content.Text };
     }
 
     private static Part CreateHostedFileDataPart(MEAI.HostedFileContent fileContent)
@@ -765,7 +753,6 @@ internal static class MEAIToGeminiMapper
                 FileUri = fileContent.FileId,
                 MimeType = fileContent.MediaType,
             },
-            ThoughtSignature = GetThoughtSignature(fileContent),
         };
     }
 

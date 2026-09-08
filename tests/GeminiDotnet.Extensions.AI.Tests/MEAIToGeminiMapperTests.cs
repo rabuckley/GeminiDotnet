@@ -1988,8 +1988,9 @@ public sealed class MEAIToGeminiMapperTests
         bool roundTripThroughJson)
     {
         // Arrange — RawRepresentation does not survive serialization, so a caller who persisted the
-        // history as JSON arrives with only the additional properties. When a raw part is present it
-        // still wins, since it is what Gemini actually sent.
+        // history as JSON arrives with only the additional properties. The recorded copy wins over a
+        // raw part, since on a merged content it is the only one that is right, and the raw part is the
+        // fallback for a content whose recorded copy a consumer stripped.
         var properties = MaybeRoundTripThroughJson(
             new AdditionalPropertiesDictionary { [GeminiContentProperties.ThoughtSignature] = "signature" },
             roundTripThroughJson);
@@ -2004,6 +2005,10 @@ public sealed class MEAIToGeminiMapperTests
                 new FunctionCallContent("call-2", "get_weather", arguments)
                 {
                     AdditionalProperties = properties,
+                    RawRepresentation = new Part { ThoughtSignature = "stale-raw-signature" },
+                },
+                new FunctionCallContent("call-3", "get_weather", arguments)
+                {
                     RawRepresentation = new Part { ThoughtSignature = "raw-signature" },
                 },
             ]),
@@ -2015,7 +2020,7 @@ public sealed class MEAIToGeminiMapperTests
         // Assert
         var parts = Assert.Single(request.Contents).Parts;
         Assert.NotNull(parts);
-        Assert.Equal(2, parts.Count);
+        Assert.Equal(3, parts.Count);
 
         Assert.Equal("signature", parts[0].ThoughtSignature);
         Assert.NotNull(parts[0].FunctionCall);
@@ -2023,7 +2028,8 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equal("get_weather", parts[0].FunctionCall!.Name);
         Assert.Equal("Paris", parts[0].FunctionCall!.Arguments.GetProperty("city").GetString());
 
-        Assert.Equal("raw-signature", parts[1].ThoughtSignature);
+        Assert.Equal("signature", parts[1].ThoughtSignature);
+        Assert.Equal("raw-signature", parts[2].ThoughtSignature);
     }
 
     [Fact]
@@ -2730,6 +2736,242 @@ public sealed class MEAIToGeminiMapperTests
         var json = JsonSerializer.Serialize(properties);
         return JsonSerializer.Deserialize<AdditionalPropertiesDictionary>(json)!;
     }
+
+    #region Thought Signature Tests
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithSignedMediaParts_ShouldSendTheSignaturesBack(
+        bool persistAsJson)
+    {
+        // Arrange — an image-generation turn signs the inlineData part it answers with, or the fileData
+        // part when the image stayed in the Files API. Neither content type has a property for a
+        // signature, so both depend on the mapper recording one where JSON can carry it.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part
+                            {
+                                InlineData = new Blob { Data = new byte[] { 1, 2, 3 }, MimeType = "image/png" },
+                                ThoughtSignature = "inline",
+                            },
+                            new Part
+                            {
+                                FileData = new FileData { FileUri = "files/abc", MimeType = "image/png" },
+                                ThoughtSignature = "hosted",
+                            },
+                        ],
+                    },
+                },
+            ],
+        };
+
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts!;
+
+        Assert.Collection(
+            parts,
+            inline =>
+            {
+                Assert.Equal("inline", inline.ThoughtSignature);
+                Assert.Equal([1, 2, 3], inline.InlineData!.Data.ToArray());
+            },
+            hosted =>
+            {
+                Assert.Equal("hosted", hosted.ThoughtSignature);
+                Assert.Equal("files/abc", hosted.FileData!.FileUri);
+            });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithASignedTextPart_ShouldSendTheSignatureBack(bool persistAsJson)
+    {
+        // Arrange — Gemini 3 signs ordinary text parts too, and a signature it issued has to come back on
+        // the part it was issued for, from a history the caller stored as JSON as much as from one it
+        // held in memory.
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts = [new Part { Text = "The answer is 42.", ThoughtSignature = "signature" }],
+                    },
+                },
+            ],
+        };
+
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        Assert.Equal("The answer is 42.", part.Text);
+        Assert.Equal("signature", part.ThoughtSignature);
+        Assert.Null(part.Thought);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithTextSignedByHandInProperties_ShouldSendTheSignatureBack()
+    {
+        // Arrange — a caller building history by hand may put the public key on the content itself
+        // rather than in the annotation or ProtectedData slot the response mapper uses. Both slots are
+        // read, with the mapper's own first.
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.Assistant,
+            [
+                new TextContent("The answer is 42.")
+                {
+                    AdditionalProperties = new() { [GeminiContentProperties.ThoughtSignature] = "text" },
+                },
+                new TextReasoningContent("Thinking.")
+                {
+                    AdditionalProperties = new() { [GeminiContentProperties.ThoughtSignature] = "thought" },
+                },
+                new TextReasoningContent("Signed twice.")
+                {
+                    ProtectedData = "protected",
+                    AdditionalProperties = new() { [GeminiContentProperties.ThoughtSignature] = "ignored" },
+                },
+            ]),
+        };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var parts = Assert.Single(request.Contents).Parts;
+        Assert.NotNull(parts);
+        Assert.Collection(parts,
+            text => Assert.Equal("text", text.ThoughtSignature),
+            thought => Assert.Equal("thought", thought.ThoughtSignature),
+            signedTwice => Assert.Equal("protected", signedTwice.ThoughtSignature));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithSignedStreamFragments_ShouldSignOnlyTheirOwnText(
+        bool persistAsJson)
+    {
+        // Arrange — a signature Gemini issues mid-stream covers the fragment it arrived on. Aggregating
+        // the updates must not hand it to the whole answer, which would send it back attached to words it
+        // does not cover, nor drop the one that arrives after the run has started.
+        var chunks = new[]
+        {
+            StreamedChunk(new Part { Text = "The answer", ThoughtSignature = "first" }),
+            StreamedChunk(new Part { Text = " is" }),
+            StreamedChunk(new Part { Text = " 42.", ThoughtSignature = "second" }),
+        };
+
+        var state = new CandidateMappingState();
+
+        var messages = chunks
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, state, DateTimeOffset.UtcNow))
+            .ToChatResponse()
+            .Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        Assert.Equal(
+            [
+                new Part { Text = "The answer", ThoughtSignature = "first" },
+                new Part { Text = " is" },
+                new Part { Text = " 42.", ThoughtSignature = "second" },
+            ],
+            Assert.Single(request.Contents).Parts);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithASignedEmptyStreamFragment_ShouldSendItBack(
+        bool persistAsJson)
+    {
+        // Arrange — a streamed text-only answer can deliver its signature on a final part whose text is
+        // empty. That part is the only one carrying the signature, so it cannot be dropped with the
+        // unsigned empty text the mapper skips.
+        var chunks = new[]
+        {
+            StreamedChunk(new Part { Text = "Hello." }),
+            StreamedChunk(new Part { Text = "", ThoughtSignature = "signature" }),
+        };
+
+        var state = new CandidateMappingState();
+
+        var messages = chunks
+            .Select(chunk => GeminiToMEAIMapper.CreateMappedChatResponseUpdate(chunk, state, DateTimeOffset.UtcNow))
+            .ToChatResponse()
+            .Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        Assert.Equal(
+            [
+                new Part { Text = "Hello." },
+                new Part { Text = "", ThoughtSignature = "signature" },
+            ],
+            Assert.Single(request.Contents).Parts);
+    }
+
+    private static GenerateContentResponse StreamedChunk(params Part[] parts) => new()
+    {
+        Candidates = [new Candidate { Content = new Content { Role = "model", Parts = parts } }],
+    };
+
+    private static IList<ChatMessage> RoundTripThroughJson(IList<ChatMessage> messages)
+    {
+        var json = JsonSerializer.Serialize(messages, GeminiJsonUtilities.DefaultOptions);
+        return JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+    }
+
+    #endregion
 
     private sealed class UnsupportedTool : AITool;
 }
