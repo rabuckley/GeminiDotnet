@@ -29,6 +29,24 @@ public static class GeminiAdditionalProperties
     public const string ImageConfiguration = "imageConfig";
 
     /// <summary>
+    /// Key for the <see cref="V1Beta.AudioTranscriptionConfiguration"/> read from
+    /// <see cref="ChatOptions.AdditionalProperties"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Accepts an <see cref="V1Beta.AudioTranscriptionConfiguration"/> or a <see cref="JsonElement"/>
+    /// that deserializes to one. An incompatible value throws a <see cref="GeminiMappingException"/>.
+    /// </para>
+    /// <para>
+    /// The configuration is sent unchanged. The API rejects
+    /// <see cref="V1Beta.AudioTranscriptionConfiguration.CustomVocabulary"/> combined with
+    /// <see cref="V1Beta.AudioTranscriptionConfiguration.Diarization"/> or
+    /// <see cref="V1Beta.AudioTranscriptionConfiguration.WordTimestamp"/>.
+    /// </para>
+    /// </remarks>
+    public const string AudioTranscriptionConfiguration = "audioTranscriptionConfig";
+
+    /// <summary>
     /// Key for the metadata filter applied to the documents and chunks a file search retrieves, using the
     /// filter syntax described by https://google.aip.dev/160.
     /// </summary>

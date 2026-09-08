@@ -198,6 +198,11 @@ internal static class MEAIToGeminiMapper
                 GeminiAdditionalProperties.ImageConfiguration,
                 nameof(GenerationConfiguration.ImageConfiguration));
 
+            var audioTranscriptionConfiguration = ReadGenerationConfigurationValue<AudioTranscriptionConfiguration>(
+                options,
+                GeminiAdditionalProperties.AudioTranscriptionConfiguration,
+                nameof(GenerationConfiguration.AudioTranscriptionConfiguration));
+
             var configuration = new GenerationConfiguration
             {
                 StopSequences = options.StopSequences is null ? null : [.. options.StopSequences],
@@ -205,6 +210,7 @@ internal static class MEAIToGeminiMapper
                 ResponseJsonSchema = CreateMappedResponseSchema(options.ResponseFormat),
                 ResponseModalities = responseModalities,
                 ImageConfiguration = imageConfiguration,
+                AudioTranscriptionConfiguration = audioTranscriptionConfiguration,
                 CandidateCount = null,
                 MaxOutputTokens = options.MaxOutputTokens,
                 Temperature = options.Temperature,

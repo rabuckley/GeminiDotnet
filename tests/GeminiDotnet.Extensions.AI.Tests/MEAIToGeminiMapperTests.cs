@@ -3135,9 +3135,45 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAnAudioTranscriptionConfiguration_ShouldMapToTheGenerationConfiguration(
+        bool roundTripThroughJson)
+    {
+        // Arrange
+        var properties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary
+            {
+                [GeminiAdditionalProperties.AudioTranscriptionConfiguration] = new AudioTranscriptionConfiguration
+                {
+                    Diarization = true,
+                    WordTimestamp = true,
+                    LanguageCodes = ["en-GB"],
+                },
+            },
+            roundTripThroughJson);
+
+        var options = new ChatOptions { AdditionalProperties = properties };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            [new ChatMessage(ChatRole.User, "Transcribe this.")],
+            options);
+
+        // Assert
+        var configuration = request.GenerationConfiguration!.AudioTranscriptionConfiguration;
+        Assert.NotNull(configuration);
+        Assert.True(configuration.Diarization);
+        Assert.True(configuration.WordTimestamp);
+        Assert.Equal(["en-GB"], configuration.LanguageCodes);
+    }
+
+    [Theory]
     [InlineData(GeminiAdditionalProperties.ThinkingConfiguration)]
     [InlineData(GeminiAdditionalProperties.ResponseModalities)]
     [InlineData(GeminiAdditionalProperties.ImageConfiguration)]
+    [InlineData(GeminiAdditionalProperties.AudioTranscriptionConfiguration)]
     public void CreateMappedGenerateContentRequest_WithAMistypedGenerationConfigurationValue_ShouldThrow(string key)
     {
         // Arrange

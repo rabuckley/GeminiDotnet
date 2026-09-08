@@ -21,6 +21,7 @@ namespace GeminiDotnet.Extensions.AI;
 // Types used in ChatOptions.AdditionalProperties (for SK PromptExecutionSettings compatibility)
 [JsonSerializable(typeof(ThinkingConfiguration))]
 [JsonSerializable(typeof(ImageConfiguration))]
+[JsonSerializable(typeof(AudioTranscriptionConfiguration))]
 [JsonSerializable(typeof(ResponseModality))]
 [JsonSerializable(typeof(IEnumerable<ResponseModality>))]
 [JsonSerializable(typeof(List<ResponseModality>))]
