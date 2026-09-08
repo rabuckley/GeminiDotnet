@@ -676,6 +676,79 @@ public sealed class GeminiChatClientTests
         Assert.Contains("250250", second.Text.Replace(",", "").Replace(" ", ""));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetStreamingResponseAsync_ShouldReplayEveryFieldGeminiSetOnAModelPart(
+        bool persistHistoryAsJson)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var clientOptions = new GeminiClientOptions { ApiKey = _apiKey, ModelId = Model };
+        using var requests = new RequestRecordingHandler();
+        using var httpClient = new HttpClient(requests) { BaseAddress = clientOptions.Endpoint };
+        httpClient.DefaultRequestHeaders.Add("x-goog-api-key", clientOptions.ApiKey);
+
+        IChatClient client = new GeminiChatClient(new GeminiClient(httpClient, clientOptions.ModelId));
+
+        var messages = new List<ChatMessage> { new(ChatRole.User, "In two sentences, why is the sky blue?") };
+
+        var updates = new List<ChatResponseUpdate>();
+
+        await foreach (var update in client.GetStreamingResponseAsync(messages, cancellationToken: cancellationToken))
+        {
+            updates.Add(update);
+        }
+
+        messages.AddMessages(updates.ToChatResponse());
+
+        if (persistHistoryAsJson)
+        {
+            var json = JsonSerializer.Serialize(messages, GeminiJsonUtilities.DefaultOptions);
+            messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+            Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+        }
+
+        messages.Add(new ChatMessage(ChatRole.User, "Thanks!"));
+
+        // Act
+        var followUp = await client.GetResponseAsync(messages, cancellationToken: cancellationToken);
+        _output.WriteLine(followUp.Text);
+
+        // Assert
+        var sent = updates
+            .Select(update => Assert.IsType<GenerateContentResponse>(update.RawRepresentation))
+            .SelectMany(response => response.Candidates ?? [])
+            .SelectMany(candidate => candidate.Content?.Parts ?? [])
+            .SelectMany(GetPartFields)
+            .ToHashSet();
+
+        var replayed = JsonSerializer.Deserialize<GenerateContentRequest>(requests.Bodies[^1])!
+            .Contents
+            .SelectMany(content => content.Parts ?? [])
+            .SelectMany(GetPartFields)
+            .ToHashSet();
+
+        Assert.True(
+            sent.Count > 0,
+            $"{Model} streamed no part field other than text, so this turn proves nothing about replay.");
+        Assert.Empty(sent.Except(replayed));
+    }
+
+    /// <summary>
+    /// The JSON fields of a part other than its text, which stream aggregation merges across fragments
+    /// and so cannot be matched one for one.
+    /// </summary>
+    private static IEnumerable<string> GetPartFields(Part part)
+    {
+        return JsonSerializer.SerializeToElement(part, GeminiJsonUtilities.DefaultOptions)
+            .EnumerateObject()
+            .Where(field => field.Name is not "text")
+            .Select(field => $"{field.Name}={field.Value.GetRawText()}");
+    }
+
     private sealed class RequestRecordingHandler : DelegatingHandler
     {
         public RequestRecordingHandler() : base(new HttpClientHandler())
