@@ -3,7 +3,7 @@ using File = GeminiDotnet.V1.Files.File;
 
 namespace GeminiDotnet.V1;
 
-internal sealed class FilesClient : IFilesClient
+internal sealed partial class FilesClient : IFilesClient
 {
     private readonly IGeminiRequester _requester;
     

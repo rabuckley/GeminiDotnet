@@ -1,6 +1,6 @@
 namespace GeminiDotnet.V1;
 
-internal sealed class BatchesClient : IBatchesClient
+internal sealed partial class BatchesClient : IBatchesClient
 {
     private readonly IGeminiRequester _requester;
     

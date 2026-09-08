@@ -49,7 +49,7 @@ public sealed class GeminiClientTests
         var result = await client.GenerateContentAsync(model, request, cancellationToken);
 
         // Assert
-        var response = result.Candidates.Single().Content.Parts.Single();
+        var response = result.Candidates!.Single().Content!.Parts!.Single();
         Assert.NotNull(response.Text);
         var resultText = response.Text;
         _output.WriteLine(resultText);
@@ -83,8 +83,8 @@ public sealed class GeminiClientTests
 
         // Assert
         Assert.NotNull(result);
-        var candidate = Assert.Single(result.Candidates);
-        var choice = Assert.Single(candidate.Content.Parts);
+        var candidate = Assert.Single(result.Candidates!);
+        var choice = Assert.Single(candidate.Content!.Parts!);
         Assert.Contains("Neko", choice.Text, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -104,7 +104,7 @@ public sealed class GeminiClientTests
         // Act
         await foreach (var result in client.StreamGenerateContentAsync(model, request, cancellationToken))
         {
-            var response = result.Candidates.Single().Content.Parts.Single();
+            var response = result.Candidates!.Single().Content!.Parts!.Single();
             Assert.NotNull(response.Text);
             sb.Append(response.Text);
             count++;
@@ -172,19 +172,19 @@ public sealed class GeminiClientTests
         var result = await client.GenerateContentAsync(model, request, cancellationToken);
 
         // Assert
-        var candidate = result.Candidates.Single();
-        var explanation = candidate.Content.Parts.First(p => p.Text is not null).Text!;
+        var candidate = result.Candidates!.Single();
+        var explanation = candidate.Content!.Parts!.First(p => p.Text is not null).Text!;
         _output.WriteLine(explanation);
-        var codePart = candidate.Content.Parts.First(p => p.ExecutableCode is not null).ExecutableCode!;
+        var codePart = candidate.Content.Parts!.First(p => p.ExecutableCode is not null).ExecutableCode!;
 
         _output.WriteLine(codePart.Language.ToString());
-        _output.WriteLine(codePart.Code);
+        _output.WriteLine(codePart.Code!);
 
         Assert.Contains("Hello, World!", codePart.Code);
         Assert.Equal(ExecutableCodeLanguage.Python, codePart.Language);
-        var resultPart = candidate.Content.Parts.First(p => p.CodeExecutionResult is not null).CodeExecutionResult!;
+        var resultPart = candidate.Content.Parts!.First(p => p.CodeExecutionResult is not null).CodeExecutionResult!;
 
-        _output.WriteLine(resultPart.Output);
+        _output.WriteLine(resultPart.Output!);
         Assert.Contains("Hello, World!", resultPart.Output);
     }
 
@@ -301,7 +301,7 @@ public sealed class GeminiClientTests
 
         // Assert
         Assert.NotNull(result);
-        var candidate = Assert.Single(result.Candidates);
+        var candidate = Assert.Single(result.Candidates!);
         Assert.NotNull(candidate.GroundingMetadata);
         Assert.NotNull(candidate.GroundingMetadata.WebSearchQueries);
         Assert.NotNull(candidate.GroundingMetadata.GroundingChunks);
@@ -398,7 +398,7 @@ public sealed class GeminiClientTests
             cancellationToken);
 
         // Assert
-        var candidate = Assert.Single(response.Candidates);
+        var candidate = Assert.Single(response.Candidates!);
         var metadata = candidate.UrlContextMetadata?.UrlMetadata;
         Assert.NotNull(metadata);
         var urlContext = Assert.Single(metadata);

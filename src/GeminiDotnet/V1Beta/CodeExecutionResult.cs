@@ -20,7 +20,8 @@ public sealed record CodeExecutionResult
     /// Required. Outcome of the code execution.
     /// </summary>
     [JsonPropertyName("outcome")]
-    public required CodeExecutionResultOutcome Outcome { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public CodeExecutionResultOutcome Outcome { get; init; }
 
     /// <summary>
     /// Optional. Contains stdout when code execution is successful, stderr or other

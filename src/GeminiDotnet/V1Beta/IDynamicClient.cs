@@ -1,7 +1,7 @@
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IDynamicClient
+public partial interface IDynamicClient
 {
     /// <summary>
     /// Generates a model response given an input <see cref="V1Beta.GenerateContentRequest"/>.

@@ -139,5 +139,12 @@ public enum CandidateFinishReason
     /// </summary>
     [JsonStringEnumMemberName("ESCALATION")]
     Escalation,
+
+    /// <summary>
+    /// Indicates that token generation stopped because the user account is
+    /// limited or disabled due to Prohibited Use Policy (PUP) violations.
+    /// </summary>
+    [JsonStringEnumMemberName("PUP_LIMITED_DISABLED")]
+    PupLimitedDisabled,
 }
 

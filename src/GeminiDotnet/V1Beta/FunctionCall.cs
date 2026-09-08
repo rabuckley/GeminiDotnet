@@ -31,6 +31,7 @@ public sealed record FunctionCall
     /// length of 128.
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Name { get; init; }
 }
 

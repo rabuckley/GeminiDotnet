@@ -35,6 +35,7 @@ public sealed record Message
     /// Required. The text content of the structured <see cref="V1Beta.Models.Message"/>.
     /// </summary>
     [JsonPropertyName("content")]
-    public required string Content { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Content { get; init; }
 }
 

@@ -1,6 +1,6 @@
 namespace GeminiDotnet.V1;
 
-internal sealed class CorporaClient : ICorporaClient
+internal sealed partial class CorporaClient : ICorporaClient
 {
     private readonly IGeminiRequester _requester;
     

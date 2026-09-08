@@ -26,7 +26,8 @@ public sealed record EmbedContentRequest
     /// Format: <c>models/{model}</c>
     /// </summary>
     [JsonPropertyName("model")]
-    public required string Model { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Model { get; init; }
 
     /// <summary>
     /// Optional. Deprecated: Please use EmbedContentConfig.output_dimensionality instead.

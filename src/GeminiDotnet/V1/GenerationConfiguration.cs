@@ -141,7 +141,7 @@ public sealed record GenerationConfiguration
     public ResponseFormatConfiguration? ResponseFormat { get; init; }
 
     /// <summary>
-    /// Optional. An internal detail. Use <see cref="Responsejsonschema"/> rather than this field.
+    /// Optional. An internal detail. Use <see cref="ResponseJsonSchema"/> rather than this field.
     /// </summary>
     [JsonPropertyName("responseJsonSchema")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

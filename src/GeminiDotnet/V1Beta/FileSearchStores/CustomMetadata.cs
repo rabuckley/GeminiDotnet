@@ -11,7 +11,8 @@ public sealed record CustomMetadata
     /// Required. The key of the metadata to store.
     /// </summary>
     [JsonPropertyName("key")]
-    public required string Key { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Key { get; init; }
 
     /// <summary>
     /// The numeric value of the metadata to store.

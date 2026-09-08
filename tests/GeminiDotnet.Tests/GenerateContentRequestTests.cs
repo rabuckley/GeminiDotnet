@@ -18,7 +18,7 @@ public sealed class GenerateContentRequestTests
 
         // Assert
         Assert.NotNull(request);
-        Assert.Equal(3, request.Contents.Count);
+        Assert.Equal(3, request.Contents!.Count);
     }
 
     [Fact]

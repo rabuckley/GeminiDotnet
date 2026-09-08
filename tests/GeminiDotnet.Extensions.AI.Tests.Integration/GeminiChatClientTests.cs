@@ -669,7 +669,7 @@ public sealed class GeminiChatClientTests
         // Assert — the first reply already states the number, so a right answer alone would not show the
         // code parts were sent. The second request has to carry them, and Gemini has to accept it.
         var echoed = JsonSerializer.Deserialize<GenerateContentRequest>(requests.Bodies[^1])!;
-        var echoedParts = echoed.Contents.SelectMany(c => c.Parts ?? []).ToList();
+        var echoedParts = echoed.Contents!.SelectMany(c => c.Parts ?? []).ToList();
 
         Assert.Contains(echoedParts, p => p.ExecutableCode is not null);
         Assert.Contains(echoedParts, p => p.CodeExecutionResult is not null);
@@ -726,7 +726,7 @@ public sealed class GeminiChatClientTests
             .ToHashSet();
 
         var replayed = JsonSerializer.Deserialize<GenerateContentRequest>(requests.Bodies[^1])!
-            .Contents
+            .Contents!
             .SelectMany(content => content.Parts ?? [])
             .SelectMany(GetPartFields)
             .ToHashSet();
@@ -839,13 +839,13 @@ public sealed class GeminiChatClientTests
             .FirstOrDefault(value => value is not null);
 
         Assert.NotNull(transcription);
-        Assert.NotEmpty(transcription.Text);
+        Assert.NotEmpty(transcription.Text!);
         Assert.NotNull(transcription.Words);
         Assert.NotEmpty(transcription.Words);
 
         foreach (var word in transcription.Words)
         {
-            Assert.NotEmpty(word.Word);
+            Assert.NotEmpty(word.Word!);
             Assert.NotNull(word.StartOffset);
             Assert.NotNull(word.EndOffset);
             Assert.EndsWith("s", word.StartOffset);

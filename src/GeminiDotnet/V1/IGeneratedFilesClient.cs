@@ -1,7 +1,7 @@
 
 namespace GeminiDotnet.V1;
 
-public interface IGeneratedFilesClient
+public partial interface IGeneratedFilesClient
 {
     /// <summary>
     /// Gets the latest state of a long-running operation.  Clients can use this

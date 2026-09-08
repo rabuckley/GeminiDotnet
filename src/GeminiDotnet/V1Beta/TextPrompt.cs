@@ -12,6 +12,7 @@ public sealed record TextPrompt
     /// Required. The prompt text.
     /// </summary>
     [JsonPropertyName("text")]
-    public required string Text { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Text { get; init; }
 }
 

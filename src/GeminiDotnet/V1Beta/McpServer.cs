@@ -5,7 +5,7 @@ namespace GeminiDotnet.V1Beta;
 /// <summary>
 /// A MCPServer is a server that can be called by the model to perform actions.
 /// It is a server that implements the MCP protocol.
-/// Next ID: 6
+/// Next ID: 7
 /// </summary>
 public sealed record McpServer
 {

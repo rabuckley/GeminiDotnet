@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.Corpora;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface ICorporaClient
+public partial interface ICorporaClient
 {
     /// <summary>
     /// Lists all <c>Corpora</c> owned by the user.

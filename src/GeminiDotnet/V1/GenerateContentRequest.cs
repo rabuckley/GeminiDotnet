@@ -24,7 +24,8 @@ public sealed record GenerateContentRequest
     /// latest request.
     /// </summary>
     [JsonPropertyName("contents")]
-    public required IReadOnlyList<Content> Contents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<Content>? Contents { get; init; }
 
     /// <summary>
     /// Optional. Configuration options for model generation and outputs.
@@ -38,7 +39,8 @@ public sealed record GenerateContentRequest
     /// Format: <c>models/{model}</c>.
     /// </summary>
     [JsonPropertyName("model")]
-    public required string Model { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Model { get; init; }
 
     /// <summary>
     /// Optional. A list of unique <see cref="V1.SafetySetting"/> instances for blocking unsafe content.

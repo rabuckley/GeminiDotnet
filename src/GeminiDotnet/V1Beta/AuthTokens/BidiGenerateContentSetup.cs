@@ -57,7 +57,8 @@ public sealed record BidiGenerateContentSetup
     /// Format: <c>models/{model}</c>
     /// </summary>
     [JsonPropertyName("model")]
-    public required string Model { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Model { get; init; }
 
     /// <summary>
     /// Optional. If set, enables transcription of the model's audio output. The

@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.AuthTokens;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IAuthTokensClient
+public partial interface IAuthTokensClient
 {
     /// <summary>
     /// Creates a token that can be used to constrain the behavior of a

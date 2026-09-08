@@ -26,7 +26,8 @@ public sealed record FunctionResponse
     /// length of 128.
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Name { get; init; }
 
     /// <summary>
     /// Required. The function response in JSON object format.
@@ -40,6 +41,7 @@ public sealed record FunctionResponse
     /// See https://ai.google.dev/gemini-api/docs/function-calling#multimodal.
     /// </summary>
     [JsonPropertyName("response")]
-    public required JsonElement Response { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement Response { get; init; }
 }
 

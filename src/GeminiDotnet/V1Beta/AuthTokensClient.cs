@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.AuthTokens;
 
 namespace GeminiDotnet.V1Beta;
 
-internal sealed class AuthTokensClient : IAuthTokensClient
+internal sealed partial class AuthTokensClient : IAuthTokensClient
 {
     private readonly IGeminiRequester _requester;
     

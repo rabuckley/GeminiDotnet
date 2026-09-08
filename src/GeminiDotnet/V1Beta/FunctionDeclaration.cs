@@ -24,7 +24,8 @@ public sealed record FunctionDeclaration
     /// Required. A brief description of the function.
     /// </summary>
     [JsonPropertyName("description")]
-    public required string Description { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Description { get; init; }
 
     /// <summary>
     /// Required. The name of the function.
@@ -32,7 +33,8 @@ public sealed record FunctionDeclaration
     /// with a maximum length of 128.
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Name { get; init; }
 
     /// <summary>
     /// Optional. Describes the parameters to this function. Reflects the Open API 3.03

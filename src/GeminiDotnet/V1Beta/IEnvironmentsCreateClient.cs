@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.EnvironmentsCreate;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IEnvironmentsCreateClient
+public partial interface IEnvironmentsCreateClient
 {
     /// <summary>
     /// Creates an environment.

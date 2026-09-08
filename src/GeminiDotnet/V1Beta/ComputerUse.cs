@@ -26,7 +26,8 @@ public sealed record ComputerUse
     /// Required. The environment being operated.
     /// </summary>
     [JsonPropertyName("environment")]
-    public required ComputerUseEnvironment Environment { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ComputerUseEnvironment Environment { get; init; }
 
     /// <summary>
     /// Optional. By default, predefined functions are included in the final model

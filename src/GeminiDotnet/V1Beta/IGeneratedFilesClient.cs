@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.GeneratedFiles;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IGeneratedFilesClient
+public partial interface IGeneratedFilesClient
 {
     /// <summary>
     /// Lists the generated files owned by the requesting project.

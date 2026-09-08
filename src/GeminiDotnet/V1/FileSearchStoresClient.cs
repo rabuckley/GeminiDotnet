@@ -2,7 +2,7 @@ using GeminiDotnet.V1.FileSearchStores;
 
 namespace GeminiDotnet.V1;
 
-internal sealed class FileSearchStoresClient : IFileSearchStoresClient
+internal sealed partial class FileSearchStoresClient : IFileSearchStoresClient
 {
     private readonly IGeminiRequester _requester;
     

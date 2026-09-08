@@ -1,6 +1,6 @@
 namespace GeminiDotnet.V1;
 
-internal sealed class GeneratedFilesClient : IGeneratedFilesClient
+internal sealed partial class GeneratedFilesClient : IGeneratedFilesClient
 {
     private readonly IGeminiRequester _requester;
     

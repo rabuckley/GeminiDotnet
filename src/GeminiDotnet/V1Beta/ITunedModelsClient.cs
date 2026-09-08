@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.TunedModels;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface ITunedModelsClient
+public partial interface ITunedModelsClient
 {
     /// <summary>
     /// Lists created tuned models.

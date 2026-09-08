@@ -31,14 +31,14 @@ public sealed class MEAIToGeminiMapperTests
         Assert.NotNull(request);
         Assert.NotNull(request.SystemInstruction);
         Assert.Null(request.SystemInstruction.Role);
-        var part = Assert.Single(request.SystemInstruction.Parts);
+        var part = Assert.Single(request.SystemInstruction.Parts!);
         Assert.Equal("You are Neko the cat. Respond like one.", part.Text);
 
         for (int i = 1; i < messages.Count; i++)
         {
             var message = messages[i];
-            var content = request.Contents.ElementAt(i - 1);
-            var p = Assert.Single(content.Parts);
+            var content = request.Contents!.ElementAt(i - 1);
+            var p = Assert.Single(content.Parts!);
 
             Assert.Equal(message.Text, p.Text);
 
@@ -311,7 +311,7 @@ public sealed class MEAIToGeminiMapperTests
         // Assert
         var fileSearch = Assert.Single(request.Tools!).FileSearch;
         Assert.NotNull(fileSearch);
-        Assert.Equal("fileSearchStores/poems", Assert.Single(fileSearch.FileSearchStoreNames));
+        Assert.Equal("fileSearchStores/poems", Assert.Single(fileSearch.FileSearchStoreNames!));
         Assert.Equal(5, fileSearch.TopK);
         Assert.Equal("author = \"Robert Graves\"", fileSearch.MetadataFilter);
     }
@@ -530,7 +530,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
-        var part = Assert.Single(request.SystemInstruction.Parts);
+        var part = Assert.Single(request.SystemInstruction.Parts!);
         Assert.Null(request.SystemInstruction.Role);
         Assert.Equal(instructions, part.Text);
     }
@@ -556,7 +556,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
-        Assert.Equal(2, request.SystemInstruction.Parts.Count);
+        Assert.Equal(2, request.SystemInstruction!.Parts!.Count);
         Assert.Null(request.SystemInstruction.Role);
         Assert.Equal(instructions, request.SystemInstruction.Parts[0].Text);
         Assert.Equal(systemMessage, request.SystemInstruction.Parts[1].Text);
@@ -581,7 +581,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
-        Assert.Equal(2, request.SystemInstruction.Parts.Count);
+        Assert.Equal(2, request.SystemInstruction!.Parts!.Count);
         Assert.Null(request.SystemInstruction.Role);
         Assert.Equal(firstMessage, request.SystemInstruction.Parts[0].Text);
         Assert.Equal(secondMessage, request.SystemInstruction.Parts[1].Text);
@@ -605,7 +605,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.Null(request.SystemInstruction);
-        var content = Assert.Single(request.Contents);
+        var content = Assert.Single(request.Contents!);
         Assert.Equal(ChatRoles.User, content.Role);
     }
 
@@ -630,7 +630,7 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert
         Assert.NotNull(request.SystemInstruction);
-        Assert.Equal(2, request.SystemInstruction.Parts.Count);
+        Assert.Equal(2, request.SystemInstruction!.Parts!.Count);
         Assert.Equal(instructions, request.SystemInstruction.Parts[0].Text);
         Assert.Equal(systemMessage, request.SystemInstruction.Parts[1].Text);
     }
@@ -767,7 +767,7 @@ public sealed class MEAIToGeminiMapperTests
             rawRepresentation);
 
         // Assert
-        var content = Assert.Single(request.Contents);
+        var content = Assert.Single(request.Contents!);
         Assert.Equal("Goodbye!", Assert.Single(content.Parts!).Text);
         Assert.Same(rawRepresentation.ToolConfiguration, request.ToolConfiguration);
     }
@@ -788,7 +788,7 @@ public sealed class MEAIToGeminiMapperTests
             clientOptions);
 
         // Assert
-        Assert.Equal(3, result.Requests.Count);
+        Assert.Equal(3, result.Requests!.Count);
 
         for (int i = 0; i < inputValues.Length; i++)
         {
@@ -820,8 +820,8 @@ public sealed class MEAIToGeminiMapperTests
             clientOptions);
 
         // Assert
-        Assert.Single(result.Requests);
-        var request = result.Requests[0];
+        Assert.Single(result.Requests!);
+        var request = result.Requests![0];
         Assert.Equal(clientOptions.DefaultEmbeddingDimensions, request.OutputDimensionality);
     }
 
@@ -840,7 +840,7 @@ public sealed class MEAIToGeminiMapperTests
             clientOptions);
 
         // Assert
-        var request = Assert.Single(result.Requests);
+        var request = Assert.Single(result.Requests!);
         Assert.Null(request.OutputDimensionality);
     }
 
@@ -935,8 +935,8 @@ public sealed class MEAIToGeminiMapperTests
 
         // Assert — the last content (tool message) should have a FunctionResponse
         // with the resolved function name, not the call ID.
-        var toolContent = request.Contents.Last();
-        var functionResponse = toolContent.Parts.Single().FunctionResponse;
+        var toolContent = request.Contents!.Last();
+        var functionResponse = toolContent.Parts!.Single().FunctionResponse;
 
         Assert.NotNull(functionResponse);
         Assert.Equal(functionName, functionResponse.Name);
@@ -961,7 +961,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert — falls back to CallId when no matching FunctionCallContent is found.
-        var functionResponse = request.Contents.Single().Parts.Single().FunctionResponse;
+        var functionResponse = request.Contents!.Single().Parts!.Single().FunctionResponse;
 
         Assert.NotNull(functionResponse);
         Assert.Equal(callId, functionResponse.Name);
@@ -985,7 +985,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert
-        var part = Assert.Single(request.Contents.Single().Parts);
+        var part = Assert.Single(request.Contents!.Single().Parts!);
         Assert.Equal("Grounded answer.", part.Text);
     }
 
@@ -1021,7 +1021,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert
-        var content = Assert.Single(request.Contents);
+        var content = Assert.Single(request.Contents!);
         Assert.Equal(ChatRoles.User, content.Role);
         Assert.Equal("Who?", Assert.Single(content.Parts!).Text);
         Assert.Null(request.SystemInstruction);
@@ -1050,7 +1050,7 @@ public sealed class MEAIToGeminiMapperTests
         // Assert
         Assert.Null(request.SystemInstruction);
         Assert.Collection(
-            request.Contents,
+            request.Contents!,
             content =>
             {
                 Assert.Equal(ChatRoles.User, content.Role);
@@ -1079,7 +1079,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert
-        var part = Assert.Single(request.Contents.Single().Parts!);
+        var part = Assert.Single(request.Contents!.Single().Parts!);
         Assert.NotNull(part.FileData);
         Assert.Equal(fileUri, part.FileData.FileUri);
         Assert.Equal(mimeType, part.FileData.MimeType);
@@ -1109,7 +1109,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
 
         // Assert — the file part should be prepended before the text part
-        var userContent = Assert.Single(request.Contents);
+        var userContent = Assert.Single(request.Contents!);
         Assert.Equal(2, userContent.Parts!.Count);
 
         var filePart = userContent.Parts[0];
@@ -1138,7 +1138,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
 
         // Assert — content should be unchanged
-        var userContent = Assert.Single(request.Contents);
+        var userContent = Assert.Single(request.Contents!);
         var part = Assert.Single(userContent.Parts!);
         Assert.Equal(userPrompt, part.Text);
     }
@@ -1171,7 +1171,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
 
         // Assert — file parts should be prepended to the last user content (index 1)
-        var lastUserContent = request.Contents.Last();
+        var lastUserContent = request.Contents!.Last();
         Assert.Equal(3, lastUserContent.Parts!.Count);
 
         Assert.Equal(csvUri, lastUserContent.Parts[0].FileData!.FileUri);
@@ -1194,7 +1194,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert
-        var part = Assert.Single(request.Contents.Single().Parts!);
+        var part = Assert.Single(request.Contents!.Single().Parts!);
         Assert.NotNull(part.FileData);
         Assert.Equal(fileUri, part.FileData.FileUri);
         Assert.Null(part.FileData.MimeType);
@@ -1230,7 +1230,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
 
         // Assert — tool-input file prepended, then inline file, then text
-        var userContent = Assert.Single(request.Contents);
+        var userContent = Assert.Single(request.Contents!);
         Assert.Equal(3, userContent.Parts!.Count);
 
         Assert.Equal(toolInputFileUri, userContent.Parts[0].FileData!.FileUri);
@@ -1285,7 +1285,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert — only the text part should survive; web search content is skipped
-        var content = Assert.Single(request.Contents);
+        var content = Assert.Single(request.Contents!);
         var part = Assert.Single(content.Parts!);
         Assert.Equal("Here are the results.", part.Text);
     }
@@ -1316,7 +1316,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
 
         // Assert
-        var content = Assert.Single(request.Contents);
+        var content = Assert.Single(request.Contents!);
         var part = Assert.Single(content.Parts!);
         Assert.Equal("Here are the results.", part.Text);
     }
@@ -1373,7 +1373,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Collection(
             parts,
@@ -1428,7 +1428,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Equal(2, parts.Count);
 
@@ -1506,7 +1506,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", mapped.Messages, new ChatOptions());
 
         // Assert
-        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+        Assert.Equal(expectedParts, Assert.Single(request.Contents!).Parts);
     }
 
     [Fact]
@@ -1905,7 +1905,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Same(part, Assert.Single(parts));
     }
@@ -1934,7 +1934,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Same(part, Assert.Single(parts));
     }
@@ -1970,7 +1970,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         var part = Assert.Single(parts);
         Assert.Equal("signature", part.ThoughtSignature);
@@ -2018,7 +2018,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Equal(3, parts.Count);
 
@@ -2095,7 +2095,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         var part = Assert.Single(parts);
 
@@ -2134,7 +2134,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         var part = Assert.Single(parts);
         Assert.Equal("signature", part.ThoughtSignature);
@@ -2184,7 +2184,7 @@ public sealed class MEAIToGeminiMapperTests
             new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Null(Assert.IsType<Part>(parts[0]).ToolCall!.Id);
         Assert.Null(Assert.IsType<Part>(parts[1]).ToolResponse!.Id);
@@ -2299,7 +2299,7 @@ public sealed class MEAIToGeminiMapperTests
             new ChatOptions());
 
         // Assert
-        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+        Assert.Equal(expectedParts, Assert.Single(request.Contents!).Parts);
     }
 
     [Fact]
@@ -2316,7 +2316,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", mapped.Messages, new ChatOptions());
 
         // Assert
-        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+        Assert.Equal(expectedParts, Assert.Single(request.Contents!).Parts);
     }
 
     [Fact]
@@ -2336,7 +2336,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Equal(4, parts.Count);
 
@@ -2370,7 +2370,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", streamed.Messages, new ChatOptions());
 
         // Assert
-        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+        Assert.Equal(expectedParts, Assert.Single(request.Contents!).Parts);
     }
 
     [Fact]
@@ -2393,7 +2393,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+        Assert.Equal(expectedParts, Assert.Single(request.Contents!).Parts);
     }
 
     [Theory]
@@ -2423,7 +2423,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
         Assert.Equal(outcome, part.CodeExecutionResult!.Outcome);
     }
 
@@ -2440,7 +2440,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
         Assert.Equal(CodeExecutionResultOutcome.Unspecified, part.CodeExecutionResult!.Outcome);
         Assert.Equal("1", part.CodeExecutionResult.Output);
     }
@@ -2458,7 +2458,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
         Assert.Null(part.CodeExecutionResult!.Output);
     }
 
@@ -2537,7 +2537,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Equal([executableCodePart, codeExecutionResultPart], parts);
     }
@@ -2611,7 +2611,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Equal(4, parts.Count);
         Assert.Equal("a", parts[0].ExecutableCode!.Code);
@@ -2786,7 +2786,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts!;
+        var parts = Assert.Single(request.Contents!).Parts!;
 
         Assert.Collection(
             parts,
@@ -2825,7 +2825,7 @@ public sealed class MEAIToGeminiMapperTests
 
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
-        Assert.Equal(expectedParts, Assert.Single(request.Contents).Parts);
+        Assert.Equal(expectedParts, Assert.Single(request.Contents!).Parts);
     }
 
     [Theory]
@@ -2862,7 +2862,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
         Assert.Equal("The answer is 42.", part.Text);
         Assert.Equal("signature", part.ThoughtSignature);
         Assert.Null(part.Thought);
@@ -2898,7 +2898,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var parts = Assert.Single(request.Contents).Parts;
+        var parts = Assert.Single(request.Contents!).Parts;
         Assert.NotNull(parts);
         Assert.Collection(parts,
             text => Assert.Equal("text", text.ThoughtSignature),
@@ -2935,7 +2935,7 @@ public sealed class MEAIToGeminiMapperTests
 
         Assert.Equal(
             [new Part { Text = "The answer is 42." }, new Part { Text = "", ThoughtSignature = "signature" }],
-            Assert.Single(request.Contents).Parts);
+            Assert.Single(request.Contents!).Parts);
     }
 
     [Theory]
@@ -2976,7 +2976,7 @@ public sealed class MEAIToGeminiMapperTests
                 new Part { Text = " is" },
                 new Part { Text = " 42.", ThoughtSignature = "second" },
             ],
-            Assert.Single(request.Contents).Parts);
+            Assert.Single(request.Contents!).Parts);
     }
 
     [Theory]
@@ -3015,7 +3015,7 @@ public sealed class MEAIToGeminiMapperTests
                 new Part { Text = "Hello." },
                 new Part { Text = "", ThoughtSignature = "signature" },
             ],
-            Assert.Single(request.Contents).Parts);
+            Assert.Single(request.Contents!).Parts);
     }
 
     [Fact]
@@ -3039,7 +3039,7 @@ public sealed class MEAIToGeminiMapperTests
 
         Assert.Equal(
             [new Part { Thought = true, Text = "Let me think." }],
-            Assert.Single(request.Contents).Parts);
+            Assert.Single(request.Contents!).Parts);
     }
 
     private static GenerateContentResponse StreamedChunk(params Part[] parts) => new()
@@ -3069,7 +3069,7 @@ public sealed class MEAIToGeminiMapperTests
 
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
-        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
         Assert.Equal("signature", part.ThoughtSignature);
 
         Assert.Null(part.Thought);
@@ -3089,7 +3089,7 @@ public sealed class MEAIToGeminiMapperTests
 
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
-        Assert.Empty(request.Contents);
+        Assert.Empty(request.Contents!);
     }
 
     [Fact]
@@ -3128,7 +3128,7 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         // Assert
-        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
         Assert.Equal("hello", part.Text);
         Assert.Null(part.AudioTranscription);
     }

@@ -12,6 +12,7 @@ public sealed record BatchEmbedContentsRequest
     /// match the model specified <c>BatchEmbedContentsRequest.model</c>.
     /// </summary>
     [JsonPropertyName("requests")]
-    public required IReadOnlyList<EmbedContentRequest> Requests { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<EmbedContentRequest>? Requests { get; init; }
 }
 

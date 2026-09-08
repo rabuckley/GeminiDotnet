@@ -2,7 +2,7 @@ using GeminiDotnet.V1Beta.Models;
 
 namespace GeminiDotnet.V1Beta;
 
-public interface IModelsClient
+public partial interface IModelsClient
 {
     /// <summary>
     /// Lists the [<see cref="V1Beta.Models.Model"/>s](https://ai.google.dev/gemini-api/docs/models/gemini)

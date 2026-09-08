@@ -679,7 +679,7 @@ internal static class MEAIToGeminiMapper
 
     /// <summary>
     /// Searches the conversation history for a <see cref="MEAI.FunctionCallContent"/> whose
-    /// <see cref="MEAI.FunctionCallContent.CallId"/> matches <paramref name="callId"/> and
+    /// <see cref="MEAI.ToolCallContent.CallId"/> matches <paramref name="callId"/> and
     /// returns its <see cref="MEAI.FunctionCallContent.Name"/>.
     /// </summary>
     /// <returns>

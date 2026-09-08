@@ -25,7 +25,8 @@ public sealed record EmbedContentBatch
     /// Required. The user-defined name of this batch.
     /// </summary>
     [JsonPropertyName("displayName")]
-    public required string DisplayName { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? DisplayName { get; init; }
 
     /// <summary>
     /// Output only. The time at which the batch processing completed.
@@ -46,7 +47,8 @@ public sealed record EmbedContentBatch
     /// Format: <c>models/{model}</c>.
     /// </summary>
     [JsonPropertyName("model")]
-    public required string Model { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Model { get; init; }
 
     /// <summary>
     /// Output only. Identifier. Resource name of the batch.

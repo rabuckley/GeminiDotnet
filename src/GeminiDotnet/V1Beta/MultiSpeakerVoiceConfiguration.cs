@@ -11,6 +11,7 @@ public sealed record MultiSpeakerVoiceConfiguration
     /// Required. All the enabled speaker voices.
     /// </summary>
     [JsonPropertyName("speakerVoiceConfigs")]
-    public required IReadOnlyList<SpeakerVoiceConfiguration> SpeakerVoiceConfigurations { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<SpeakerVoiceConfiguration>? SpeakerVoiceConfigurations { get; init; }
 }
 

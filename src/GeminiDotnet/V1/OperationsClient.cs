@@ -1,6 +1,6 @@
 namespace GeminiDotnet.V1;
 
-internal sealed class OperationsClient : IOperationsClient
+internal sealed partial class OperationsClient : IOperationsClient
 {
     private readonly IGeminiRequester _requester;
     

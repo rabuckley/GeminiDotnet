@@ -40,6 +40,7 @@ public sealed record SemanticRetrieverConfiguration
     /// <c>corpora/123/documents/abc</c>.
     /// </summary>
     [JsonPropertyName("source")]
-    public required string Source { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Source { get; init; }
 }
 

@@ -152,7 +152,7 @@ public static class GeminiContentProperties
     /// </summary>
     /// <example>
     /// After a round trip through JSON the value is a <see cref="JsonElement"/>, which
-    /// <see cref="AdditionalPropertiesDictionary.TryGetValue{T}"/> reports as absent. Read it with
+    /// <see cref="AdditionalPropertiesDictionary{TValue}.TryGetValue{T}"/> reports as absent. Read it with
     /// <see cref="AdditionalPropertiesDictionaryExtensions.TryGetGeminiValue{T}"/>, which handles both
     /// forms:
     /// <code>

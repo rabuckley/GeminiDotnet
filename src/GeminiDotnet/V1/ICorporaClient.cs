@@ -1,7 +1,7 @@
 
 namespace GeminiDotnet.V1;
 
-public interface ICorporaClient
+public partial interface ICorporaClient
 {
     /// <summary>
     /// Gets the latest state of a long-running operation.  Clients can use this

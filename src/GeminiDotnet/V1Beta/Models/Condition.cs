@@ -18,7 +18,8 @@ public sealed record Condition
     /// Required. Operator applied to the given key-value pair to trigger the condition.
     /// </summary>
     [JsonPropertyName("operation")]
-    public required ConditionOperation Operation { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ConditionOperation Operation { get; init; }
 
     /// <summary>
     /// The string value to filter the metadata on.

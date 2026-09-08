@@ -13,6 +13,7 @@ public sealed record LanguageHints
     /// </summary>
     [Obsolete]
     [JsonPropertyName("languageCodes")]
-    public required IReadOnlyList<string> LanguageCodes { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<string>? LanguageCodes { get; init; }
 }
 

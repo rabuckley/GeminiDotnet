@@ -47,6 +47,7 @@ public sealed record Permission
     /// Required. The role granted by this permission.
     /// </summary>
     [JsonPropertyName("role")]
-    public required PermissionRole Role { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public PermissionRole Role { get; init; }
 }
 
