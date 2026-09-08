@@ -5,8 +5,8 @@ using System.Text.Json;
 namespace GeminiDotnet.Extensions.AI;
 
 /// <summary>
-/// Keys for Gemini <see cref="Part"/> metadata carried in <see cref="AIContent.AdditionalProperties"/>
-/// or, for signed text, <see cref="AIAnnotation.AdditionalProperties"/>.
+/// Keys for Gemini <see cref="Part"/> metadata stored in <see cref="AIContent.AdditionalProperties"/>
+/// or <see cref="AIAnnotation.AdditionalProperties"/>, as specified by each member.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -71,6 +71,42 @@ public static class GeminiContentProperties
     /// none.
     /// </remarks>
     public const string ThoughtSignature = "thoughtSignature";
+
+    /// <summary>
+    /// Key for the <see cref="V1Beta.AudioTranscription"/> stored in
+    /// <see cref="AIAnnotation.AdditionalProperties"/> on the mapped content.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The annotation covers the entire text when the content has nonempty text equal to the transcript.
+    /// Otherwise, it has no region. Speaker labels and word timings are included when requested.
+    /// </para>
+    /// <para>
+    /// Use <see cref="GeminiContentExtensions.GetAudioTranscription"/> to read the transcription,
+    /// including after JSON serialization. <see cref="Part.AudioTranscription"/> is output only and is
+    /// omitted when the content is sent back to Gemini.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// Streaming aggregation preserves each speaker segment as a separate content:
+    /// <code>
+    /// List&lt;ChatResponseUpdate&gt; updates = [];
+    ///
+    /// await foreach (var update in client.GetStreamingResponseAsync(messages, options))
+    /// {
+    ///     updates.Add(update);
+    /// }
+    ///
+    /// foreach (var content in updates.ToChatResponse().Messages.SelectMany(message =&gt; message.Contents))
+    /// {
+    ///     if (content is TextContent text &amp;&amp; text.GetAudioTranscription() is { } transcription)
+    ///     {
+    ///         Console.WriteLine($"{transcription.SpeakerLabel}: {text.Text}");
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    public const string AudioTranscription = "audioTranscription";
 
     /// <summary>
     /// Key for the kind of tool that was invoked, as a <see cref="V1Beta.ToolType"/>. Read from

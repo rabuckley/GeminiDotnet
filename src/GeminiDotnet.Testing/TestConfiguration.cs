@@ -9,6 +9,11 @@ public static class TestConfiguration
     /// </summary>
     public const string DefaultModel = "gemini-3.1-flash-lite";
 
+    /// <summary>
+    /// The model used to test structured audio transcription, which <see cref="DefaultModel"/> does not return.
+    /// </summary>
+    public const string TranscriptionModel = "gemini-3.5-transcribe";
+
     public static string GetApiKey()
     {
         return Environment.GetEnvironmentVariable(VariableName)

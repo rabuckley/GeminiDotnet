@@ -48,7 +48,8 @@ internal sealed class CandidateMappingState
     public Queue<string> UnansweredToolCallIds { get; } = [];
 
     /// <summary>
-    /// The text a grounding segment's byte offsets index: every non-thought text part mapped so far, joined.
+    /// The text a grounding segment's byte offsets index: every non-thought <see cref="V1Beta.Part.Text"/>
+    /// mapped so far, joined.
     /// </summary>
     /// <remarks>
     /// A builder rather than a string, so that the whole text is copied once per grounding delivery instead

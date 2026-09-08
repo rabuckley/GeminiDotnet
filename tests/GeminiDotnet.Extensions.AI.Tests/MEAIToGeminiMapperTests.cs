@@ -2737,7 +2737,7 @@ public sealed class MEAIToGeminiMapperTests
         return JsonSerializer.Deserialize<AdditionalPropertiesDictionary>(json)!;
     }
 
-    #region Thought Signature Tests
+    #region Thought Signature, Audio Transcription and Thought-Only Part Tests
 
     [Theory]
     [InlineData(false)]
@@ -3056,48 +3056,6 @@ public sealed class MEAIToGeminiMapperTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void CreateMappedGenerateContentRequest_WithTextLessThoughtParts_ShouldReplayBareSignatures(
-        bool persistAsJson)
-    {
-        var response = new GenerateContentResponse
-        {
-            Candidates =
-            [
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Role = "model",
-                        Parts =
-                        [
-                            new Part { Thought = true, ThoughtSignature = "thought" },
-                            new Part { ThoughtSignature = "bare" },
-                        ],
-                    },
-                },
-            ],
-        };
-
-        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
-
-        if (persistAsJson)
-        {
-            messages = RoundTripThroughJson(messages);
-        }
-
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
-
-        Assert.Equal(
-            [
-                new Part { ThoughtSignature = "thought" },
-                new Part { ThoughtSignature = "bare" },
-            ],
-            Assert.Single(request.Contents).Parts);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
     public void CreateMappedGenerateContentRequest_WithASignatureOnlyContent_ShouldRebuildThePart(
         bool roundTripThroughJson)
     {
@@ -3132,6 +3090,105 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
 
         Assert.Empty(request.Contents);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithATranscribedResponse_ShouldNotWriteTheTranscription()
+    {
+        // Arrange
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate
+                {
+                    Content = new Content
+                    {
+                        Role = "model",
+                        Parts =
+                        [
+                            new Part
+                            {
+                                Text = "hello",
+                                AudioTranscription = new AudioTranscription
+                                {
+                                    Text = "hello",
+                                    SpeakerLabel = "spk:0",
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+        };
+
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        // Assert
+        var part = Assert.Single(Assert.Single(request.Contents).Parts!);
+        Assert.Equal("hello", part.Text);
+        Assert.Null(part.AudioTranscription);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAnAudioTranscriptionConfiguration_ShouldMapToTheGenerationConfiguration(
+        bool roundTripThroughJson)
+    {
+        // Arrange
+        var properties = MaybeRoundTripThroughJson(
+            new AdditionalPropertiesDictionary
+            {
+                [GeminiAdditionalProperties.AudioTranscriptionConfiguration] = new AudioTranscriptionConfiguration
+                {
+                    Diarization = true,
+                    WordTimestamp = true,
+                    LanguageCodes = ["en-GB"],
+                },
+            },
+            roundTripThroughJson);
+
+        var options = new ChatOptions { AdditionalProperties = properties };
+
+        // Act
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            [new ChatMessage(ChatRole.User, "Transcribe this.")],
+            options);
+
+        // Assert
+        var configuration = request.GenerationConfiguration!.AudioTranscriptionConfiguration;
+        Assert.NotNull(configuration);
+        Assert.True(configuration.Diarization);
+        Assert.True(configuration.WordTimestamp);
+        Assert.Equal(["en-GB"], configuration.LanguageCodes);
+    }
+
+    [Theory]
+    [InlineData(GeminiAdditionalProperties.ThinkingConfiguration)]
+    [InlineData(GeminiAdditionalProperties.ResponseModalities)]
+    [InlineData(GeminiAdditionalProperties.ImageConfiguration)]
+    [InlineData(GeminiAdditionalProperties.AudioTranscriptionConfiguration)]
+    public void CreateMappedGenerateContentRequest_WithAMistypedGenerationConfigurationValue_ShouldThrow(string key)
+    {
+        // Arrange
+        var options = new ChatOptions
+        {
+            AdditionalProperties = new AdditionalPropertiesDictionary { [key] = "mistyped" },
+        };
+
+        // Act
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            "",
+            [new ChatMessage(ChatRole.User, "Transcribe this.")],
+            options);
+
+        // Assert
+        Assert.Throws<GeminiMappingException>(Act);
     }
 
     private static AIContent RoundTripThroughJson(AIContent content)

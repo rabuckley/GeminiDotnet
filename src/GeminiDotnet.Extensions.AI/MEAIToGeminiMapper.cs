@@ -157,6 +157,15 @@ internal static class MEAIToGeminiMapper
             return mappedTools;
         }
 
+        static T? ReadGenerationConfigurationValue<T>(MEAI.ChatOptions options, string key, string toPropertyName)
+            where T : class
+        {
+            return options.AdditionalProperties?.GetValueOrThrow<T>(
+                key,
+                fromPropertyName: $"{typeof(MEAI.ChatOptions)}.{nameof(MEAI.ChatOptions.AdditionalProperties)}",
+                toPropertyName: $"{typeof(GenerationConfiguration)}.{toPropertyName}");
+        }
+
         static GenerationConfiguration? CreateMappedGenerationConfiguration(MEAI.ChatOptions? options)
         {
             if (options is null)
@@ -164,14 +173,19 @@ internal static class MEAIToGeminiMapper
                 return null;
             }
 
+            // Reject mistyped options so configuration errors cannot silently change model behavior.
 #pragma warning disable CS0618 // Type or member is obsolete
-            var thinkingConfiguration = options.AdditionalProperties?.GetValueOrDefault<ThinkingConfiguration>(
-                GeminiAdditionalProperties.ThinkingConfiguration)
+            var thinkingConfiguration = ReadGenerationConfigurationValue<ThinkingConfiguration>(
+                    options,
+                    GeminiAdditionalProperties.ThinkingConfiguration,
+                    nameof(GenerationConfiguration.ThinkingConfiguration))
 #pragma warning restore CS0618 // Type or member is obsolete
                 ?? CreateMappedThinkingConfiguration(options.Reasoning);
 
-            var responseModalities = options.AdditionalProperties?
-                    .GetValueOrDefault<IEnumerable<ResponseModality>>(GeminiAdditionalProperties.ResponseModalities)
+            var responseModalities = ReadGenerationConfigurationValue<IEnumerable<ResponseModality>>(
+                    options,
+                    GeminiAdditionalProperties.ResponseModalities,
+                    nameof(GenerationConfiguration.ResponseModalities))
                 switch
                 {
                     IReadOnlyList<ResponseModality> list => list,
@@ -179,8 +193,15 @@ internal static class MEAIToGeminiMapper
                     _ => null
                 };
 
-            var imageConfiguration = options.AdditionalProperties?.GetValueOrDefault<ImageConfiguration>(
-                GeminiAdditionalProperties.ImageConfiguration);
+            var imageConfiguration = ReadGenerationConfigurationValue<ImageConfiguration>(
+                options,
+                GeminiAdditionalProperties.ImageConfiguration,
+                nameof(GenerationConfiguration.ImageConfiguration));
+
+            var audioTranscriptionConfiguration = ReadGenerationConfigurationValue<AudioTranscriptionConfiguration>(
+                options,
+                GeminiAdditionalProperties.AudioTranscriptionConfiguration,
+                nameof(GenerationConfiguration.AudioTranscriptionConfiguration));
 
             var configuration = new GenerationConfiguration
             {
@@ -189,6 +210,7 @@ internal static class MEAIToGeminiMapper
                 ResponseJsonSchema = CreateMappedResponseSchema(options.ResponseFormat),
                 ResponseModalities = responseModalities,
                 ImageConfiguration = imageConfiguration,
+                AudioTranscriptionConfiguration = audioTranscriptionConfiguration,
                 CandidateCount = null,
                 MaxOutputTokens = options.MaxOutputTokens,
                 Temperature = options.Temperature,
@@ -337,6 +359,7 @@ internal static class MEAIToGeminiMapper
             static Part CreateTextPart(MEAI.TextContent textContent)
             {
                 // Preserve the text content type on replay. A null Text maps back to reasoning content.
+                // Part.audioTranscription is output only.
                 return new Part { Text = textContent.Text ?? string.Empty };
             }
 
