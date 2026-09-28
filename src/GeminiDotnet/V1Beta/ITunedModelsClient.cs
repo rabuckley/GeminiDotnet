@@ -36,6 +36,7 @@ public partial interface ITunedModelsClient
     /// "readers:everyone" returns all tuned models that are shared with everyone
     /// </param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<ListTunedModelsResponse> ListTunedModelsAsync(
         int? pageSize = null,
         string? pageToken = null,
@@ -58,6 +59,7 @@ public partial interface ITunedModelsClient
     /// regular expression: <c>[a-z]([a-z0-9-]{0,38}[a-z0-9])?</c>.
     /// </param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<CreateTunedModelOperation> CreateTunedModelAsync(
         TunedModel request,
         string? tunedModelId = null,
@@ -68,6 +70,7 @@ public partial interface ITunedModelsClient
     /// </summary>
     /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<TunedModel> GetTunedModelAsync(
         string tunedModel,
         CancellationToken cancellationToken = default);
@@ -77,6 +80,7 @@ public partial interface ITunedModelsClient
     /// </summary>
     /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<Empty> DeleteTunedModelAsync(
         string tunedModel,
         CancellationToken cancellationToken = default);
@@ -88,6 +92,7 @@ public partial interface ITunedModelsClient
     /// <param name="request">Required. The tuned model to update.</param>
     /// <param name="updateMask">Optional. The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<TunedModel> UpdateTunedModelAsync(
         string tunedModel,
         TunedModel request,
@@ -141,6 +146,7 @@ public partial interface ITunedModelsClient
     /// <param name="tunedModel">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<GenerateTextResponse> GenerateTextByTunedModelAsync(
         string tunedModel,
         GenerateTextRequest request,

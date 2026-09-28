@@ -21,6 +21,7 @@ public partial interface ICorporaClient
     /// must match the call that provided the page token.
     /// </param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<ListCorporaResponse> ListCorporaAsync(
         int? pageSize = null,
         string? pageToken = null,
@@ -31,6 +32,7 @@ public partial interface ICorporaClient
     /// </summary>
     /// <param name="request">Required. The <see cref="V1Beta.Corpora.Corpus"/> to create.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<Corpus> CreateCorpusAsync(
         Corpus request,
         CancellationToken cancellationToken = default);
@@ -40,6 +42,7 @@ public partial interface ICorporaClient
     /// </summary>
     /// <param name="corpus">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<Corpus> GetCorpusAsync(
         string corpus,
         CancellationToken cancellationToken = default);
@@ -55,6 +58,7 @@ public partial interface ICorporaClient
     /// <see cref="V1Beta.Corpora.Corpus"/> contains any <see cref="V1Beta.FileSearchStores.Document"/>s.
     /// </param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<Empty> DeleteCorpusAsync(
         string corpus,
         bool? force = null,

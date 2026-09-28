@@ -74,6 +74,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<BatchEmbedTextResponse> BatchEmbedTextAsync(
         string model,
         BatchEmbedTextRequest request,
@@ -96,6 +97,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<CountMessageTokensResponse> CountMessageTokensAsync(
         string model,
         CountMessageTokensRequest request,
@@ -107,6 +109,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<CountTextTokensResponse> CountTextTokensAsync(
         string model,
         CountTextTokensRequest request,
@@ -144,6 +147,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<EmbedTextResponse> EmbedTextAsync(
         string model,
         EmbedTextRequest request,
@@ -156,6 +160,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<GenerateAnswerResponse> GenerateAnswerAsync(
         string model,
         GenerateAnswerRequest request,
@@ -184,6 +189,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<GenerateMessageResponse> GenerateMessageAsync(
         string model,
         GenerateMessageRequest request,
@@ -195,6 +201,7 @@ public partial interface IModelsClient
     /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete]
     Task<GenerateTextResponse> GenerateTextAsync(
         string model,
         GenerateTextRequest request,

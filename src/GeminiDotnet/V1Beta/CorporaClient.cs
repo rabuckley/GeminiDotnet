@@ -1,3 +1,9 @@
+using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using GeminiDotnet.V1Beta.Corpora;
 
 namespace GeminiDotnet.V1Beta;
@@ -12,6 +18,7 @@ internal sealed partial class CorporaClient : ICorporaClient
         _requester = requester;
     }
 
+    [Obsolete]
     public Task<ListCorporaResponse> ListCorporaAsync(
         int? pageSize = null,
         string? pageToken = null,
@@ -25,6 +32,7 @@ internal sealed partial class CorporaClient : ICorporaClient
         return _requester.ExecuteAsync<ListCorporaResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
+    [Obsolete]
     public Task<Corpus> CreateCorpusAsync(
         Corpus request,
         CancellationToken cancellationToken = default)
@@ -34,6 +42,7 @@ internal sealed partial class CorporaClient : ICorporaClient
         return _requester.ExecuteAsync<Corpus, Corpus>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<Corpus> GetCorpusAsync(
         string corpus,
         CancellationToken cancellationToken = default)
@@ -43,6 +52,7 @@ internal sealed partial class CorporaClient : ICorporaClient
         return _requester.ExecuteAsync<Corpus>(HttpMethod.Get, path, cancellationToken);
     }
 
+    [Obsolete]
     public Task<Empty> DeleteCorpusAsync(
         string corpus,
         bool? force = null,
