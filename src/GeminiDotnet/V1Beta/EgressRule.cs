@@ -3,17 +3,20 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta;
 
 /// <summary>
-/// A network egress rule that controls which external domains the
-/// environment is allowed to reach.  Each rule identifies a target domain
-/// and, optionally, a set of HTTP headers to inject into every matching
-/// outbound request.
+/// A single domain allowlist rule with optional header injection.
 /// </summary>
 public sealed record EgressRule
 {
     /// <summary>
-    /// The domain pattern to match for this rule.
-    /// Use an exact hostname (e.g., <c>github.com</c>), a wildcard prefix
-    /// (e.g., <c>*.googleapis.com</c>), or <c>*</c> to match all domains.
+    /// Optional. Reference to a server-managed Credential resource by ID.
+    /// </summary>
+    [JsonPropertyName("credential")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Credential { get; init; }
+
+    /// <summary>
+    /// Domain to allow outbound requests to. Supports wildcards (e.g.
+    /// '*.googleapis.com'). Use '*' to allow all domains.
     /// </summary>
     [JsonPropertyName("domain")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

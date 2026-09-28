@@ -53,6 +53,22 @@ public sealed record BidiGenerateContentSetup
     public AudioTranscriptionConfiguration? InputAudioTranscription { get; init; }
 
     /// <summary>
+    /// Optional. Labels with user-defined metadata for the request.
+    /// Optional. Labels must follow standard unified Cloud label requirements:
+    /// - Label keys must start with a letter.
+    /// - Label keys and values can be no longer than 63 characters (Unicode
+    /// codepoints) and can only contain lowercase letters, numeric characters,
+    /// underscores, and dashes.
+    /// - International characters are allowed.
+    /// Usage:
+    /// -  Safety identifiers from aggregators: Use the key <c>safety_identifier</c>
+    /// (e.g. <c>{"safety_identifier": "user_session_123"}</c>)
+    /// </summary>
+    [JsonPropertyName("labels")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyDictionary<string, string>? Labels { get; init; }
+
+    /// <summary>
     /// Required. The model's resource name. This serves as an ID for the Model to use.
     /// Format: <c>models/{model}</c>
     /// </summary>

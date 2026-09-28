@@ -8,6 +8,15 @@ namespace GeminiDotnet.V1Beta.EnvironmentsCreate;
 public sealed record CreateEnvironmentRequest
 {
     /// <summary>
+    /// Optional. The source environment to copy/fork from.
+    /// Format: <c>environments/{environment_id}</c> or <c>{environment_id}</c>.
+    /// When specified, <see cref="Sources"/> and <c>env</c> must be empty.
+    /// </summary>
+    [JsonPropertyName("fromEnvironment")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? FromEnvironment { get; init; }
+
+    /// <summary>
     /// Allow only specific domains.
     /// </summary>
     [JsonPropertyName("networkAllowlist")]

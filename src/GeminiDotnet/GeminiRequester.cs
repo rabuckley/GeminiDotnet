@@ -1,4 +1,7 @@
 using GeminiDotnet.Text.Json;
+using System.Globalization;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
@@ -132,6 +135,91 @@ internal sealed class GeminiRequester : IGeminiRequester
         }
     }
 
+    public async Task<TResponse> UploadAsync<TMetadata, TResponse>(
+        HttpMethod method,
+        string path,
+        TMetadata metadata,
+        MediaContent media,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(media);
+
+        var uploadUrl = await StartResumableUploadAsync(method, path, metadata, media, cancellationToken)
+            .ConfigureAwait(false);
+
+        // The whole file goes in one request, which also finalizes the upload. Resuming an
+        // interrupted upload from its last offset is not supported.
+        using var message = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
+        message.Headers.Add("X-Goog-Upload-Command", "upload, finalize");
+        message.Headers.Add("X-Goog-Upload-Offset", "0");
+
+        var content = new BorrowedStreamContent(media.Stream, media.Length);
+        content.Headers.ContentType = MediaTypeHeaderValue.Parse(media.MimeType);
+        message.Content = content;
+
+        return await ExecuteAsync<TResponse>(message, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Opens a resumable upload session and returns the URL its bytes are sent to, which the API
+    /// returns in a header rather than in the body.
+    /// </summary>
+    private async Task<string> StartResumableUploadAsync<TMetadata>(
+        HttpMethod method,
+        string path,
+        TMetadata metadata,
+        MediaContent media,
+        CancellationToken cancellationToken)
+    {
+        using var message = new HttpRequestMessage(method, path);
+        message.Headers.Add("X-Goog-Upload-Protocol", "resumable");
+        message.Headers.Add("X-Goog-Upload-Command", "start");
+        message.Headers.Add("X-Goog-Upload-Header-Content-Length", media.Length.ToString(CultureInfo.InvariantCulture));
+        message.Headers.Add("X-Goog-Upload-Header-Content-Type", media.MimeType);
+        message.Content = JsonContent.Create(metadata, _jsonSerializerContext.GetTypeInfo<TMetadata>());
+
+        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+
+        if (!response.Headers.TryGetValues("X-Goog-Upload-URL", out var uploadUrls))
+        {
+            throw new InvalidOperationException(
+                "The Gemini upload start response did not include an 'X-Goog-Upload-URL' header.");
+        }
+
+        return uploadUrls.First();
+    }
+
+    public async Task<MediaDownload> DownloadAsync(
+        HttpMethod method,
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(method, path);
+
+        var response = await _httpClient
+            .SendAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+
+        try
+        {
+            response = await EnsureSuccessOrThrow(response, cancellationToken).ConfigureAwait(false);
+
+            // Disposing the content stream of an unbuffered response is what releases its
+            // connection, so the download owning the stream is enough.
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+
+            return new MediaDownload(
+                stream,
+                response.Content.Headers.ContentType?.MediaType,
+                response.Content.Headers.ContentLength);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
+
     private async Task<HttpResponseMessage> EnsureSuccessOrThrow(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)
@@ -157,5 +245,24 @@ internal sealed class GeminiRequester : IGeminiRequester
         // Fall back to throwing the HttpRequestException
         response.EnsureSuccessStatusCode();
         return null!; // unreachable
+    }
+
+    /// <summary>
+    /// Sends a stream the caller still owns. <see cref="StreamContent"/> would dispose it along
+    /// with the request message.
+    /// </summary>
+    private sealed class BorrowedStreamContent(Stream stream, long length) : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream target, TransportContext? context)
+            => stream.CopyToAsync(target);
+
+        protected override Task SerializeToStreamAsync(Stream target, TransportContext? context, CancellationToken cancellationToken)
+            => stream.CopyToAsync(target, cancellationToken);
+
+        protected override bool TryComputeLength(out long computedLength)
+        {
+            computedLength = length;
+            return true;
+        }
     }
 }

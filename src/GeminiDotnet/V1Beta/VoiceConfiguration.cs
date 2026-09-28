@@ -13,5 +13,16 @@ public sealed record VoiceConfiguration
     [JsonPropertyName("prebuiltVoiceConfig")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public PrebuiltVoiceConfiguration? PrebuiltVoiceConfiguration { get; init; }
+
+    /// <summary>
+    /// Optional. The speaker identifier for synthesis.
+    /// Supported formats:
+    /// *   Speaker name for prebuilt voices (for example, <c>Orus</c> or <c>Kore</c>).
+    /// *   Voice ID for stored voices (for example, <c>voice_xxx</c>).
+    /// *   Voice replication key (for example, <c>voicekey_xxx</c>).
+    /// </summary>
+    [JsonPropertyName("voice")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Voice { get; init; }
 }
 

@@ -41,6 +41,7 @@ public sealed record GenerationConfiguration
     /// be used within non-required properties. (Nullable properties are not
     /// sufficient.) If <c>$ref</c> is set on a sub-schema, no other properties, except
     /// for than those starting as a <c>$</c>, may be set.
+    /// Deprecated. Use <c>response_format</c> instead.
     /// </summary>
     [Obsolete]
     [JsonPropertyName("_responseJsonSchema")]
@@ -205,6 +206,7 @@ public sealed record GenerationConfiguration
     /// <c>application/json</c>: Schema for JSON response.
     /// Refer to the [JSON text generation
     /// guide](https://ai.google.dev/gemini-api/docs/json-mode) for more details.
+    /// Deprecated. Use <c>response_format</c> instead.
     /// </summary>
     [Obsolete]
     [JsonPropertyName("responseSchema")]

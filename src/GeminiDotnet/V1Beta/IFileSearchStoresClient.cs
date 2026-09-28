@@ -77,10 +77,12 @@ public partial interface IFileSearchStoresClient
     /// </summary>
     /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
+    /// <param name="media">The bytes to upload, at most 100 MiB.</param>
     /// <param name="cancellationToken"></param>
     Task<UploadToFileSearchStoreOperation> UploadToFileSearchStoreAsync(
         string fileSearchStore,
         UploadToFileSearchStoreRequest request,
+        MediaContent media,
         CancellationToken cancellationToken = default);
 
     /// <summary>

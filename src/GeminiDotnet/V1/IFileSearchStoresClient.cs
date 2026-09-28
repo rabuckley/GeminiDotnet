@@ -77,10 +77,12 @@ public partial interface IFileSearchStoresClient
     /// </summary>
     /// <param name="fileSearchStore">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
     /// <param name="request">The request body.</param>
+    /// <param name="media">The bytes to upload, at most 100 MiB.</param>
     /// <param name="cancellationToken"></param>
     Task<UploadToFileSearchStoreOperation> UploadToFileSearchStoreAsync(
         string fileSearchStore,
         UploadToFileSearchStoreRequest request,
+        MediaContent media,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -159,6 +161,24 @@ public partial interface IFileSearchStoresClient
     /// <param name="mediaId">Part of <c>name</c>. See documentation of <c>fileSearchStoresId</c>.</param>
     /// <param name="cancellationToken"></param>
     Task<DownloadMediaResponse> DownloadMediaAsync(
+        string fileSearchStoresId,
+        string mediaId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Downloads media from a <see cref="V1.FileSearchStores.FileSearchStore"/>.
+    /// </summary>
+    /// <remarks>
+    /// Reads the bytes this operation serves, where <see cref="DownloadMediaAsync"/> reads its
+    /// JSON response. Dispose the returned download once its bytes have been read.
+    /// </remarks>
+    /// <param name="fileSearchStoresId">
+    /// Part of <c>name</c>. Required. The resource name of the media to download.
+    /// Example: <c>fileSearchStores/abc-123/media/blob123</c>
+    /// </param>
+    /// <param name="mediaId">Part of <c>name</c>. See documentation of <c>fileSearchStoresId</c>.</param>
+    /// <param name="cancellationToken"></param>
+    Task<MediaDownload> DownloadMediaContentAsync(
         string fileSearchStoresId,
         string mediaId,
         CancellationToken cancellationToken = default);
