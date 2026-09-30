@@ -18,6 +18,7 @@ Then, you can create and use the `GeminiClient` to interact with the Google Gemi
 
 ```cs
 using GeminiDotnet;
+using GeminiDotnet.V1Beta;
 
 var options = new GeminiClientOptions
 {
@@ -28,18 +29,20 @@ var client = new GeminiClient(options);
 
 var request = new GenerateContentRequest
 {
-    Contents = 
+    Contents =
     [
-        new ChatMessage 
-        { 
+        new Content
+        {
             Role = ChatRoles.User,
             Parts = [new Part { Text = "Who was the first person to walk on the moon?" }]
         }
     ]
 };
 
-await foreach (var result in client.GenerateContentStreamingAsync("gemini-3.7-flash", request, cancellationToken))
+await foreach (var result in client.V1Beta.Models.StreamGenerateContentAsync("models/gemini-3.7-flash", request, cancellationToken))
 {
     // Use the result as it is returned.
 }
 ```
+
+Methods are grouped into clients by API resource, such as `client.V1Beta.Models` and `client.V1Beta.Files`. A method that acts on a resource takes its full resource name (`models/gemini-3.7-flash`, `files/abc123`), not a bare id, and throws an `ArgumentException` if the name doesn't match the expected form.
