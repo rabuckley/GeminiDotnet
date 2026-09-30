@@ -70,12 +70,15 @@ internal sealed partial class FileSearchStoresClient : IFileSearchStoresClient
     public Task<UploadToFileSearchStoreOperation> UploadToFileSearchStoreAsync(
         string fileSearchStore,
         UploadToFileSearchStoreRequest request,
+        MediaContent media,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(fileSearchStore);
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}:uploadToFileSearchStore";
-        return _requester.ExecuteAsync<UploadToFileSearchStoreRequest, UploadToFileSearchStoreOperation>(HttpMethod.Post, path, request, cancellationToken);
+        ArgumentNullException.ThrowIfNull(media);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(media.Length, 104857600L);
+        var path = $"/upload/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}:uploadToFileSearchStore";
+        return _requester.UploadAsync<UploadToFileSearchStoreRequest, UploadToFileSearchStoreOperation>(HttpMethod.Post, path, request, media, cancellationToken);
     }
 
     public Task<ListDocumentsResponse> ListDocumentsAsync(

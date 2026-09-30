@@ -522,7 +522,7 @@ public sealed class GeminiHostedFileClientTests
             });
         }
 
-        public Task<CreateFileResponse> CreateFileAsync(CreateFileRequest request, CancellationToken cancellationToken = default)
+        public Task<CreateFileResponse> CreateFileAsync(CreateFileRequest request, MediaContent media, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
 
         public Task<File> GetFileAsync(string file, CancellationToken cancellationToken = default)

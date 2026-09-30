@@ -70,6 +70,31 @@ public sealed class FilesClientUploadTests
     }
 
     [Fact]
+    public async Task UploadFileAsync_ShouldLeaveTheCallersStreamOpen()
+    {
+        // Arrange
+        const string uploadUrl = "https://upload.example.com/resume?upload_id=open";
+        var handler = new MockUploadHandler(
+            uploadUrl,
+            expectedFileName: "files/open-file",
+            expectedUri: "https://generativelanguage.googleapis.com/v1beta/files/open-file",
+            expectedDisplayName: null,
+            requestLog: []);
+
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://generativelanguage.googleapis.com") };
+        var client = new FilesClient(new GeminiRequester(httpClient, V1BetaJsonContext.Default));
+
+        using var stream = new MemoryStream([0x00, 0x01]);
+
+        // Act
+        await client.UploadFileAsync(stream, stream.Length);
+
+        // Assert — the caller can rewind and reuse the stream, e.g. to retry
+        stream.Position = 0;
+        Assert.Equal(0x00, stream.ReadByte());
+    }
+
+    [Fact]
     public async Task UploadFileAsync_WithNoOptions_ShouldUseDefaultMimeType()
     {
         // Arrange

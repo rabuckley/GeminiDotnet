@@ -28,11 +28,14 @@ internal sealed partial class FilesClient : IFilesClient
 
     public Task<CreateFileResponse> CreateFileAsync(
         CreateFileRequest request,
+        MediaContent media,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        const string path = "/v1/files";
-        return _requester.ExecuteAsync<CreateFileRequest, CreateFileResponse>(HttpMethod.Post, path, request, cancellationToken);
+        ArgumentNullException.ThrowIfNull(media);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(media.Length, 2147483648L);
+        const string path = "/upload/v1/files";
+        return _requester.UploadAsync<CreateFileRequest, CreateFileResponse>(HttpMethod.Post, path, request, media, cancellationToken);
     }
 
     public Task<File> GetFileAsync(

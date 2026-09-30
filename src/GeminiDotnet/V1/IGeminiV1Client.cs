@@ -9,11 +9,6 @@ public interface IGeminiV1Client
     IBatchesClient Batches { get; }
 
     /// <summary>
-    /// Provides access to the CachedContents API operations.
-    /// </summary>
-    ICachedContentsClient CachedContents { get; }
-
-    /// <summary>
     /// Provides access to the Corpora API operations.
     /// </summary>
     ICorporaClient Corpora { get; }

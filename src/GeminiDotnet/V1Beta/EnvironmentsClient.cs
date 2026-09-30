@@ -72,6 +72,42 @@ internal sealed partial class EnvironmentsClient : IEnvironmentsClient
         return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
     }
 
+    public Task<MediaDownload> GetEnvironmentFilesHttpContentAsync(
+        string environment,
+        string path,
+        bool? recursive = null,
+        int? pageSize = null,
+        string? pageToken = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        ArgumentNullException.ThrowIfNull(path);
+        var query = new QueryStringBuilder()
+            .Add("alt", "media")
+            .Add("recursive", recursive)
+            .Add("page_size", pageSize)
+            .Add("page_token", pageToken)
+            .ToString();
+        var requestPath = $"/v1beta/environments/{Uri.EscapeDataString(environment)}/files/{WildcardPath.Escape(path)}{query}";
+        return _requester.DownloadAsync(HttpMethod.Get, requestPath, cancellationToken);
+    }
+
+    public Task<UploadEnvironmentFileResponse> UploadEnvironmentFileHttpAsync(
+        string environment,
+        string path,
+        UploadEnvironmentFileRequest request,
+        MediaContent media,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(media);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(media.Length, 2147483648L);
+        var requestPath = $"/upload/v1beta/environments/{Uri.EscapeDataString(environment)}/files/{WildcardPath.Escape(path)}";
+        return _requester.UploadAsync<UploadEnvironmentFileRequest, UploadEnvironmentFileResponse>(HttpMethod.Put, requestPath, request, media, cancellationToken);
+    }
+
     public Task<HttpBody> GetEnvironmentHttpAsync(
         string id,
         CancellationToken cancellationToken = default)

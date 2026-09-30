@@ -23,9 +23,11 @@ public partial interface IFilesClient
     /// Creates a <see cref="V1.Files.File"/>.
     /// </summary>
     /// <param name="request">The request body.</param>
+    /// <param name="media">The bytes to upload, at most 2 GiB.</param>
     /// <param name="cancellationToken"></param>
     Task<CreateFileResponse> CreateFileAsync(
         CreateFileRequest request,
+        MediaContent media,
         CancellationToken cancellationToken = default);
 
     /// <summary>

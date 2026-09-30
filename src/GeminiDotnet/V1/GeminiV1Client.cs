@@ -12,8 +12,6 @@ public sealed partial class GeminiV1Client : IGeminiV1Client
 
     public IBatchesClient Batches => field ??= new BatchesClient(_requester);
 
-    public ICachedContentsClient CachedContents => field ??= new CachedContentsClient(_requester);
-
     public ICorporaClient Corpora => field ??= new CorporaClient(_requester);
 
     public IDynamicClient Dynamic => field ??= new DynamicClient(_requester);

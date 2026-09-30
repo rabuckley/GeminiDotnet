@@ -9,8 +9,9 @@ public partial interface IFilesClient
     /// <see cref="File"/> metadata.
     /// </summary>
     /// <remarks>
-    /// This implementation uses single-shot upload mode (the entire file is sent in one request).
-    /// Chunked resumable uploads for large files are not yet supported.
+    /// A convenience over <see cref="CreateFileAsync"/>, which takes the file's metadata and
+    /// content directly. The entire file is sent in one request; chunked resumable uploads for
+    /// large files are not yet supported.
     /// </remarks>
     /// <param name="content">The file content stream to upload.</param>
     /// <param name="contentLength">The total size of the file content in bytes.</param>

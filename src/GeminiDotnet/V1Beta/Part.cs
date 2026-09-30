@@ -94,6 +94,14 @@ public sealed record Part
     public JsonElement PartMetadata { get; init; }
 
     /// <summary>
+    /// Optional. Metadata applied to text parts to customize how they should be spoken or
+    /// synthesized, such as specifying speaker identity or speaking style.
+    /// </summary>
+    [JsonPropertyName("speechMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SpeechMetadata? SpeechMetadata { get; init; }
+
+    /// <summary>
     /// Inline text.
     /// </summary>
     [JsonPropertyName("text")]
