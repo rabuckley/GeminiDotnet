@@ -18,8 +18,12 @@ internal sealed partial class CorporaClient : ICorporaClient
         _requester = requester;
     }
 
+    public ICorporaOperationsClient Operations => field ??= new CorporaOperationsClient(_requester);
+
+    public ICorporaPermissionsClient Permissions => field ??= new CorporaPermissionsClient(_requester);
+
     [Obsolete]
-    public Task<ListCorporaResponse> ListCorporaAsync(
+    public Task<ListCorporaResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
@@ -33,7 +37,7 @@ internal sealed partial class CorporaClient : ICorporaClient
     }
 
     [Obsolete]
-    public Task<Corpus> CreateCorpusAsync(
+    public Task<Corpus> CreateAsync(
         Corpus request,
         CancellationToken cancellationToken = default)
     {
@@ -43,104 +47,35 @@ internal sealed partial class CorporaClient : ICorporaClient
     }
 
     [Obsolete]
-    public Task<Corpus> GetCorpusAsync(
-        string corpus,
+    public Task<Corpus> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(corpus);
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["corpora", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'corpora/{{corpusId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Corpus>(HttpMethod.Get, path, cancellationToken);
     }
 
     [Obsolete]
-    public Task<Empty> DeleteCorpusAsync(
-        string corpus,
+    public Task<Empty> DeleteAsync(
+        string name,
         bool? force = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(corpus);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["corpora", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'corpora/{{corpusId}}'.", nameof(name));
+        }
         var query = new QueryStringBuilder()
             .Add("force", force)
             .ToString();
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}{query}";
+        var path = $"/v1beta/{WildcardPath.Escape(name)}{query}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
-    }
-
-    public Task<Operation> GetOperationByCorpusAndOperationAsync(
-        string corpus,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<ListPermissionsResponse> ListPermissionsByCorpusAsync(
-        string corpus,
-        int? pageSize = null,
-        string? pageToken = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        var query = new QueryStringBuilder()
-            .Add("pageSize", pageSize)
-            .Add("pageToken", pageToken)
-            .ToString();
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions{query}";
-        return _requester.ExecuteAsync<ListPermissionsResponse>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Permission> CreatePermissionByCorpusAsync(
-        string corpus,
-        Permission request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions";
-        return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Post, path, request, cancellationToken);
-    }
-
-    public Task<Permission> GetPermissionByCorpusAndPermissionAsync(
-        string corpus,
-        string permission,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions/{Uri.EscapeDataString(permission)}";
-        return _requester.ExecuteAsync<Permission>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Empty> DeletePermissionByCorpusAndPermissionAsync(
-        string corpus,
-        string permission,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions/{Uri.EscapeDataString(permission)}";
-        return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
-    }
-
-    public Task<Permission> UpdatePermissionByCorpusAndPermissionAsync(
-        string corpus,
-        string permission,
-        Permission request,
-        string updateMask,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        ArgumentNullException.ThrowIfNull(permission);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrEmpty(updateMask);
-        var query = new QueryStringBuilder()
-            .Add("updateMask", updateMask)
-            .ToString();
-        var path = $"/v1beta/corpora/{Uri.EscapeDataString(corpus)}/permissions/{Uri.EscapeDataString(permission)}{query}";
-        return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
 }

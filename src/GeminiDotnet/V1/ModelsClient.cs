@@ -18,7 +18,9 @@ internal sealed partial class ModelsClient : IModelsClient
         _requester = requester;
     }
 
-    public Task<ListModelsResponse> ListModelsAsync(
+    public IModelsOperationsClient Operations => field ??= new ModelsOperationsClient(_requester);
+
+    public Task<ListModelsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
@@ -31,12 +33,16 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<ListModelsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Model> GetModelAsync(
-        string model,
+    public Task<Model> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(model);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'models/{{modelId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Model>(HttpMethod.Get, path, cancellationToken);
     }
 
@@ -46,8 +52,12 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:asyncBatchEmbedContent";
+        var path = $"/v1/{WildcardPath.Escape(model)}:asyncBatchEmbedContent";
         return _requester.ExecuteAsync<AsyncBatchEmbedContentRequest, AsyncBatchEmbedContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -57,8 +67,12 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:batchEmbedContents";
+        var path = $"/v1/{WildcardPath.Escape(model)}:batchEmbedContents";
         return _requester.ExecuteAsync<BatchEmbedContentsRequest, BatchEmbedContentsResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -68,8 +82,12 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:batchGenerateContent";
+        var path = $"/v1/{WildcardPath.Escape(model)}:batchGenerateContent";
         return _requester.ExecuteAsync<BatchGenerateContentRequest, BatchGenerateContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -79,8 +97,12 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:countTokens";
+        var path = $"/v1/{WildcardPath.Escape(model)}:countTokens";
         return _requester.ExecuteAsync<CountTokensRequest, CountTokensResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -90,8 +112,12 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:embedContent";
+        var path = $"/v1/{WildcardPath.Escape(model)}:embedContent";
         return _requester.ExecuteAsync<EmbedContentRequest, EmbedContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -101,8 +127,12 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:generateContent";
+        var path = $"/v1/{WildcardPath.Escape(model)}:generateContent";
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
@@ -112,39 +142,13 @@ internal sealed partial class ModelsClient : IModelsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["models", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'models/{{modelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}:streamGenerateContent?alt=sse";
+        var path = $"/v1/{WildcardPath.Escape(model)}:streamGenerateContent?alt=sse";
         return _requester.ExecuteStreamingAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
-    }
-
-    public Task<ListOperationsResponse> ListOperationsByModelAsync(
-        string model,
-        string? filter = null,
-        int? pageSize = null,
-        string? pageToken = null,
-        bool? returnPartialSuccess = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        var query = new QueryStringBuilder()
-            .Add("filter", filter)
-            .Add("pageSize", pageSize)
-            .Add("pageToken", pageToken)
-            .Add("returnPartialSuccess", returnPartialSuccess)
-            .ToString();
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}/operations{query}";
-        return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Operation> GetOperationByModelAndOperationAsync(
-        string model,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1/models/{Uri.EscapeDataString(model)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
 }

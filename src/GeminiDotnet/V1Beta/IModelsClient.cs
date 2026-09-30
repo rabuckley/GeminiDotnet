@@ -5,6 +5,11 @@ namespace GeminiDotnet.V1Beta;
 public partial interface IModelsClient
 {
     /// <summary>
+    /// Provides access to the Operations API operations.
+    /// </summary>
+    IModelsOperationsClient Operations { get; }
+
+    /// <summary>
     /// Lists the [<see cref="V1Beta.Models.Model"/>s](https://ai.google.dev/gemini-api/docs/models/gemini)
     /// available through the Gemini API.
     /// </summary>
@@ -22,7 +27,7 @@ public partial interface IModelsClient
     /// the call that provided the page token.
     /// </param>
     /// <param name="cancellationToken"></param>
-    Task<ListModelsResponse> ListModelsAsync(
+    Task<ListModelsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default);
@@ -35,10 +40,13 @@ public partial interface IModelsClient
     /// guide](https://ai.google.dev/gemini-api/docs/models/gemini) for detailed
     /// model information.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Required. The resource name of the model. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Model> GetModelAsync(
-        string model,
+    Task<Model> GetAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -46,7 +54,10 @@ public partial interface IModelsClient
     /// We have a <c>BatchEmbedContents</c> handler in <c>GenerativeService</c>, but it was
     /// synchronized. So we name this one to be <c>Async</c> to avoid confusion.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion. Format: <c>models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<AsyncBatchEmbedContentOperation> AsyncBatchEmbedContentAsync(
@@ -59,7 +70,10 @@ public partial interface IModelsClient
     /// consists of a batch of strings represented as <see cref="V1Beta.EmbedContentRequest"/>
     /// objects.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<BatchEmbedContentsResponse> BatchEmbedContentsAsync(
@@ -71,7 +85,10 @@ public partial interface IModelsClient
     /// Generates multiple embeddings from the model given input text in a
     /// synchronous call.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the embedding. Examples: models/embedding-gecko-001
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -83,7 +100,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Enqueues a batch of <c>GenerateContent</c> requests for batch processing.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion. Format: <c>models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<BatchGenerateContentOperation> BatchGenerateContentAsync(
@@ -94,7 +114,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Runs a model's tokenizer on a string and returns the token count.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -106,7 +129,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Runs a model's tokenizer on a text and returns the token count.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -120,7 +146,10 @@ public partial interface IModelsClient
     /// Refer to the [tokens guide](https://ai.google.dev/gemini-api/docs/tokens)
     /// to learn more about tokens.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<CountTokensResponse> CountTokensAsync(
@@ -133,7 +162,10 @@ public partial interface IModelsClient
     /// specified [Gemini Embedding
     /// model](https://ai.google.dev/gemini-api/docs/models/gemini#text-embedding).
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<EmbedContentResponse> EmbedContentAsync(
@@ -144,7 +176,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Generates an embedding from the model given an input message.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The model name to use with the format model=models/{model}.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -157,7 +192,10 @@ public partial interface IModelsClient
     /// Generates a grounded answer from the model given an input
     /// <see cref="V1Beta.Models.GenerateAnswerRequest"/>.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the grounded response. Format: <c>model=models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -175,7 +213,10 @@ public partial interface IModelsClient
     /// guide](https://ai.google.dev/gemini-api/docs/models/gemini) and [tuning
     /// guide](https://ai.google.dev/gemini-api/docs/model-tuning) for details.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion. Format: <c>models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<GenerateContentResponse> GenerateContentAsync(
@@ -186,7 +227,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Generates a response from the model given an input <see cref="V1Beta.Models.MessagePrompt"/>.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the model to use. Format: <c>name=models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -198,7 +242,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Generates a response from the model given an input message.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> or <see cref="V1Beta.TunedModels.TunedModel"/> to use for generating the completion. Examples: models/text-bison-001 tunedModels/sentence-translator-u3b7m
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     [Obsolete]
@@ -210,7 +257,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Performs a prediction request.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the model for prediction. Format: <c>name=models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<PredictResponse> PredictAsync(
@@ -221,7 +271,10 @@ public partial interface IModelsClient
     /// <summary>
     /// Same as Predict but returns an LRO.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the model for prediction. Format: <c>name=models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     Task<PredictLongRunningOperation> PredictLongRunningAsync(
@@ -234,53 +287,15 @@ public partial interface IModelsClient
     /// response](https://ai.google.dev/gemini-api/docs/text-generation?lang=python#generate-a-text-stream)
     /// from the model given an input <see cref="V1Beta.GenerateContentRequest"/>.
     /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="model">
+    /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion. Format: <c>models/{model}</c>.
+    /// A resource name of the form <c>models/{modelId}</c>.
+    /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
     IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentAsync(
         string model,
         GenerateContentRequest request,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Lists operations that match the specified filter in the request. If the
-    /// server doesn't support this method, it returns <c>UNIMPLEMENTED</c>.
-    /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="filter">The standard list filter.</param>
-    /// <param name="pageSize">The standard list page size.</param>
-    /// <param name="pageToken">The standard list page token.</param>
-    /// <param name="returnPartialSuccess">
-    /// When set to <c>true</c>, operations that are reachable are returned as normal,
-    /// and those that are unreachable are returned in the
-    /// ListOperationsResponse.unreachable
-    /// field.
-    /// This can only be <c>true</c> when reading across collections. For example, when
-    /// <c>parent</c> is set to <c>"projects/example/locations/-"</c>.
-    /// This field is not supported by default and will result in an
-    /// <c>UNIMPLEMENTED</c> error if set unless explicitly documented otherwise in
-    /// service or product specific documentation.
-    /// </param>
-    /// <param name="cancellationToken"></param>
-    Task<ListOperationsResponse> ListOperationsByModelAsync(
-        string model,
-        string? filter = null,
-        int? pageSize = null,
-        string? pageToken = null,
-        bool? returnPartialSuccess = null,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets the latest state of a long-running operation.  Clients can use this
-    /// method to poll the operation result at intervals as recommended by the API
-    /// service.
-    /// </summary>
-    /// <param name="model">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="cancellationToken"></param>
-    Task<Operation> GetOperationByModelAndOperationAsync(
-        string model,
-        string operation,
         CancellationToken cancellationToken = default);
 
 }

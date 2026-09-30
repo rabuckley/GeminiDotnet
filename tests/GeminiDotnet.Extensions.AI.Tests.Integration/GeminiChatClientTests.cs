@@ -481,7 +481,7 @@ public sealed class GeminiChatClientTests
         // A fact the model cannot know, so an answer containing it can only have come from the store.
         const string fact = "The Aldbourne Reading Room was founded in 1873 by Hester Vane.";
 
-        var store = await stores.CreateFileSearchStoreAsync(
+        var store = await stores.CreateAsync(
             new FileSearchStore { DisplayName = $"gemini-dotnet-test-{Guid.NewGuid():N}" },
             cancellationToken);
 
@@ -536,14 +536,14 @@ public sealed class GeminiChatClientTests
             // shared project, where nothing else would ever notice it.
             try
             {
-                await stores.DeleteFileSearchStoreAsync(storeId, force: true, CancellationToken.None);
+                await stores.DeleteAsync($"fileSearchStores/{storeId}", force: true, CancellationToken.None);
             }
             finally
             {
                 if (uploadedFileId is not null)
                 {
                     // Importing copies the file into the store, so the upload is the test's to clean up.
-                    await client.V1Beta.Files.DeleteFileAsync(uploadedFileId, CancellationToken.None);
+                    await client.V1Beta.Files.DeleteAsync($"files/{uploadedFileId}", CancellationToken.None);
                 }
             }
         }
@@ -860,7 +860,7 @@ public sealed class GeminiChatClientTests
         CancellationToken cancellationToken)
     {
         var operation = await client.V1Beta.FileSearchStores.ImportFileAsync(
-            storeId,
+            $"fileSearchStores/{storeId}",
             new ImportFileRequest { FileName = fileName },
             cancellationToken);
 
@@ -875,9 +875,8 @@ public sealed class GeminiChatClientTests
 
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
-            var polled = await client.V1Beta.FileSearchStores.GetOperationByFileSearchStoreAndOperationAsync(
-                storeId,
-                operationId,
+            var polled = await client.V1Beta.FileSearchStores.Operations.GetAsync(
+                $"fileSearchStores/{storeId}/operations/{operationId}",
                 cancellationToken);
 
             operation = operation with { Done = polled.Done, Error = polled.Error };

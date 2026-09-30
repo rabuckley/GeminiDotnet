@@ -24,7 +24,7 @@ public sealed class ImageGenerationExample
             ],
         };
 
-        var response = await client.V1Beta.Models.GenerateContentAsync(model, request, cancellationToken);
+        var response = await client.V1Beta.Models.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         if (response.Candidates?.Count != 1)
         {

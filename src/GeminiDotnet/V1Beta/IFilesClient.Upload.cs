@@ -9,7 +9,7 @@ public partial interface IFilesClient
     /// <see cref="File"/> metadata.
     /// </summary>
     /// <remarks>
-    /// A convenience over <see cref="CreateFileAsync"/>, which takes the file's metadata and
+    /// A convenience over <see cref="IMediaClient.UploadAsync"/>, which takes the file's metadata and
     /// content directly. The entire file is sent in one request; chunked resumable uploads for
     /// large files are not yet supported.
     /// </remarks>

@@ -19,7 +19,7 @@ internal sealed partial class FilesClient : IFilesClient
         _requester = requester;
     }
 
-    public Task<ListFilesResponse> ListFilesAsync(
+    public Task<ListFilesResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
@@ -32,43 +32,52 @@ internal sealed partial class FilesClient : IFilesClient
         return _requester.ExecuteAsync<ListFilesResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<CreateFileResponse> CreateFileAsync(
-        CreateFileRequest request,
-        MediaContent media,
+    public Task<File> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(media);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(media.Length, 2147483648L);
-        const string path = "/upload/v1/files";
-        return _requester.UploadAsync<CreateFileRequest, CreateFileResponse>(HttpMethod.Post, path, request, media, cancellationToken);
-    }
-
-    public Task<File> GetFileAsync(
-        string file,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(file);
-        var path = $"/v1/files/{Uri.EscapeDataString(file)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["files", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'files/{{fileId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<File>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Empty> DeleteFileAsync(
-        string file,
+    public Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(file);
-        var path = $"/v1/files/{Uri.EscapeDataString(file)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["files", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'files/{{fileId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
-    public Task<DownloadFileResponse> DownloadFileAsync(
-        string file,
+    public Task<MediaDownload> DownloadAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(file);
-        var path = $"/v1/files/{Uri.EscapeDataString(file)}:download";
-        return _requester.ExecuteAsync<DownloadFileResponse>(HttpMethod.Get, path, cancellationToken);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["files", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'files/{{fileId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}:download?alt=media";
+        return _requester.DownloadAsync(HttpMethod.Get, path, cancellationToken);
+    }
+
+    public Task<RegisterFilesResponse> RegisterAsync(
+        RegisterFilesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        const string path = "/v1/files:register";
+        return _requester.ExecuteAsync<RegisterFilesRequest, RegisterFilesResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
 }

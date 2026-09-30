@@ -293,9 +293,8 @@ public sealed class GeminiHostedFileClientTests
     [Fact]
     public async Task DownloadAsync_DisposesDownloadResult_WhenGetFileFails()
     {
-        // Arrange — GetFileAsync returns a faulted task (404), but
-        // DownloadFileStreamAsync succeeds. The download result must be disposed
-        // to avoid leaking the underlying HttpResponseMessage.
+        // Arrange — GetAsync returns a faulted task (404), but DownloadAsync
+        // succeeds. The download must be disposed to avoid leaking its response.
         var filesClient = new StubFilesClient
         {
             FaultGetFileAsync = true,
@@ -306,7 +305,7 @@ public sealed class GeminiHostedFileClientTests
         await Assert.ThrowsAsync<GeminiClientException>(() => client.DownloadAsync("nonexistent"));
 
         // The download response should have been disposed by the catch block.
-        Assert.True(filesClient.LastDownloadResponse?.IsDisposed ?? false);
+        Assert.True(filesClient.LastDownloadStream?.IsDisposed ?? false);
     }
 
     [Fact]
@@ -320,7 +319,7 @@ public sealed class GeminiHostedFileClientTests
         await using var stream = await client.DownloadAsync(
             "https://generativelanguage.googleapis.com/v1beta/files/uri-test");
 
-        // Assert — the stub records the resource ID passed to GetFileAsync
+        // Assert — the stub records the resource ID passed to GetAsync
         Assert.Equal("uri-test", filesClient.LastGetFileId);
     }
 
@@ -350,22 +349,15 @@ public sealed class GeminiHostedFileClientTests
     public async Task GeminiHostedFileDownloadStream_Dispose_DisposesUnderlyingResult()
     {
         // Arrange
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent("test"u8.ToArray()),
-        };
-        response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-
-        var result = new FileDownloadResult(response);
-        var contentStream = await result.GetContentStreamAsync();
-        var downloadStream = new GeminiHostedFileDownloadStream(result, contentStream, "test.bin");
+        var contentStream = new TrackableStream("test"u8.ToArray());
+        var download = new MediaDownload(contentStream, "application/octet-stream", contentStream.Length);
+        var downloadStream = new GeminiHostedFileDownloadStream(download, "test.bin");
 
         // Act
         await downloadStream.DisposeAsync();
 
-        // Assert — reading from the content stream after disposal should throw
-        var readFromDisposed = () => response.Content.ReadAsStream();
-        Assert.Throws<ObjectDisposedException>(readFromDisposed);
+        // Assert
+        Assert.True(contentStream.IsDisposed);
     }
 
     #endregion
@@ -477,12 +469,10 @@ public sealed class GeminiHostedFileClientTests
         public ICorporaClient Corpora => throw new NotImplementedException();
         public IDynamicClient Dynamic => throw new NotImplementedException();
         public IEnvironmentsClient Environments => throw new NotImplementedException();
-        public IEnvironmentsCreateClient EnvironmentsCreate => throw new NotImplementedException();
-        public IEnvironmentsListClient EnvironmentsList => throw new NotImplementedException();
         public IFilesClient Files => _files;
         public IFileSearchStoresClient FileSearchStores => throw new NotImplementedException();
-        public IFilesRegisterClient FilesRegister => throw new NotImplementedException();
         public IGeneratedFilesClient GeneratedFiles => throw new NotImplementedException();
+        public IMediaClient Media => throw new NotImplementedException();
         public IModelsClient Models => throw new NotImplementedException();
         public ITunedModelsClient TunedModels => throw new NotImplementedException();
     }
@@ -501,11 +491,11 @@ public sealed class GeminiHostedFileClientTests
         public string? LastDeletedFile { get; set; }
         public string? LastGetFileId { get; set; }
         public UploadFileOptions? LastUploadOptions { get; set; }
-        public TrackableHttpResponseMessage? LastDownloadResponse { get; set; }
+        public TrackableStream? LastDownloadStream { get; set; }
 
         private int _paginationIndex;
 
-        public Task<ListFilesResponse> ListFilesAsync(int? pageSize = null, string? pageToken = null, CancellationToken cancellationToken = default)
+        public Task<ListFilesResponse> ListAsync(int? pageSize = null, string? pageToken = null, CancellationToken cancellationToken = default)
         {
             if (PaginatedResults is not null)
             {
@@ -522,12 +512,12 @@ public sealed class GeminiHostedFileClientTests
             });
         }
 
-        public Task<CreateFileResponse> CreateFileAsync(CreateFileRequest request, MediaContent media, CancellationToken cancellationToken = default)
+        public Task<RegisterFilesResponse> RegisterAsync(RegisterFilesRequest request, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
 
-        public Task<File> GetFileAsync(string file, CancellationToken cancellationToken = default)
+        public Task<File> GetAsync(string name, CancellationToken cancellationToken = default)
         {
-            LastGetFileId = file;
+            LastGetFileId = name["files/".Length..];
 
             if (ThrowNotFoundOnGet)
             {
@@ -542,35 +532,26 @@ public sealed class GeminiHostedFileClientTests
                 return Task.FromException<File>(CreateGeminiException(HttpStatusCode.NotFound));
             }
 
-            return Task.FromResult(FileToReturn ?? new File { Name = $"files/{file}" });
+            return Task.FromResult(FileToReturn ?? new File { Name = name });
         }
 
-        public Task<Empty> DeleteFileAsync(string file, CancellationToken cancellationToken = default)
+        public Task<Empty> DeleteAsync(string name, CancellationToken cancellationToken = default)
         {
             if (ThrowOnDelete)
             {
                 ThrowGeminiException(HttpStatusCode.NotFound);
             }
 
-            LastDeletedFile = file;
+            LastDeletedFile = name["files/".Length..];
             return Task.FromResult(new Empty());
         }
 
-        public Task<DownloadFileResponse> DownloadFileAsync(string file, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<FileDownloadResult> DownloadFileStreamAsync(string file, CancellationToken cancellationToken = default)
+        public Task<MediaDownload> DownloadAsync(string name, CancellationToken cancellationToken = default)
         {
-            // Return a result wrapping a simple memory-backed response, using a
-            // trackable message so tests can verify disposal.
-            var response = new TrackableHttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new ByteArrayContent("file-content"u8.ToArray()),
-            };
-            response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
-            LastDownloadResponse = response;
-            return Task.FromResult(new FileDownloadResult(response));
+            // A trackable stream, so tests can verify the download is disposed.
+            var stream = new TrackableStream("file-content"u8.ToArray());
+            LastDownloadStream = stream;
+            return Task.FromResult(new MediaDownload(stream, "text/plain", stream.Length));
         }
 
         public Task<File> UploadFileAsync(Stream content, long contentLength, UploadFileOptions? options = null, CancellationToken cancellationToken = default)
@@ -636,9 +617,9 @@ public sealed class GeminiHostedFileClientTests
     }
 
     /// <summary>
-    /// An <see cref="HttpResponseMessage"/> subclass that tracks whether it has been disposed.
+    /// A <see cref="MemoryStream"/> that tracks whether it has been disposed.
     /// </summary>
-    private sealed class TrackableHttpResponseMessage : HttpResponseMessage
+    private sealed class TrackableStream(byte[] buffer) : MemoryStream(buffer)
     {
         public bool IsDisposed { get; private set; }
 

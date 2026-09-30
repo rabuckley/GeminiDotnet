@@ -22,7 +22,7 @@ public partial interface IOperationsClient
     /// service or product specific documentation.
     /// </param>
     /// <param name="cancellationToken"></param>
-    Task<ListOperationsResponse> ListOperationsAsync(
+    Task<ListOperationsResponse> ListAsync(
         string? filter = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -35,10 +35,13 @@ public partial interface IOperationsClient
     /// operation. If the server doesn't support this method, it returns
     /// <c>google.rpc.Code.UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="operationsId">Part of <c>name</c>. The name of the operation resource to be deleted.</param>
+    /// <param name="name">
+    /// The name of the operation resource to be deleted.
+    /// A resource name of the form <c>operations/{operationId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Empty> DeleteOperationByOperationsIdAsync(
-        string operationsId,
+    Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
 }

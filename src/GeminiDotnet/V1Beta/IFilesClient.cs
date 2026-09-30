@@ -14,47 +14,59 @@ public partial interface IFilesClient
     /// </param>
     /// <param name="pageToken">Optional. A page token from a previous <c>ListFiles</c> call.</param>
     /// <param name="cancellationToken"></param>
-    Task<ListFilesResponse> ListFilesAsync(
+    Task<ListFilesResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a <see cref="V1Beta.Files.File"/>.
-    /// </summary>
-    /// <param name="request">The request body.</param>
-    /// <param name="media">The bytes to upload, at most 2 GiB.</param>
-    /// <param name="cancellationToken"></param>
-    Task<CreateFileResponse> CreateFileAsync(
-        CreateFileRequest request,
-        MediaContent media,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Gets the metadata for the given <see cref="V1Beta.Files.File"/>.
     /// </summary>
-    /// <param name="file">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Required. The name of the <see cref="V1Beta.Files.File"/> to get. Example: <c>files/abc-123</c>
+    /// A resource name of the form <c>files/{fileId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<File> GetFileAsync(
-        string file,
+    Task<File> GetAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes the <see cref="V1Beta.Files.File"/>.
     /// </summary>
-    /// <param name="file">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Required. The name of the <see cref="V1Beta.Files.File"/> to delete. Example: <c>files/abc-123</c>
+    /// A resource name of the form <c>files/{fileId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Empty> DeleteFileAsync(
-        string file,
+    Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Download the <see cref="V1Beta.Files.File"/>.
     /// </summary>
-    /// <param name="file">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <remarks>
+    /// Reads the bytes this operation serves, which is all it serves. Dispose the returned
+    /// download once its bytes have been read.
+    /// </remarks>
+    /// <param name="name">A resource name of the form <c>files/{fileId}</c>.</param>
     /// <param name="cancellationToken"></param>
-    Task<DownloadFileResponse> DownloadFileAsync(
-        string file,
+    Task<MediaDownload> DownloadAsync(
+        string name,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Registers a Google Cloud Storage files with FileService. The user is
+    /// expected to provide Google Cloud Storage URIs and will receive a File
+    /// resource for each URI in return. Note that the files are not copied, just
+    /// registered with File API. If one file fails to register, the whole request
+    /// fails.
+    /// </summary>
+    /// <param name="request">The request body.</param>
+    /// <param name="cancellationToken"></param>
+    Task<RegisterFilesResponse> RegisterAsync(
+        RegisterFilesRequest request,
         CancellationToken cancellationToken = default);
 
 }

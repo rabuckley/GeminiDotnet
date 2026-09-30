@@ -17,7 +17,7 @@ internal sealed partial class BatchesClient : IBatchesClient
         _requester = requester;
     }
 
-    public Task<ListOperationsResponse> ListOperationsByAsync(
+    public Task<ListOperationsResponse> ListAsync(
         string? filter = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -34,60 +34,80 @@ internal sealed partial class BatchesClient : IBatchesClient
         return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Operation> GetOperationByGenerateContentBatchAsync(
-        string generateContentBatch,
+    public Task<Operation> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(generateContentBatch);
-        var path = $"/v1/batches/{Uri.EscapeDataString(generateContentBatch)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["batches", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'batches/{{batchId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Empty> DeleteOperationAsync(
-        string generateContentBatch,
+    public Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(generateContentBatch);
-        var path = $"/v1/batches/{Uri.EscapeDataString(generateContentBatch)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["batches", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'batches/{{batchId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
-    public Task<Empty> CancelOperationByGenerateContentBatchAsync(
-        string generateContentBatch,
+    public Task<Empty> CancelAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(generateContentBatch);
-        var path = $"/v1/batches/{Uri.EscapeDataString(generateContentBatch)}:cancel";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["batches", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'batches/{{batchId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}:cancel";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Post, path, cancellationToken);
     }
 
     public Task<EmbedContentBatch> UpdateEmbedContentBatchAsync(
-        string generateContentBatch,
+        string name,
         EmbedContentBatch request,
         string? updateMask = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(generateContentBatch);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["batches", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'batches/{{batchId}}'.", nameof(name));
+        }
         ArgumentNullException.ThrowIfNull(request);
         var query = new QueryStringBuilder()
             .Add("updateMask", updateMask)
             .ToString();
-        var path = $"/v1/batches/{Uri.EscapeDataString(generateContentBatch)}:updateEmbedContentBatch{query}";
+        var path = $"/v1/{WildcardPath.Escape(name)}:updateEmbedContentBatch{query}";
         return _requester.ExecuteAsync<EmbedContentBatch, EmbedContentBatch>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
     public Task<GenerateContentBatch> UpdateGenerateContentBatchAsync(
-        string generateContentBatch,
+        string name,
         GenerateContentBatch request,
         string? updateMask = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(generateContentBatch);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["batches", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'batches/{{batchId}}'.", nameof(name));
+        }
         ArgumentNullException.ThrowIfNull(request);
         var query = new QueryStringBuilder()
             .Add("updateMask", updateMask)
             .ToString();
-        var path = $"/v1/batches/{Uri.EscapeDataString(generateContentBatch)}:updateGenerateContentBatch{query}";
+        var path = $"/v1/{WildcardPath.Escape(name)}:updateGenerateContentBatch{query}";
         return _requester.ExecuteAsync<GenerateContentBatch, GenerateContentBatch>(HttpMethod.Patch, path, request, cancellationToken);
     }
 

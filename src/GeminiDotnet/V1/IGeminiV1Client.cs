@@ -19,24 +19,24 @@ public interface IGeminiV1Client
     IDynamicClient Dynamic { get; }
 
     /// <summary>
-    /// Provides access to the Files API operations.
-    /// </summary>
-    IFilesClient Files { get; }
-
-    /// <summary>
     /// Provides access to the FileSearchStores API operations.
     /// </summary>
     IFileSearchStoresClient FileSearchStores { get; }
 
     /// <summary>
-    /// Provides access to the FilesRegister API operations.
+    /// Provides access to the Files API operations.
     /// </summary>
-    IFilesRegisterClient FilesRegister { get; }
+    IFilesClient Files { get; }
 
     /// <summary>
     /// Provides access to the GeneratedFiles API operations.
     /// </summary>
     IGeneratedFilesClient GeneratedFiles { get; }
+
+    /// <summary>
+    /// Provides access to the Media API operations.
+    /// </summary>
+    IMediaClient Media { get; }
 
     /// <summary>
     /// Provides access to the Models API operations.

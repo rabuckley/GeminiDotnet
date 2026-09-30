@@ -18,7 +18,9 @@ internal sealed partial class GeneratedFilesClient : IGeneratedFilesClient
         _requester = requester;
     }
 
-    public Task<ListGeneratedFilesResponse> ListGeneratedFilesAsync(
+    public IGeneratedFilesOperationsClient Operations => field ??= new GeneratedFilesOperationsClient(_requester);
+
+    public Task<ListGeneratedFilesResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
@@ -31,24 +33,17 @@ internal sealed partial class GeneratedFilesClient : IGeneratedFilesClient
         return _requester.ExecuteAsync<ListGeneratedFilesResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<GeneratedFile> GetGeneratedFileAsync(
-        string generatedFile,
+    public Task<GeneratedFile> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(generatedFile);
-        var path = $"/v1beta/generatedFiles/{Uri.EscapeDataString(generatedFile)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["generatedFiles", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'generatedFiles/{{generatedFileId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<GeneratedFile>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Operation> GetOperationByGeneratedFileAndOperationAsync(
-        string generatedFile,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(generatedFile);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/generatedFiles/{Uri.EscapeDataString(generatedFile)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
 }

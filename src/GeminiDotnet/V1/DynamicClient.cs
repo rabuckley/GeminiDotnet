@@ -17,25 +17,33 @@ internal sealed partial class DynamicClient : IDynamicClient
         _requester = requester;
     }
 
-    public Task<GenerateContentResponse> GenerateContentByDynamicIdAsync(
-        string dynamicId,
+    public Task<GenerateContentResponse> GenerateContentAsync(
+        string model,
         GenerateContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dynamicId);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["dynamic", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'dynamic/{{dynamicId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/dynamic/{Uri.EscapeDataString(dynamicId)}:generateContent";
+        var path = $"/v1/{WildcardPath.Escape(model)}:generateContent";
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
-    public IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentByDynamicIdAsync(
-        string dynamicId,
+    public IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentAsync(
+        string model,
         GenerateContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dynamicId);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["dynamic", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'dynamic/{{dynamicId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1/dynamic/{Uri.EscapeDataString(dynamicId)}:streamGenerateContent?alt=sse";
+        var path = $"/v1/{WildcardPath.Escape(model)}:streamGenerateContent?alt=sse";
         return _requester.ExecuteStreamingAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 

@@ -17,7 +17,7 @@ internal sealed partial class OperationsClient : IOperationsClient
         _requester = requester;
     }
 
-    public Task<ListOperationsResponse> ListOperationsAsync(
+    public Task<ListOperationsResponse> ListAsync(
         string? filter = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -34,12 +34,16 @@ internal sealed partial class OperationsClient : IOperationsClient
         return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Empty> DeleteOperationByOperationsIdAsync(
-        string operationsId,
+    public Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(operationsId);
-        var path = $"/v1/operations/{Uri.EscapeDataString(operationsId)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/', 2) is not ["operations", _])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'operations/{{operationId}}'.", nameof(name));
+        }
+        var path = $"/v1/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 

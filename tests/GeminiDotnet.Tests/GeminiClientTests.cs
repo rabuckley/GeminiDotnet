@@ -46,7 +46,7 @@ public sealed class GeminiClientTests
         var request = WhoWasTheFirstPersonToWalkOnTheMoonRequest(model);
 
         // Act
-        var result = await client.GenerateContentAsync(model, request, cancellationToken);
+        var result = await client.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         // Assert
         var response = result.Candidates!.Single().Content!.Parts!.Single();
@@ -79,7 +79,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(model, request, cancellationToken);
+        var result = await client.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -102,7 +102,7 @@ public sealed class GeminiClientTests
         var count = 0;
 
         // Act
-        await foreach (var result in client.StreamGenerateContentAsync(model, request, cancellationToken))
+        await foreach (var result in client.StreamGenerateContentAsync($"models/{model}", request, cancellationToken))
         {
             var response = result.Candidates!.Single().Content!.Parts!.Single();
             Assert.NotNull(response.Text);
@@ -133,7 +133,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.EmbedContentAsync(model, request, cancellationToken);
+        var result = await client.EmbedContentAsync($"models/{model}", request, cancellationToken);
 
         // Assert
         Assert.NotNull(result.Embedding);
@@ -169,7 +169,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(model, request, cancellationToken);
+        var result = await client.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         // Assert
         var candidate = result.Candidates!.Single();
@@ -224,7 +224,7 @@ public sealed class GeminiClientTests
         UsageMetadata? usage = null;
 
         // Act
-        await foreach (var chunk in client.StreamGenerateContentAsync(model, request, cancellationToken))
+        await foreach (var chunk in client.StreamGenerateContentAsync($"models/{model}", request, cancellationToken))
         {
             usage = chunk.UsageMetadata ?? usage;
 
@@ -264,7 +264,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        async Task Act() => await client.GenerateContentAsync(model, request, cancellationToken);
+        async Task Act() => await client.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         // Assert
         var ex = await Assert.ThrowsAsync<GeminiClientException>(Act);
@@ -297,7 +297,7 @@ public sealed class GeminiClientTests
         };
 
         // Act
-        var result = await client.GenerateContentAsync(model, request, cancellationToken);
+        var result = await client.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -349,7 +349,7 @@ public sealed class GeminiClientTests
             Tools = [new Tool { GoogleSearch = new GoogleSearch() }]
         };
 
-        await foreach (var update in client.StreamGenerateContentAsync(model, request, cancellationToken))
+        await foreach (var update in client.StreamGenerateContentAsync($"models/{model}", request, cancellationToken))
         {
             foreach (var part in StreamedParts(update))
             {
@@ -393,7 +393,7 @@ public sealed class GeminiClientTests
 
         // Act
         var response = await client.GenerateContentAsync(
-            model,
+            $"models/{model}",
             request,
             cancellationToken);
 

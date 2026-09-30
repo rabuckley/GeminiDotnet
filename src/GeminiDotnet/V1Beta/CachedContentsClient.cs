@@ -18,7 +18,7 @@ internal sealed partial class CachedContentsClient : ICachedContentsClient
         _requester = requester;
     }
 
-    public Task<ListCachedContentsResponse> ListCachedContentsAsync(
+    public Task<ListCachedContentsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
@@ -31,7 +31,7 @@ internal sealed partial class CachedContentsClient : ICachedContentsClient
         return _requester.ExecuteAsync<ListCachedContentsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<CachedContent> CreateCachedContentAsync(
+    public Task<CachedContent> CreateAsync(
         CachedContent request,
         CancellationToken cancellationToken = default)
     {
@@ -40,36 +40,48 @@ internal sealed partial class CachedContentsClient : ICachedContentsClient
         return _requester.ExecuteAsync<CachedContent, CachedContent>(HttpMethod.Post, path, request, cancellationToken);
     }
 
-    public Task<CachedContent> GetCachedContentAsync(
-        string id,
+    public Task<CachedContent> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["cachedContents", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'cachedContents/{{cachedContentId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<CachedContent>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Empty> DeleteCachedContentAsync(
-        string id,
+    public Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(id);
-        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["cachedContents", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'cachedContents/{{cachedContentId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
-    public Task<CachedContent> UpdateCachedContentAsync(
-        string id,
+    public Task<CachedContent> PatchAsync(
+        string name,
         CachedContent request,
         string? updateMask = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["cachedContents", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'cachedContents/{{cachedContentId}}'.", nameof(name));
+        }
         ArgumentNullException.ThrowIfNull(request);
         var query = new QueryStringBuilder()
             .Add("updateMask", updateMask)
             .ToString();
-        var path = $"/v1beta/cachedContents/{Uri.EscapeDataString(id)}{query}";
+        var path = $"/v1beta/{WildcardPath.Escape(name)}{query}";
         return _requester.ExecuteAsync<CachedContent, CachedContent>(HttpMethod.Patch, path, request, cancellationToken);
     }
 

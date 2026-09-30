@@ -18,7 +18,7 @@ internal sealed partial class AuthTokensClient : IAuthTokensClient
         _requester = requester;
     }
 
-    public Task<AuthToken> CreateTokenAsync(
+    public Task<AuthToken> CreateAsync(
         AuthToken request,
         CancellationToken cancellationToken = default)
     {
