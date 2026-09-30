@@ -18,7 +18,13 @@ internal sealed partial class FileSearchStoresClient : IFileSearchStoresClient
         _requester = requester;
     }
 
-    public Task<ListFileSearchStoresResponse> ListFileSearchStoresAsync(
+    public IFileSearchStoresDocumentsClient Documents => field ??= new FileSearchStoresDocumentsClient(_requester);
+
+    public IFileSearchStoresOperationsClient Operations => field ??= new FileSearchStoresOperationsClient(_requester);
+
+    public IFileSearchStoresUploadClient Upload => field ??= new FileSearchStoresUploadClient(_requester);
+
+    public Task<ListFileSearchStoresResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
@@ -31,7 +37,7 @@ internal sealed partial class FileSearchStoresClient : IFileSearchStoresClient
         return _requester.ExecuteAsync<ListFileSearchStoresResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<FileSearchStore> CreateFileSearchStoreAsync(
+    public Task<FileSearchStore> CreateAsync(
         FileSearchStore request,
         CancellationToken cancellationToken = default)
     {
@@ -40,125 +46,49 @@ internal sealed partial class FileSearchStoresClient : IFileSearchStoresClient
         return _requester.ExecuteAsync<FileSearchStore, FileSearchStore>(HttpMethod.Post, path, request, cancellationToken);
     }
 
-    public Task<FileSearchStore> GetFileSearchStoreAsync(
-        string fileSearchStore,
+    public Task<FileSearchStore> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["fileSearchStores", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'fileSearchStores/{{fileSearchStoreId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<FileSearchStore>(HttpMethod.Get, path, cancellationToken);
     }
 
-    public Task<Empty> DeleteFileSearchStoreAsync(
-        string fileSearchStore,
+    public Task<Empty> DeleteAsync(
+        string name,
         bool? force = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["fileSearchStores", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'fileSearchStores/{{fileSearchStoreId}}'.", nameof(name));
+        }
         var query = new QueryStringBuilder()
             .Add("force", force)
             .ToString();
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}{query}";
+        var path = $"/v1beta/{WildcardPath.Escape(name)}{query}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
     public Task<ImportFileOperation> ImportFileAsync(
-        string fileSearchStore,
+        string fileSearchStoreName,
         ImportFileRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
+        ArgumentNullException.ThrowIfNull(fileSearchStoreName);
+        if (fileSearchStoreName.Split('/') is not ["fileSearchStores", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{fileSearchStoreName}' is not a resource name of the form 'fileSearchStores/{{fileSearchStoreId}}'.", nameof(fileSearchStoreName));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}:importFile";
+        var path = $"/v1beta/{WildcardPath.Escape(fileSearchStoreName)}:importFile";
         return _requester.ExecuteAsync<ImportFileRequest, ImportFileOperation>(HttpMethod.Post, path, request, cancellationToken);
-    }
-
-    public Task<UploadToFileSearchStoreOperation> UploadToFileSearchStoreAsync(
-        string fileSearchStore,
-        UploadToFileSearchStoreRequest request,
-        MediaContent media,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(media);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(media.Length, 104857600L);
-        var path = $"/upload/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}:uploadToFileSearchStore";
-        return _requester.UploadAsync<UploadToFileSearchStoreRequest, UploadToFileSearchStoreOperation>(HttpMethod.Post, path, request, media, cancellationToken);
-    }
-
-    public Task<ListDocumentsResponse> ListDocumentsAsync(
-        string fileSearchStore,
-        int? pageSize = null,
-        string? pageToken = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        var query = new QueryStringBuilder()
-            .Add("pageSize", pageSize)
-            .Add("pageToken", pageToken)
-            .ToString();
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/documents{query}";
-        return _requester.ExecuteAsync<ListDocumentsResponse>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Document> GetDocumentAsync(
-        string fileSearchStore,
-        string document,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        ArgumentNullException.ThrowIfNull(document);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/documents/{Uri.EscapeDataString(document)}";
-        return _requester.ExecuteAsync<Document>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Empty> DeleteDocumentAsync(
-        string fileSearchStore,
-        string document,
-        bool? force = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        ArgumentNullException.ThrowIfNull(document);
-        var query = new QueryStringBuilder()
-            .Add("force", force)
-            .ToString();
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/documents/{Uri.EscapeDataString(document)}{query}";
-        return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
-    }
-
-    public Task<Operation> GetOperationByFileSearchStoreAndOperationAsync(
-        string fileSearchStore,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStore);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStore)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<DownloadMediaResponse> DownloadMediaAsync(
-        string fileSearchStoresId,
-        string mediaId,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStoresId);
-        ArgumentNullException.ThrowIfNull(mediaId);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStoresId)}/media/{Uri.EscapeDataString(mediaId)}";
-        return _requester.ExecuteAsync<DownloadMediaResponse>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Operation> GetOperationByFileSearchStoresIdAndOperationsIdAsync(
-        string fileSearchStoresId,
-        string operationsId,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(fileSearchStoresId);
-        ArgumentNullException.ThrowIfNull(operationsId);
-        var path = $"/v1beta/fileSearchStores/{Uri.EscapeDataString(fileSearchStoresId)}/upload/operations/{Uri.EscapeDataString(operationsId)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
     }
 
 }

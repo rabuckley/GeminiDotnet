@@ -4,16 +4,8 @@ namespace GeminiDotnet.V1;
 public partial interface IGeneratedFilesClient
 {
     /// <summary>
-    /// Gets the latest state of a long-running operation.  Clients can use this
-    /// method to poll the operation result at intervals as recommended by the API
-    /// service.
+    /// Provides access to the Operations API operations.
     /// </summary>
-    /// <param name="generatedFile">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="cancellationToken"></param>
-    Task<Operation> GetOperationByGeneratedFileAndOperationAsync(
-        string generatedFile,
-        string operation,
-        CancellationToken cancellationToken = default);
+    IGeneratedFilesOperationsClient Operations { get; }
 
 }

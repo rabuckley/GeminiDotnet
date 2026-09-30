@@ -94,32 +94,25 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
     {
         ArgumentNullException.ThrowIfNull(fileId);
 
-        var resourceId = ExtractResourceId(fileId);
+        var name = $"files/{ExtractResourceId(fileId)}";
 
         // Fetch metadata and download the content stream concurrently.
-        var fileTask = FilesClient.GetFileAsync(resourceId, cancellationToken);
-        var downloadTask = FilesClient.DownloadFileStreamAsync(resourceId, cancellationToken);
+        var fileTask = FilesClient.GetAsync(name, cancellationToken);
+        var downloadTask = FilesClient.DownloadAsync(name, cancellationToken);
 
-        FileDownloadResult? downloadResult = null;
         try
         {
             await Task.WhenAll(fileTask, downloadTask).ConfigureAwait(false);
 
-            downloadResult = downloadTask.Result;
-
-            // Eagerly resolve the content stream so the wrapper never hits sync-over-async.
-            var contentStream = await downloadResult.GetContentStreamAsync(cancellationToken).ConfigureAwait(false);
-
-            return new GeminiHostedFileDownloadStream(downloadResult, contentStream, fileTask.Result.DisplayName);
+            return new GeminiHostedFileDownloadStream(downloadTask.Result, fileTask.Result.DisplayName);
         }
         catch
         {
-            // If the download task completed but something else failed, dispose its
-            // result to release the underlying HttpResponseMessage.
+            // If the download completed but the metadata failed, dispose the download to
+            // release its response.
             if (downloadTask.IsCompletedSuccessfully)
             {
-                downloadResult ??= downloadTask.Result;
-                downloadResult.Dispose();
+                await downloadTask.Result.DisposeAsync().ConfigureAwait(false);
             }
 
             throw;
@@ -138,7 +131,7 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
 
         try
         {
-            var file = await FilesClient.GetFileAsync(resourceId, cancellationToken).ConfigureAwait(false);
+            var file = await FilesClient.GetAsync($"files/{resourceId}", cancellationToken).ConfigureAwait(false);
             return MapFileToHostedFileContent(file);
         }
         catch (GeminiClientException ex) when (ex.Response.StatusCode is HttpStatusCode.NotFound)
@@ -169,7 +162,7 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
                 yield break;
             }
 
-            var response = await FilesClient.ListFilesAsync(
+            var response = await FilesClient.ListAsync(
                 pageSize,
                 pageToken,
                 cancellationToken).ConfigureAwait(false);
@@ -205,7 +198,7 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
 
         try
         {
-            await FilesClient.DeleteFileAsync(resourceId, cancellationToken).ConfigureAwait(false);
+            await FilesClient.DeleteAsync($"files/{resourceId}", cancellationToken).ConfigureAwait(false);
             return true;
         }
         catch (GeminiClientException ex) when (ex.Response.StatusCode is HttpStatusCode.NotFound)

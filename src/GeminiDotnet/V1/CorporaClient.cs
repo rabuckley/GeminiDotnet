@@ -17,15 +17,6 @@ internal sealed partial class CorporaClient : ICorporaClient
         _requester = requester;
     }
 
-    public Task<Operation> GetOperationByCorpusAndOperationAsync(
-        string corpus,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(corpus);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1/corpora/{Uri.EscapeDataString(corpus)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
-    }
+    public ICorporaOperationsClient Operations => field ??= new CorporaOperationsClient(_requester);
 
 }

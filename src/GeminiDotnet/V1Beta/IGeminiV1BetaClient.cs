@@ -34,14 +34,9 @@ public interface IGeminiV1BetaClient
     IEnvironmentsClient Environments { get; }
 
     /// <summary>
-    /// Provides access to the EnvironmentsCreate API operations.
+    /// Provides access to the FileSearchStores API operations.
     /// </summary>
-    IEnvironmentsCreateClient EnvironmentsCreate { get; }
-
-    /// <summary>
-    /// Provides access to the EnvironmentsList API operations.
-    /// </summary>
-    IEnvironmentsListClient EnvironmentsList { get; }
+    IFileSearchStoresClient FileSearchStores { get; }
 
     /// <summary>
     /// Provides access to the Files API operations.
@@ -49,19 +44,14 @@ public interface IGeminiV1BetaClient
     IFilesClient Files { get; }
 
     /// <summary>
-    /// Provides access to the FileSearchStores API operations.
-    /// </summary>
-    IFileSearchStoresClient FileSearchStores { get; }
-
-    /// <summary>
-    /// Provides access to the FilesRegister API operations.
-    /// </summary>
-    IFilesRegisterClient FilesRegister { get; }
-
-    /// <summary>
     /// Provides access to the GeneratedFiles API operations.
     /// </summary>
     IGeneratedFilesClient GeneratedFiles { get; }
+
+    /// <summary>
+    /// Provides access to the Media API operations.
+    /// </summary>
+    IMediaClient Media { get; }
 
     /// <summary>
     /// Provides access to the Models API operations.

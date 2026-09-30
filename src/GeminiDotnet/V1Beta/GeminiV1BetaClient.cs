@@ -29,17 +29,13 @@ public sealed partial class GeminiV1BetaClient : IGeminiV1BetaClient
 
     public IEnvironmentsClient Environments => field ??= new EnvironmentsClient(_requester);
 
-    public IEnvironmentsCreateClient EnvironmentsCreate => field ??= new EnvironmentsCreateClient(_requester);
-
-    public IEnvironmentsListClient EnvironmentsList => field ??= new EnvironmentsListClient(_requester);
+    public IFileSearchStoresClient FileSearchStores => field ??= new FileSearchStoresClient(_requester);
 
     public IFilesClient Files => field ??= new FilesClient(_requester);
 
-    public IFileSearchStoresClient FileSearchStores => field ??= new FileSearchStoresClient(_requester);
-
-    public IFilesRegisterClient FilesRegister => field ??= new FilesRegisterClient(_requester);
-
     public IGeneratedFilesClient GeneratedFiles => field ??= new GeneratedFilesClient(_requester);
+
+    public IMediaClient Media => field ??= new MediaClient(_requester);
 
     public IModelsClient Models => field ??= new ModelsClient(_requester);
 

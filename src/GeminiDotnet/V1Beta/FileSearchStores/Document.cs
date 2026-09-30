@@ -16,7 +16,7 @@ public sealed record Document
 
     /// <summary>
     /// Optional. User provided custom metadata stored as key-value pairs used for querying.
-    /// A <see cref="V1Beta.FileSearchStores.Document"/> can have a maximum of 20 <see cref="V1Beta.FileSearchStores.CustomMetadata"/>.
+    /// A <see cref="V1Beta.FileSearchStores.Document"/> can have a maximum of 20 <see cref="V1Beta.CustomMetadata"/>.
     /// </summary>
     [JsonPropertyName("customMetadata")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

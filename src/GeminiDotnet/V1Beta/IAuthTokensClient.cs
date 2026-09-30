@@ -10,7 +10,7 @@ public partial interface IAuthTokensClient
     /// </summary>
     /// <param name="request">Required. The token to create.</param>
     /// <param name="cancellationToken"></param>
-    Task<AuthToken> CreateTokenAsync(
+    Task<AuthToken> CreateAsync(
         AuthToken request,
         CancellationToken cancellationToken = default);
 

@@ -22,7 +22,7 @@ public partial interface IBatchesClient
     /// service or product specific documentation.
     /// </param>
     /// <param name="cancellationToken"></param>
-    Task<ListOperationsResponse> ListOperationsByAsync(
+    Task<ListOperationsResponse> ListAsync(
         string? filter = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -34,10 +34,13 @@ public partial interface IBatchesClient
     /// method to poll the operation result at intervals as recommended by the API
     /// service.
     /// </summary>
-    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// The name of the operation resource.
+    /// A resource name of the form <c>batches/{batchId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Operation> GetOperationByGenerateContentBatchAsync(
-        string generateContentBatch,
+    Task<Operation> GetAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -46,10 +49,13 @@ public partial interface IBatchesClient
     /// operation. If the server doesn't support this method, it returns
     /// <c>google.rpc.Code.UNIMPLEMENTED</c>.
     /// </summary>
-    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// The name of the operation resource to be deleted.
+    /// A resource name of the form <c>batches/{batchId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Empty> DeleteOperationAsync(
-        string generateContentBatch,
+    Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -64,21 +70,27 @@ public partial interface IBatchesClient
     /// an Operation.error value with a google.rpc.Status.code of <c>1</c>,
     /// corresponding to <c>Code.CANCELLED</c>.
     /// </summary>
-    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// The name of the operation resource to be cancelled.
+    /// A resource name of the form <c>batches/{batchId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Empty> CancelOperationByGenerateContentBatchAsync(
-        string generateContentBatch,
+    Task<Empty> CancelAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates a batch of EmbedContent requests for batch processing.
     /// </summary>
-    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Output only. Identifier. Resource name of the batch. Format: <c>batches/{batch_id}</c>.
+    /// A resource name of the form <c>batches/{batchId}</c>.
+    /// </param>
     /// <param name="request">Required. The batch to update.</param>
     /// <param name="updateMask">Optional. The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
     Task<EmbedContentBatch> UpdateEmbedContentBatchAsync(
-        string generateContentBatch,
+        string name,
         EmbedContentBatch request,
         string? updateMask = null,
         CancellationToken cancellationToken = default);
@@ -86,12 +98,15 @@ public partial interface IBatchesClient
     /// <summary>
     /// Updates a batch of GenerateContent requests for batch processing.
     /// </summary>
-    /// <param name="generateContentBatch">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Output only. Identifier. Resource name of the batch. Format: <c>batches/{batch_id}</c>.
+    /// A resource name of the form <c>batches/{batchId}</c>.
+    /// </param>
     /// <param name="request">Required. The batch to update.</param>
     /// <param name="updateMask">Optional. The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
     Task<GenerateContentBatch> UpdateGenerateContentBatchAsync(
-        string generateContentBatch,
+        string name,
         GenerateContentBatch request,
         string? updateMask = null,
         CancellationToken cancellationToken = default);

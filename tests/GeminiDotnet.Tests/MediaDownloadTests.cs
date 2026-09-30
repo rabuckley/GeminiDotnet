@@ -16,7 +16,7 @@ public sealed class MediaDownloadTests
         });
 
         // Act
-        await using var download = await client.GetEnvironmentFilesHttpContentAsync("env", "dir/file.txt");
+        await using var download = await client.DownloadAsync("files/file");
         using var reader = new StreamReader(download.Stream);
 
         // Assert
@@ -36,20 +36,20 @@ public sealed class MediaDownloadTests
 
         // Act
         var ex = await Assert.ThrowsAsync<GeminiClientException>(
-            () => client.GetEnvironmentFilesHttpContentAsync("env", "missing.txt"));
+            () => client.DownloadAsync("files/missing"));
 
         // Assert
         Assert.Contains("No such file.", ex.Message);
         Assert.True(body.IsDisposed);
     }
 
-    private static EnvironmentsClient CreateClient(HttpResponseMessage response)
+    private static FilesClient CreateClient(HttpResponseMessage response)
     {
         var httpClient = new HttpClient(new StubHandler(response))
         {
             BaseAddress = new Uri("https://generativelanguage.googleapis.com"),
         };
-        return new EnvironmentsClient(new GeminiRequester(httpClient, V1BetaJsonContext.Default));
+        return new FilesClient(new GeminiRequester(httpClient, V1BetaJsonContext.Default));
     }
 
     private sealed class StubHandler(HttpResponseMessage response) : HttpMessageHandler

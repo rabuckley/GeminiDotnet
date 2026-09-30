@@ -18,8 +18,12 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         _requester = requester;
     }
 
+    public ITunedModelsOperationsClient Operations => field ??= new TunedModelsOperationsClient(_requester);
+
+    public ITunedModelsPermissionsClient Permissions => field ??= new TunedModelsPermissionsClient(_requester);
+
     [Obsolete]
-    public Task<ListTunedModelsResponse> ListTunedModelsAsync(
+    public Task<ListTunedModelsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         string? filter = null,
@@ -35,7 +39,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
     }
 
     [Obsolete]
-    public Task<CreateTunedModelOperation> CreateTunedModelAsync(
+    public Task<CreateTunedModelOperation> CreateAsync(
         TunedModel request,
         string? tunedModelId = null,
         CancellationToken cancellationToken = default)
@@ -49,202 +53,142 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
     }
 
     [Obsolete]
-    public Task<TunedModel> GetTunedModelAsync(
-        string tunedModel,
+    public Task<TunedModel> GetAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<TunedModel>(HttpMethod.Get, path, cancellationToken);
     }
 
     [Obsolete]
-    public Task<Empty> DeleteTunedModelAsync(
-        string tunedModel,
+    public Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}";
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(name));
+        }
+        var path = $"/v1beta/{WildcardPath.Escape(name)}";
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
     [Obsolete]
-    public Task<TunedModel> UpdateTunedModelAsync(
-        string tunedModel,
+    public Task<TunedModel> PatchAsync(
+        string name,
         TunedModel request,
         string? updateMask = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(name));
+        }
         ArgumentNullException.ThrowIfNull(request);
         var query = new QueryStringBuilder()
             .Add("updateMask", updateMask)
             .ToString();
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}{query}";
+        var path = $"/v1beta/{WildcardPath.Escape(name)}{query}";
         return _requester.ExecuteAsync<TunedModel, TunedModel>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
-    public Task<AsyncBatchEmbedContentOperation> AsyncBatchEmbedContentByTunedModelAsync(
-        string tunedModel,
+    public Task<AsyncBatchEmbedContentOperation> AsyncBatchEmbedContentAsync(
+        string model,
         AsyncBatchEmbedContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:asyncBatchEmbedContent";
+        var path = $"/v1beta/{WildcardPath.Escape(model)}:asyncBatchEmbedContent";
         return _requester.ExecuteAsync<AsyncBatchEmbedContentRequest, AsyncBatchEmbedContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
-    public Task<BatchGenerateContentOperation> BatchGenerateContentByTunedModelAsync(
-        string tunedModel,
+    public Task<BatchGenerateContentOperation> BatchGenerateContentAsync(
+        string model,
         BatchGenerateContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:batchGenerateContent";
+        var path = $"/v1beta/{WildcardPath.Escape(model)}:batchGenerateContent";
         return _requester.ExecuteAsync<BatchGenerateContentRequest, BatchGenerateContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
-    public Task<GenerateContentResponse> GenerateContentByTunedModelAsync(
-        string tunedModel,
+    public Task<GenerateContentResponse> GenerateContentAsync(
+        string model,
         GenerateContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:generateContent";
+        var path = $"/v1beta/{WildcardPath.Escape(model)}:generateContent";
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
     [Obsolete]
-    public Task<GenerateTextResponse> GenerateTextByTunedModelAsync(
-        string tunedModel,
+    public Task<GenerateTextResponse> GenerateTextAsync(
+        string model,
         GenerateTextRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:generateText";
+        var path = $"/v1beta/{WildcardPath.Escape(model)}:generateText";
         return _requester.ExecuteAsync<GenerateTextRequest, GenerateTextResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
-    public IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentByTunedModelAsync(
-        string tunedModel,
+    public IAsyncEnumerable<GenerateContentResponse> StreamGenerateContentAsync(
+        string model,
         GenerateContentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(model);
+        if (model.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{model}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(model));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:streamGenerateContent?alt=sse";
+        var path = $"/v1beta/{WildcardPath.Escape(model)}:streamGenerateContent?alt=sse";
         return _requester.ExecuteStreamingAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
     public Task<TransferOwnershipResponse> TransferOwnershipAsync(
-        string tunedModel,
+        string name,
         TransferOwnershipRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tunedModel);
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/') is not ["tunedModels", { Length: > 0 }])
+        {
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'tunedModels/{{tunedModelId}}'.", nameof(name));
+        }
         ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}:transferOwnership";
+        var path = $"/v1beta/{WildcardPath.Escape(name)}:transferOwnership";
         return _requester.ExecuteAsync<TransferOwnershipRequest, TransferOwnershipResponse>(HttpMethod.Post, path, request, cancellationToken);
-    }
-
-    public Task<ListOperationsResponse> ListOperationsAsync(
-        string tunedModel,
-        string? filter = null,
-        int? pageSize = null,
-        string? pageToken = null,
-        bool? returnPartialSuccess = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        var query = new QueryStringBuilder()
-            .Add("filter", filter)
-            .Add("pageSize", pageSize)
-            .Add("pageToken", pageToken)
-            .Add("returnPartialSuccess", returnPartialSuccess)
-            .ToString();
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/operations{query}";
-        return _requester.ExecuteAsync<ListOperationsResponse>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Operation> GetOperationAsync(
-        string tunedModel,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<ListPermissionsResponse> ListPermissionsAsync(
-        string tunedModel,
-        int? pageSize = null,
-        string? pageToken = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        var query = new QueryStringBuilder()
-            .Add("pageSize", pageSize)
-            .Add("pageToken", pageToken)
-            .ToString();
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions{query}";
-        return _requester.ExecuteAsync<ListPermissionsResponse>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Permission> CreatePermissionAsync(
-        string tunedModel,
-        Permission request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        ArgumentNullException.ThrowIfNull(request);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions";
-        return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Post, path, request, cancellationToken);
-    }
-
-    public Task<Permission> GetPermissionAsync(
-        string tunedModel,
-        string permission,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions/{Uri.EscapeDataString(permission)}";
-        return _requester.ExecuteAsync<Permission>(HttpMethod.Get, path, cancellationToken);
-    }
-
-    public Task<Empty> DeletePermissionAsync(
-        string tunedModel,
-        string permission,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        ArgumentNullException.ThrowIfNull(permission);
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions/{Uri.EscapeDataString(permission)}";
-        return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
-    }
-
-    public Task<Permission> UpdatePermissionAsync(
-        string tunedModel,
-        string permission,
-        Permission request,
-        string updateMask,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(tunedModel);
-        ArgumentNullException.ThrowIfNull(permission);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrEmpty(updateMask);
-        var query = new QueryStringBuilder()
-            .Add("updateMask", updateMask)
-            .ToString();
-        var path = $"/v1beta/tunedModels/{Uri.EscapeDataString(tunedModel)}/permissions/{Uri.EscapeDataString(permission)}{query}";
-        return _requester.ExecuteAsync<Permission, Permission>(HttpMethod.Patch, path, request, cancellationToken);
     }
 
 }

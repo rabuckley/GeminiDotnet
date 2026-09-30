@@ -21,7 +21,7 @@ public partial interface ICachedContentsClient
     /// match the call that provided the page token.
     /// </param>
     /// <param name="cancellationToken"></param>
-    Task<ListCachedContentsResponse> ListCachedContentsAsync(
+    Task<ListCachedContentsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default);
@@ -31,37 +31,46 @@ public partial interface ICachedContentsClient
     /// </summary>
     /// <param name="request">Required. The cached content to create.</param>
     /// <param name="cancellationToken"></param>
-    Task<CachedContent> CreateCachedContentAsync(
+    Task<CachedContent> CreateAsync(
         CachedContent request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Reads CachedContent resource.
     /// </summary>
-    /// <param name="id">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Required. The resource name referring to the content cache entry. Format: <c>cachedContents/{id}</c>
+    /// A resource name of the form <c>cachedContents/{cachedContentId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<CachedContent> GetCachedContentAsync(
-        string id,
+    Task<CachedContent> GetAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes CachedContent resource.
     /// </summary>
-    /// <param name="id">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Required. The resource name referring to the content cache entry Format: <c>cachedContents/{id}</c>
+    /// A resource name of the form <c>cachedContents/{cachedContentId}</c>.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    Task<Empty> DeleteCachedContentAsync(
-        string id,
+    Task<Empty> DeleteAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates CachedContent resource (only expiration is updatable).
     /// </summary>
-    /// <param name="id">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">
+    /// Output only. Identifier. The resource name referring to the cached content. Format: <c>cachedContents/{id}</c>
+    /// A resource name of the form <c>cachedContents/{cachedContentId}</c>.
+    /// </param>
     /// <param name="request">Required. The content cache entry to update</param>
     /// <param name="updateMask">The list of fields to update.</param>
     /// <param name="cancellationToken"></param>
-    Task<CachedContent> UpdateCachedContentAsync(
-        string id,
+    Task<CachedContent> PatchAsync(
+        string name,
         CachedContent request,
         string? updateMask = null,
         CancellationToken cancellationToken = default);

@@ -60,7 +60,7 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
             options?.RawRepresentationFactory?.Invoke(this) as BatchEmbedContentsRequest);
 
         var response = await _client.V1Beta.Models
-            .BatchEmbedContentsAsync(modelId, request, cancellationToken)
+            .BatchEmbedContentsAsync($"models/{modelId}", request, cancellationToken)
             .ConfigureAwait(false);
 
         return GeminiToMEAIMapper.CreateMappedGeneratedEmbeddings(

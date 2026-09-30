@@ -5,6 +5,11 @@ namespace GeminiDotnet.V1Beta;
 public partial interface IGeneratedFilesClient
 {
     /// <summary>
+    /// Provides access to the Operations API operations.
+    /// </summary>
+    IGeneratedFilesOperationsClient Operations { get; }
+
+    /// <summary>
     /// Lists the generated files owned by the requesting project.
     /// </summary>
     /// <param name="pageSize">
@@ -13,7 +18,7 @@ public partial interface IGeneratedFilesClient
     /// </param>
     /// <param name="pageToken">Optional. A page token from a previous <c>ListGeneratedFiles</c> call.</param>
     /// <param name="cancellationToken"></param>
-    Task<ListGeneratedFilesResponse> ListGeneratedFilesAsync(
+    Task<ListGeneratedFilesResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default);
@@ -23,23 +28,10 @@ public partial interface IGeneratedFilesClient
     /// of the generated file is returned. To retrieve the file content via REST,
     /// add alt=media as a query parameter.
     /// </summary>
-    /// <param name="generatedFile">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
+    /// <param name="name">A resource name of the form <c>generatedFiles/{generatedFileId}</c>.</param>
     /// <param name="cancellationToken"></param>
-    Task<GeneratedFile> GetGeneratedFileAsync(
-        string generatedFile,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets the latest state of a long-running operation.  Clients can use this
-    /// method to poll the operation result at intervals as recommended by the API
-    /// service.
-    /// </summary>
-    /// <param name="generatedFile">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="operation">Resource ID segment making up resource <c>name</c>. It identifies the resource within its parent collection as described in https://google.aip.dev/122.</param>
-    /// <param name="cancellationToken"></param>
-    Task<Operation> GetOperationByGeneratedFileAndOperationAsync(
-        string generatedFile,
-        string operation,
+    Task<GeneratedFile> GetAsync(
+        string name,
         CancellationToken cancellationToken = default);
 
 }

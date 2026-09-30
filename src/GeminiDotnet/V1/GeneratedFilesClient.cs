@@ -17,15 +17,6 @@ internal sealed partial class GeneratedFilesClient : IGeneratedFilesClient
         _requester = requester;
     }
 
-    public Task<Operation> GetOperationByGeneratedFileAndOperationAsync(
-        string generatedFile,
-        string operation,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(generatedFile);
-        ArgumentNullException.ThrowIfNull(operation);
-        var path = $"/v1/generatedFiles/{Uri.EscapeDataString(generatedFile)}/operations/{Uri.EscapeDataString(operation)}";
-        return _requester.ExecuteAsync<Operation>(HttpMethod.Get, path, cancellationToken);
-    }
+    public IGeneratedFilesOperationsClient Operations => field ??= new GeneratedFilesOperationsClient(_requester);
 
 }

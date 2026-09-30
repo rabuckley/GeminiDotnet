@@ -69,7 +69,7 @@ public sealed class GeminiChatClient : IChatClient
             options,
             options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
 
-        var response = await ModelsClient.GenerateContentAsync(model, request, cancellationToken).ConfigureAwait(false);
+        var response = await ModelsClient.GenerateContentAsync($"models/{model}", request, cancellationToken).ConfigureAwait(false);
 
         return GeminiToMEAIMapper.CreateMappedChatResponse(
             response,
@@ -100,7 +100,7 @@ public sealed class GeminiChatClient : IChatClient
             options,
             options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
 
-        var results = ModelsClient.StreamGenerateContentAsync(model, request, cancellationToken);
+        var results = ModelsClient.StreamGenerateContentAsync($"models/{model}", request, cancellationToken);
 
         // One state for the whole stream, so that a tool call correlates with the result that arrives in a
         // later chunk and a grounding segment resolves against the text every chunk has produced.
