@@ -1,3 +1,9 @@
+using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using GeminiDotnet.V1Beta.Models;
 
 namespace GeminiDotnet.V1Beta;
@@ -56,6 +62,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<BatchEmbedContentsRequest, BatchEmbedContentsResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<BatchEmbedTextResponse> BatchEmbedTextAsync(
         string model,
         BatchEmbedTextRequest request,
@@ -78,6 +85,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<BatchGenerateContentRequest, BatchGenerateContentOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<CountMessageTokensResponse> CountMessageTokensAsync(
         string model,
         CountMessageTokensRequest request,
@@ -89,6 +97,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<CountMessageTokensRequest, CountMessageTokensResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<CountTextTokensResponse> CountTextTokensAsync(
         string model,
         CountTextTokensRequest request,
@@ -122,6 +131,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<EmbedContentRequest, EmbedContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<EmbedTextResponse> EmbedTextAsync(
         string model,
         EmbedTextRequest request,
@@ -133,6 +143,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<EmbedTextRequest, EmbedTextResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<GenerateAnswerResponse> GenerateAnswerAsync(
         string model,
         GenerateAnswerRequest request,
@@ -155,6 +166,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<GenerateMessageResponse> GenerateMessageAsync(
         string model,
         GenerateMessageRequest request,
@@ -166,6 +178,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<GenerateMessageRequest, GenerateMessageResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<GenerateTextResponse> GenerateTextAsync(
         string model,
         GenerateTextRequest request,

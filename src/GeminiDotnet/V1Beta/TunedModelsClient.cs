@@ -1,3 +1,9 @@
+using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using GeminiDotnet.V1Beta.TunedModels;
 
 namespace GeminiDotnet.V1Beta;
@@ -12,6 +18,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         _requester = requester;
     }
 
+    [Obsolete]
     public Task<ListTunedModelsResponse> ListTunedModelsAsync(
         int? pageSize = null,
         string? pageToken = null,
@@ -27,6 +34,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         return _requester.ExecuteAsync<ListTunedModelsResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
+    [Obsolete]
     public Task<CreateTunedModelOperation> CreateTunedModelAsync(
         TunedModel request,
         string? tunedModelId = null,
@@ -40,6 +48,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         return _requester.ExecuteAsync<TunedModel, CreateTunedModelOperation>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<TunedModel> GetTunedModelAsync(
         string tunedModel,
         CancellationToken cancellationToken = default)
@@ -49,6 +58,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         return _requester.ExecuteAsync<TunedModel>(HttpMethod.Get, path, cancellationToken);
     }
 
+    [Obsolete]
     public Task<Empty> DeleteTunedModelAsync(
         string tunedModel,
         CancellationToken cancellationToken = default)
@@ -58,6 +68,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         return _requester.ExecuteAsync<Empty>(HttpMethod.Delete, path, cancellationToken);
     }
 
+    [Obsolete]
     public Task<TunedModel> UpdateTunedModelAsync(
         string tunedModel,
         TunedModel request,
@@ -106,6 +117,7 @@ internal sealed partial class TunedModelsClient : ITunedModelsClient
         return _requester.ExecuteAsync<GenerateContentRequest, GenerateContentResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete]
     public Task<GenerateTextResponse> GenerateTextByTunedModelAsync(
         string tunedModel,
         GenerateTextRequest request,
