@@ -14,12 +14,7 @@ public partial interface IEnvironmentsFilesClient
     /// snapshot. To download file contents directly, pass ?alt=media or use the
     /// files.download helper.
     /// </summary>
-    /// <param name="parent">A resource name of the form <c>environments/{environmentId}</c>.</param>
-    /// <param name="path">
-    /// Optional. The path of the file or directory within the environment.
-    /// If empty, defaults to the root of the workspace.
-    /// Example: "workspace/src/main.py"
-    /// </param>
+    /// <param name="name">A resource name of the form <c>environments/{environmentId}/files/{fileId}</c>.</param>
     /// <param name="recursive">
     /// Optional. If true and the path is a directory, recursively lists all files
     /// and subdirectories. Defaults to false (immediate children only).
@@ -34,9 +29,8 @@ public partial interface IEnvironmentsFilesClient
     /// NOLINT
     /// </param>
     /// <param name="cancellationToken"></param>
-    Task<GetEnvironmentFilesResponse> ListAsync(
-        string parent,
-        string? path = null,
+    Task<GetEnvironmentFilesResponse> GetAsync(
+        string name,
         bool? recursive = null,
         int? pageSize = null,
         string? pageToken = null,

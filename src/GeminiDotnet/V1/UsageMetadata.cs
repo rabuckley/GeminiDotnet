@@ -73,8 +73,8 @@ public sealed record UsageMetadata
     public IReadOnlyList<ModalityTokenCount>? ToolUsePromptTokensDetails { get; init; }
 
     /// <summary>
-    /// Total token count for the generation request (prompt + thoughts +
-    /// response candidates).
+    /// Total token count for the generation request (prompt + tool-use prompt +
+    /// thoughts + response candidates).
     /// </summary>
     [JsonPropertyName("totalTokenCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

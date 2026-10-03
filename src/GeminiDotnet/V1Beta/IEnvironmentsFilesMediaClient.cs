@@ -13,7 +13,11 @@ public partial interface IEnvironmentsFilesMediaClient
     /// Required. The resource name of the environment. Format: <c>environments/{environment_id}</c>
     /// A resource name of the form <c>environments/{environmentId}</c>.
     /// </param>
-    /// <param name="path">Optional. The path of the file or directory within the environment. If empty, defaults to the root of the workspace. Example: "workspace/src/main.py"</param>
+    /// <param name="path">
+    /// Optional. The path of the file or directory within the environment.
+    /// If empty, defaults to the root of the workspace.
+    /// Example: "workspace/src/main.py"
+    /// </param>
     /// <param name="recursive">
     /// Optional. If true and the path is a directory, recursively lists all files
     /// and subdirectories. Defaults to false (immediate children only).
@@ -30,7 +34,7 @@ public partial interface IEnvironmentsFilesMediaClient
     /// <param name="cancellationToken"></param>
     Task<GetEnvironmentFilesResponse> DownloadAsync(
         string parent,
-        string path,
+        string? path = null,
         bool? recursive = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -49,7 +53,11 @@ public partial interface IEnvironmentsFilesMediaClient
     /// Required. The resource name of the environment. Format: <c>environments/{environment_id}</c>
     /// A resource name of the form <c>environments/{environmentId}</c>.
     /// </param>
-    /// <param name="path">Optional. The path of the file or directory within the environment. If empty, defaults to the root of the workspace. Example: "workspace/src/main.py"</param>
+    /// <param name="path">
+    /// Optional. The path of the file or directory within the environment.
+    /// If empty, defaults to the root of the workspace.
+    /// Example: "workspace/src/main.py"
+    /// </param>
     /// <param name="recursive">
     /// Optional. If true and the path is a directory, recursively lists all files
     /// and subdirectories. Defaults to false (immediate children only).
@@ -66,7 +74,7 @@ public partial interface IEnvironmentsFilesMediaClient
     /// <param name="cancellationToken"></param>
     Task<MediaDownload> DownloadContentAsync(
         string parent,
-        string path,
+        string? path = null,
         bool? recursive = null,
         int? pageSize = null,
         string? pageToken = null,

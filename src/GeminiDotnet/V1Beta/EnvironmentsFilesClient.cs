@@ -20,27 +20,25 @@ internal sealed partial class EnvironmentsFilesClient : IEnvironmentsFilesClient
 
     public IEnvironmentsFilesMediaClient Media => field ??= new EnvironmentsFilesMediaClient(_requester);
 
-    public Task<GetEnvironmentFilesResponse> ListAsync(
-        string parent,
-        string? path = null,
+    public Task<GetEnvironmentFilesResponse> GetAsync(
+        string name,
         bool? recursive = null,
         int? pageSize = null,
         string? pageToken = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(parent);
-        if (parent.Split('/') is not ["environments", { Length: > 0 }])
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Split('/', 4) is not ["environments", { Length: > 0 }, "files", _])
         {
-            throw new ArgumentException($"'{parent}' is not a resource name of the form 'environments/{{environmentId}}'.", nameof(parent));
+            throw new ArgumentException($"'{name}' is not a resource name of the form 'environments/{{environmentId}}/files/{{fileId}}'.", nameof(name));
         }
         var query = new QueryStringBuilder()
-            .Add("path", path)
             .Add("recursive", recursive)
             .Add("page_size", pageSize)
             .Add("page_token", pageToken)
             .ToString();
-        var requestPath = $"/v1beta/{WildcardPath.Escape(parent)}/files{query}";
-        return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
+        var path = $"/v1beta/{WildcardPath.Escape(name)}{query}";
+        return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, path, cancellationToken);
     }
 
 }

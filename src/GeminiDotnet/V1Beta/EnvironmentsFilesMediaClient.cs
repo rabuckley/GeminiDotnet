@@ -20,7 +20,7 @@ internal sealed partial class EnvironmentsFilesMediaClient : IEnvironmentsFilesM
 
     public Task<GetEnvironmentFilesResponse> DownloadAsync(
         string parent,
-        string path,
+        string? path = null,
         bool? recursive = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -31,19 +31,19 @@ internal sealed partial class EnvironmentsFilesMediaClient : IEnvironmentsFilesM
         {
             throw new ArgumentException($"'{parent}' is not a resource name of the form 'environments/{{environmentId}}'.", nameof(parent));
         }
-        ArgumentNullException.ThrowIfNull(path);
         var query = new QueryStringBuilder()
+            .Add("path", path)
             .Add("recursive", recursive)
             .Add("page_size", pageSize)
             .Add("page_token", pageToken)
             .ToString();
-        var requestPath = $"/v1beta/{WildcardPath.Escape(parent)}/files/{WildcardPath.Escape(path)}{query}";
+        var requestPath = $"/v1beta/{WildcardPath.Escape(parent)}/files{query}";
         return _requester.ExecuteAsync<GetEnvironmentFilesResponse>(HttpMethod.Get, requestPath, cancellationToken);
     }
 
     public Task<MediaDownload> DownloadContentAsync(
         string parent,
-        string path,
+        string? path = null,
         bool? recursive = null,
         int? pageSize = null,
         string? pageToken = null,
@@ -54,14 +54,14 @@ internal sealed partial class EnvironmentsFilesMediaClient : IEnvironmentsFilesM
         {
             throw new ArgumentException($"'{parent}' is not a resource name of the form 'environments/{{environmentId}}'.", nameof(parent));
         }
-        ArgumentNullException.ThrowIfNull(path);
         var query = new QueryStringBuilder()
             .Add("alt", "media")
+            .Add("path", path)
             .Add("recursive", recursive)
             .Add("page_size", pageSize)
             .Add("page_token", pageToken)
             .ToString();
-        var requestPath = $"/v1beta/{WildcardPath.Escape(parent)}/files/{WildcardPath.Escape(path)}{query}";
+        var requestPath = $"/v1beta/{WildcardPath.Escape(parent)}/files{query}";
         return _requester.DownloadAsync(HttpMethod.Get, requestPath, cancellationToken);
     }
 
