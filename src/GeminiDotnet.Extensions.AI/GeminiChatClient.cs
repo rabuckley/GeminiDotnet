@@ -12,6 +12,7 @@ namespace GeminiDotnet.Extensions.AI;
 public sealed class GeminiChatClient : IChatClient
 {
     private readonly IGeminiClient _client;
+    private readonly GeminiClient? _ownedClient;
     private readonly TimeProvider _timeProvider;
     private readonly ChatClientMetadata _metadata;
 
@@ -20,14 +21,25 @@ public sealed class GeminiChatClient : IChatClient
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
     /// </summary>
+    /// <remarks>
+    /// The adapter creates and owns a <see cref="GeminiClient"/>, which is disposed when the adapter is disposed.
+    /// </remarks>
     /// <param name="options">The options to use for the client.</param>
-    public GeminiChatClient(GeminiClientOptions options) : this(new GeminiClient(options))
+    public GeminiChatClient(GeminiClientOptions options) : this(ownedClient: new GeminiClient(options))
     {
+    }
+
+    private GeminiChatClient(GeminiClient ownedClient) : this(ownedClient, TimeProvider.System)
+    {
+        _ownedClient = ownedClient;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
     /// </summary>
+    /// <remarks>
+    /// The caller retains ownership of <paramref name="client"/>; disposing the adapter does not dispose it.
+    /// </remarks>
     /// <param name="client">The <see cref="GeminiClient"/> to use.</param>
     public GeminiChatClient(IGeminiClient client) : this(client, TimeProvider.System)
     {
@@ -136,5 +148,6 @@ public sealed class GeminiChatClient : IChatClient
     /// <inheritdoc />
     public void Dispose()
     {
+        _ownedClient?.Dispose();
     }
 }

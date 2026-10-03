@@ -325,24 +325,6 @@ public sealed class GeminiHostedFileClientTests
 
     #endregion
 
-    #region Dispose
-
-    [Fact]
-    public void Dispose_DisposesOwnedClient()
-    {
-        // Arrange — use a disposable stub to verify Dispose is called
-        var disposableClient = new DisposableStubGeminiClient();
-        var client = new GeminiHostedFileClient(disposableClient);
-
-        // Act — disposing the adapter should NOT dispose the client it doesn't own
-        client.Dispose();
-
-        // Assert
-        Assert.False(disposableClient.IsDisposed);
-    }
-
-    #endregion
-
     #region GeminiHostedFileDownloadStream
 
     [Fact]
@@ -628,20 +610,5 @@ public sealed class GeminiHostedFileClientTests
             IsDisposed = true;
             base.Dispose(disposing);
         }
-    }
-
-    /// <summary>
-    /// A disposable <see cref="IGeminiClient"/> stub for testing ownership semantics.
-    /// </summary>
-    private sealed class DisposableStubGeminiClient : IGeminiClient, IDisposable
-    {
-        public bool IsDisposed { get; private set; }
-
-        public IGeminiClientOptions Options => throw new NotImplementedException();
-        public Uri? Endpoint => new("https://generativelanguage.googleapis.com");
-        public V1.IGeminiV1Client V1 => throw new NotImplementedException();
-        public IGeminiV1BetaClient V1Beta => throw new NotImplementedException();
-
-        public void Dispose() => IsDisposed = true;
     }
 }

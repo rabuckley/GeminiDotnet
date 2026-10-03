@@ -19,35 +19,39 @@ namespace GeminiDotnet.Extensions.AI;
 public sealed class GeminiHostedFileClient : IHostedFileClient
 {
     private readonly IGeminiClient _client;
-    private readonly bool _ownsClient;
+    private readonly GeminiClient? _ownedClient;
     private readonly HostedFileClientMetadata _metadata;
 
     private IFilesClient FilesClient => _client.V1Beta.Files;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiHostedFileClient"/> class.
-    /// The created <see cref="GeminiClient"/> is owned by this instance and will be
-    /// disposed when this instance is disposed.
     /// </summary>
+    /// <remarks>
+    /// The adapter creates and owns a <see cref="GeminiClient"/>, which is disposed when the adapter is disposed.
+    /// </remarks>
     /// <param name="options">The options to use for the client.</param>
-    public GeminiHostedFileClient(GeminiClientOptions options) : this(new GeminiClient(options), ownsClient: true)
+    public GeminiHostedFileClient(GeminiClientOptions options) : this(ownedClient: new GeminiClient(options))
     {
+    }
+
+    private GeminiHostedFileClient(GeminiClient ownedClient) : this(client: ownedClient)
+    {
+        _ownedClient = ownedClient;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiHostedFileClient"/> class.
     /// </summary>
+    /// <remarks>
+    /// The caller retains ownership of <paramref name="client"/>; disposing the adapter does not dispose it.
+    /// </remarks>
     /// <param name="client">The <see cref="IGeminiClient"/> to use.</param>
-    public GeminiHostedFileClient(IGeminiClient client) : this(client, ownsClient: false)
-    {
-    }
-
-    private GeminiHostedFileClient(IGeminiClient client, bool ownsClient)
+    public GeminiHostedFileClient(IGeminiClient client)
     {
         ArgumentNullException.ThrowIfNull(client);
 
         _client = client;
-        _ownsClient = ownsClient;
         _metadata = new HostedFileClientMetadata(
             providerName: "Gemini",
             providerUri: client.Endpoint);
@@ -238,10 +242,7 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_ownsClient && _client is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
+        _ownedClient?.Dispose();
     }
 
     // -- Mapping helpers --
