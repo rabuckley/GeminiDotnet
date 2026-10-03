@@ -119,6 +119,11 @@ jobs:
           fetch-depth: 0 # git-cliff walks the tag history for the release span
           persist-credentials: false
 
+      # Checkout can leave the pushed tag lightweight (actions/checkout#290), which
+      # drops the annotated message git-cliff renders as the release's preamble.
+      - name: Fetch the annotated tag
+        run: git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+
       - name: Download packages
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
