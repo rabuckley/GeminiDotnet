@@ -9,20 +9,32 @@ namespace GeminiDotnet.Extensions.AI;
 public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
     private readonly IGeminiClient _client;
+    private readonly GeminiClient? _ownedClient;
     private readonly EmbeddingGeneratorMetadata _metadata;
     private readonly TimeProvider _timeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiEmbeddingGenerator"/> class.
     /// </summary>
+    /// <remarks>
+    /// The adapter creates and owns a <see cref="GeminiClient"/>, which is disposed when the adapter is disposed.
+    /// </remarks>
     /// <param name="options">The options to use for the client.</param>
-    public GeminiEmbeddingGenerator(GeminiClientOptions options) : this(new GeminiClient(options))
+    public GeminiEmbeddingGenerator(GeminiClientOptions options) : this(ownedClient: new GeminiClient(options))
     {
+    }
+
+    private GeminiEmbeddingGenerator(GeminiClient ownedClient) : this(ownedClient, TimeProvider.System)
+    {
+        _ownedClient = ownedClient;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiEmbeddingGenerator"/> class.
     /// </summary>
+    /// <remarks>
+    /// The caller retains ownership of <paramref name="client"/>; disposing the adapter does not dispose it.
+    /// </remarks>
     /// <param name="client">The <see cref="IGeminiClient"/> to use.</param>
     public GeminiEmbeddingGenerator(IGeminiClient client) : this(client, TimeProvider.System)
     {
@@ -89,5 +101,6 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
 
     public void Dispose()
     {
+        _ownedClient?.Dispose();
     }
 }
