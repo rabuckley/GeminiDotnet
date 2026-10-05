@@ -19,7 +19,7 @@ public sealed class ScriptedHttpMessageHandler : HttpMessageHandler
     /// </summary>
     public static readonly Uri DefaultEndpoint = new("https://generativelanguage.googleapis.com");
 
-    private readonly Queue<Func<HttpResponseMessage>> _responses = new();
+    private readonly Queue<Func<RecordedRequest, HttpResponseMessage>> _responses = new();
     private readonly List<RecordedRequest> _requests = [];
     private readonly object _gate = new();
 
@@ -93,6 +93,23 @@ public sealed class ScriptedHttpMessageHandler : HttpMessageHandler
     {
         ArgumentNullException.ThrowIfNull(createResponse);
 
+        return RespondWith(_ => createResponse());
+    }
+
+    /// <summary>
+    /// Queues a response that is built from the request it answers.
+    /// </summary>
+    /// <param name="createResponse">The function that builds the response for the request.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="createResponse"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// The response is still the next one in the script; the request only shapes it. Use this when concurrent
+    /// requests may arrive in either order.
+    /// </remarks>
+    public ScriptedHttpMessageHandler RespondWith(Func<RecordedRequest, HttpResponseMessage> createResponse)
+    {
+        ArgumentNullException.ThrowIfNull(createResponse);
+
         lock (_gate)
         {
             _responses.Enqueue(createResponse);
@@ -127,7 +144,7 @@ public sealed class ScriptedHttpMessageHandler : HttpMessageHandler
         // The body is read now because the sender disposes the request, and its content, once it has sent.
         var recorded = await RecordedRequest.CaptureAsync(request, cancellationToken).ConfigureAwait(false);
 
-        Func<HttpResponseMessage>? createResponse;
+        Func<RecordedRequest, HttpResponseMessage>? createResponse;
         int requestNumber;
         lock (_gate)
         {
@@ -142,7 +159,7 @@ public sealed class ScriptedHttpMessageHandler : HttpMessageHandler
                 $"No scripted response is left for request {requestNumber}: {recorded.Method} {recorded.RequestUri}");
         }
 
-        var response = createResponse();
+        var response = createResponse(recorded);
         response.RequestMessage = request;
         return response;
     }
