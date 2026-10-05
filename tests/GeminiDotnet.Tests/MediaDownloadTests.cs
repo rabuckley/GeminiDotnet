@@ -1,3 +1,4 @@
+using GeminiDotnet.Testing;
 using GeminiDotnet.V1Beta;
 using System.Net;
 using System.Text;
@@ -16,7 +17,7 @@ public sealed class MediaDownloadTests
         });
 
         // Act
-        await using var download = await client.DownloadAsync("files/file");
+        await using var download = await client.DownloadAsync("files/file", TestContext.Current.CancellationToken);
         using var reader = new StreamReader(download.Stream);
 
         // Assert
@@ -43,21 +44,10 @@ public sealed class MediaDownloadTests
         Assert.True(body.IsDisposed);
     }
 
-    private static FilesClient CreateClient(HttpResponseMessage response)
+    private static IFilesClient CreateClient(HttpResponseMessage response)
     {
-        var httpClient = new HttpClient(new StubHandler(response))
-        {
-            BaseAddress = new Uri("https://generativelanguage.googleapis.com"),
-        };
-        return new FilesClient(new GeminiRequester(httpClient, V1BetaJsonContext.Default));
-    }
-
-    private sealed class StubHandler(HttpResponseMessage response) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-            => Task.FromResult(response);
+        var handler = new ScriptedHttpMessageHandler().RespondWith(() => response);
+        return new GeminiClient(handler.CreateHttpClient()).V1Beta.Files;
     }
 
     private sealed class TrackingContent(string content, string mediaType)

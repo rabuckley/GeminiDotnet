@@ -1,6 +1,5 @@
+using GeminiDotnet.Testing;
 using Microsoft.Extensions.AI;
-using System.Net;
-using System.Text;
 
 #pragma warning disable MEAI001 // Type is for evaluation purposes only
 
@@ -35,10 +34,8 @@ public sealed class AdapterDisposalTests
     public async Task Dispose_WhenGivenAClient_ShouldLeaveItUsable(string adapterName)
     {
         // Arrange
-        using var httpClient = new HttpClient(new StubHandler())
-        {
-            BaseAddress = new Uri("https://generativelanguage.googleapis.com"),
-        };
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson("""{ "name": "files/file" }""");
+        using var httpClient = handler.CreateHttpClient();
         using var client = new GeminiClient(httpClient);
         var adapter = CreateFromClient(adapterName, client);
 
@@ -73,15 +70,4 @@ public sealed class AdapterDisposalTests
         IHostedFileClient fileClient => fileClient.GetService<IGeminiClient>()!,
         _ => throw new ArgumentOutOfRangeException(nameof(adapter)),
     };
-
-    private sealed class StubHandler : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-            => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{ "name": "files/file" }""", Encoding.UTF8, "application/json"),
-            });
-    }
 }

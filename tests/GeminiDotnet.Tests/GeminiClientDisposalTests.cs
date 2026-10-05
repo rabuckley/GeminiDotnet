@@ -1,3 +1,4 @@
+using GeminiDotnet.Testing;
 using System.Net;
 
 namespace GeminiDotnet;
@@ -22,10 +23,8 @@ public sealed class GeminiClientDisposalTests
     public async Task Dispose_WhenGivenAnHttpClient_ShouldLeaveItUsable()
     {
         // Arrange
-        using var httpClient = new HttpClient(new StubHandler())
-        {
-            BaseAddress = new Uri("https://generativelanguage.googleapis.com"),
-        };
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson("{}");
+        using var httpClient = handler.CreateHttpClient();
         var client = new GeminiClient(httpClient);
 
         // Act
@@ -34,13 +33,5 @@ public sealed class GeminiClientDisposalTests
         // Assert
         using var response = await httpClient.GetAsync("v1beta/files/file", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    private sealed class StubHandler : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-            => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
     }
 }
