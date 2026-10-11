@@ -72,6 +72,74 @@ public sealed class GeminiChatClientWireTests
     }
 
     [Fact]
+    public async Task GetResponseAsync_WithARawRepresentation_ShouldSendItsFieldsAlongsideTheMappedConversation()
+    {
+        // Arrange
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(TextResponseJson);
+        var client = CreateClient(handler);
+        var options = new ChatOptions
+        {
+            ModelId = Model,
+            RawRepresentationFactory = _ => new V1Beta.GenerateContentRequest
+            {
+                Contents = [],
+                CachedContent = "cachedContents/weather",
+            },
+        };
+
+        // Act
+        await client.GetResponseAsync("What's the weather in Paris?", options, TestContext.Current.CancellationToken);
+
+        // Assert
+        var body = Assert.Single(handler.Requests).ReadBodyAsJson();
+        Assert.Equal("cachedContents/weather", body?["cachedContent"]?.GetValue<string>());
+        var content = Assert.Single(body?["contents"]?.AsArray() ?? []);
+        Assert.Equal("What's the weather in Paris?", content?["parts"]?[0]?["text"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithNoModel_ShouldThrowArgumentExceptionWithoutSending()
+    {
+        // Arrange
+        var handler = new ScriptedHttpMessageHandler();
+        var client = CreateClient(handler);
+
+        // Act
+        Task Act() => client.GetResponseAsync([], new ChatOptions(), TestContext.Current.CancellationToken);
+
+        // Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(Act);
+        Assert.Contains(nameof(ChatOptions.ModelId), ex.Message);
+        Assert.Contains(nameof(GeminiClientOptions), ex.Message);
+        Assert.Contains(nameof(ChatOptions), ex.Message);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithNoModel_ShouldThrowArgumentExceptionWithoutSending()
+    {
+        // Arrange
+        var handler = new ScriptedHttpMessageHandler();
+        var client = CreateClient(handler);
+
+        // Act
+        async Task Act()
+        {
+            await foreach (var _ in client.GetStreamingResponseAsync(
+                [], new ChatOptions(), TestContext.Current.CancellationToken))
+            {
+            }
+        }
+
+        // Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(Act);
+        Assert.Contains(nameof(ChatOptions.ModelId), ex.Message);
+        Assert.Contains(nameof(GeminiClientOptions), ex.Message);
+        Assert.Contains(nameof(ChatOptions), ex.Message);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
     public async Task GetResponseAsync_ShouldMapTheResponseForTheCaller()
     {
         // Arrange
