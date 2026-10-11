@@ -73,13 +73,7 @@ public sealed class GeminiChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(messages);
 
-        var model = ModelIdHelper.GetModelId(options, _metadata);
-
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
-            model,
-            messages,
-            options,
-            options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
+        var (model, request) = CreateRequest(messages, options);
 
         var response = await ModelsClient.GenerateContentAsync($"models/{model}", request, cancellationToken).ConfigureAwait(false);
 
@@ -104,13 +98,7 @@ public sealed class GeminiChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(messages);
 
-        var model = ModelIdHelper.GetModelId(options, _metadata);
-
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
-            model,
-            messages,
-            options,
-            options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
+        var (model, request) = CreateRequest(messages, options);
 
         var results = ModelsClient.StreamGenerateContentAsync($"models/{model}", request, cancellationToken);
 
@@ -125,6 +113,21 @@ public sealed class GeminiChatClient : IChatClient
                 state,
                 createdAt: _timeProvider.GetUtcNow());
         }
+    }
+
+    private (string Model, GenerateContentRequest Request) CreateRequest(
+        IEnumerable<ChatMessage> messages,
+        ChatOptions? options)
+    {
+        var model = ModelIdHelper.GetModelId(options, _metadata);
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
+            model,
+            messages,
+            options,
+            options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
+
+        return (model, request);
     }
 
     /// <inheritdoc />

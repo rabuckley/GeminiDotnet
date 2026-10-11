@@ -1,3 +1,4 @@
+using GeminiDotnet.Testing;
 using GeminiDotnet.V1Beta;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -8,17 +9,18 @@ public sealed class GenerateContentResponseTests
 {
     [Theory]
     [MemberData(nameof(ExampleResponses))]
-    public void JsonRoundtrip(string json)
+    public void JsonRoundtrip_ShouldPreserveEveryField(string json)
     {
         // Arrange
-        var response = JsonSerializer.Deserialize<GenerateContentResponse>(json);
+        var typeInfo = V1BetaJsonContext.Default.GenerateContentResponse;
 
         // Act
-        var serialized = JsonSerializer.Serialize(response);
-        var deserialized = JsonSerializer.Deserialize<GenerateContentResponse>(serialized);
+        var response = JsonSerializer.Deserialize(json, typeInfo);
+        var serialized = JsonSerializer.Serialize(response, typeInfo);
 
         // Assert
-        Assert.Equivalent(response, deserialized);
+        // Comparing with the source, not a second pass, is what catches a field the model lacks.
+        Assert.Equal(JsonText.Normalize(json), JsonText.Normalize(serialized));
     }
 
     public static IEnumerable<TheoryDataRow<string>> ExampleResponses()
