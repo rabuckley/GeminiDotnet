@@ -24,6 +24,13 @@ public sealed record RealtimeInputConfiguration
     public AutomaticActivityDetection? AutomaticActivityDetection { get; init; }
 
     /// <summary>
+    /// Optional. Configures interim transcript timestamps.
+    /// </summary>
+    [JsonPropertyName("interimTranscriptTimestampEnabled")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool? InterimTranscriptTimestampEnabled { get; init; }
+
+    /// <summary>
     /// Optional. Defines which input is included in the user's turn.
     /// </summary>
     [JsonPropertyName("turnCoverage")]

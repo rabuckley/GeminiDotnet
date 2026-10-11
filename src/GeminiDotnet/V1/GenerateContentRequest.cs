@@ -19,6 +19,15 @@ public sealed record GenerateContentRequest
     public IReadOnlyList<Content>? Contents { get; init; }
 
     /// <summary>
+    /// Optional. An opaque continuation token used to resume generation from a
+    /// previous <c>GenerateContent</c> or <c>StreamGenerateContent</c> response that stopped
+    /// with <c>finish_reason</c> set to <c>CONTINUATION</c>.
+    /// </summary>
+    [JsonPropertyName("continuationToken")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReadOnlyMemory<byte> ContinuationToken { get; init; }
+
+    /// <summary>
     /// Optional. Configuration options for model generation and outputs.
     /// </summary>
     [JsonPropertyName("generationConfig")]

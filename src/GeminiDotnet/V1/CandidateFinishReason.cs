@@ -146,5 +146,14 @@ public enum CandidateFinishReason
     /// </summary>
     [JsonStringEnumMemberName("PUP_LIMITED_DISABLED")]
     PupLimitedDisabled,
+
+    /// <summary>
+    /// Token generation was stopped because the response reached the per-request
+    /// token limit, but generation is not yet complete. The model response can
+    /// be continued via a subsequent request using the returned
+    /// <c>continuation_token</c>.
+    /// </summary>
+    [JsonStringEnumMemberName("CONTINUATION")]
+    Continuation,
 }
 
