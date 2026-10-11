@@ -1,7 +1,8 @@
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.Testing;
 using GeminiDotnet.V1Beta.Files;
 using Microsoft.Extensions.AI;
 using System.Net;
+using System.Text;
 using File = GeminiDotnet.V1Beta.Files.File;
 
 #pragma warning disable MEAI001 // Type is for evaluation purposes only
@@ -79,29 +80,28 @@ public sealed class GeminiHostedFileClientTests
     public async Task DeleteAsync_ReturnsTrue_OnSuccess()
     {
         // Arrange
-        var filesClient = new StubFilesClient();
-        var client = CreateClient(filesClient);
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson("{}");
+        using var client = CreateClient(handler);
 
         // Act
-        var result = await client.DeleteAsync("abc123");
+        var result = await client.DeleteAsync("abc123", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
-        Assert.Equal("abc123", filesClient.LastDeletedFile);
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal(HttpMethod.Delete, request.Method);
+        Assert.Equal("/v1beta/files/abc123", request.RequestUri?.AbsolutePath);
     }
 
     [Fact]
-    public async Task DeleteAsync_ReturnsFalse_OnGeminiClientException()
+    public async Task DeleteAsync_ReturnsFalse_On404()
     {
         // Arrange
-        var filesClient = new StubFilesClient
-        {
-            ThrowOnDelete = true,
-        };
-        var client = CreateClient(filesClient);
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(NotFoundJson, HttpStatusCode.NotFound);
+        using var client = CreateClient(handler);
 
         // Act
-        var result = await client.DeleteAsync("nonexistent");
+        var result = await client.DeleteAsync("nonexistent", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -115,14 +115,11 @@ public sealed class GeminiHostedFileClientTests
     public async Task GetFileInfoAsync_ReturnsNull_On404()
     {
         // Arrange
-        var filesClient = new StubFilesClient
-        {
-            ThrowNotFoundOnGet = true,
-        };
-        var client = CreateClient(filesClient);
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(NotFoundJson, HttpStatusCode.NotFound);
+        using var client = CreateClient(handler);
 
         // Act
-        var result = await client.GetFileInfoAsync("nonexistent");
+        var result = await client.GetFileInfoAsync("nonexistent", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(result);
@@ -132,22 +129,26 @@ public sealed class GeminiHostedFileClientTests
     public async Task GetFileInfoAsync_ReturnsMappedContent_OnSuccess()
     {
         // Arrange
-        var file = new File
-        {
-            Uri = "https://generativelanguage.googleapis.com/v1beta/files/found",
-            MimeType = "application/pdf",
-            DisplayName = "document.pdf",
-        };
-        var filesClient = new StubFilesClient { FileToReturn = file };
-        var client = CreateClient(filesClient);
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(
+            """
+            {
+              "name": "files/found",
+              "uri": "https://generativelanguage.googleapis.com/v1beta/files/found",
+              "mimeType": "application/pdf",
+              "displayName": "document.pdf"
+            }
+            """);
+        using var client = CreateClient(handler);
 
         // Act
-        var result = await client.GetFileInfoAsync("found");
+        var result = await client.GetFileInfoAsync("found", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(file.Uri, result.FileId);
-        Assert.Equal(file.MimeType, result.MediaType);
+        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/files/found", result.FileId);
+        Assert.Equal("application/pdf", result.MediaType);
+        Assert.Equal("document.pdf", result.Name);
+        Assert.Equal("/v1beta/files/found", Assert.Single(handler.Requests).RequestUri?.AbsolutePath);
     }
 
     #endregion
@@ -157,65 +158,48 @@ public sealed class GeminiHostedFileClientTests
     [Fact]
     public async Task ListFilesAsync_RespectsLimit()
     {
-        // Arrange — stub returns 5 files, but we request a limit of 3.
-        var files = Enumerable.Range(0, 5).Select(i => new File
-        {
-            Uri = $"https://generativelanguage.googleapis.com/v1beta/files/file-{i}",
-            Name = $"files/file-{i}",
-        }).ToList();
-
-        var filesClient = new StubFilesClient
-        {
-            FilesToList = files,
-        };
-        var client = CreateClient(filesClient);
+        // Arrange — the page holds 5 files, more than the limit of 3 asks for.
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(
+            ListFilesJson(nextPageToken: null, "file-0", "file-1", "file-2", "file-3", "file-4"));
+        using var client = CreateClient(handler);
 
         var options = new HostedFileClientOptions { Limit = 3 };
 
         // Act
-        var results = new List<HostedFileContent>();
-        await foreach (var item in client.ListFilesAsync(options))
+        List<HostedFileContent> results = [];
+        await foreach (var item in client.ListFilesAsync(options, TestContext.Current.CancellationToken))
         {
             results.Add(item);
         }
 
         // Assert
         Assert.Equal(3, results.Count);
+        Assert.Equal("?pageSize=3", Assert.Single(handler.Requests).RequestUri?.Query);
     }
 
     [Fact]
     public async Task ListFilesAsync_HandlesPagination()
     {
-        // Arrange — stub will return 2 pages of 2 files each.
-        var page1Files = new List<File>
-        {
-            new() { Uri = "https://example.com/files/a", Name = "files/a" },
-            new() { Uri = "https://example.com/files/b", Name = "files/b" },
-        };
-        var page2Files = new List<File>
-        {
-            new() { Uri = "https://example.com/files/c", Name = "files/c" },
-        };
-
-        var filesClient = new StubFilesClient
-        {
-            PaginatedResults =
-            [
-                new ListFilesResponse { Files = page1Files, NextPageToken = "page2" },
-                new ListFilesResponse { Files = page2Files, NextPageToken = null },
-            ],
-        };
-        var client = CreateClient(filesClient);
+        // Arrange
+        var handler = new ScriptedHttpMessageHandler()
+            .RespondWithJson(ListFilesJson(nextPageToken: "page2", "a", "b"))
+            .RespondWithJson(ListFilesJson(nextPageToken: null, "c"));
+        using var client = CreateClient(handler);
 
         // Act
-        var results = new List<HostedFileContent>();
-        await foreach (var item in client.ListFilesAsync())
+        List<HostedFileContent> results = [];
+        await foreach (var item in client.ListFilesAsync(cancellationToken: TestContext.Current.CancellationToken))
         {
             results.Add(item);
         }
 
         // Assert
-        Assert.Equal(3, results.Count);
+        Assert.Equal(
+            ["files/a", "files/b", "files/c"],
+            results.Select(file => file.FileId));
+        Assert.Equal(
+            ["?pageSize=100", "?pageSize=100&pageToken=page2"],
+            handler.Requests.Select(request => request.RequestUri?.Query));
     }
 
     #endregion
@@ -226,37 +210,50 @@ public sealed class GeminiHostedFileClientTests
     public async Task UploadAsync_PassesMediaTypeAndFileName()
     {
         // Arrange
-        var uploadedFile = new File
-        {
-            Uri = "https://generativelanguage.googleapis.com/v1beta/files/uploaded",
-            MimeType = "text/csv",
-            DisplayName = "data.csv",
-            Name = "files/uploaded",
-        };
-
-        var filesClient = new StubFilesClient { FileToReturn = uploadedFile };
-        var client = CreateClient(filesClient);
+        var handler = new ScriptedHttpMessageHandler()
+            .RespondWith(UploadStarted)
+            .RespondWithJson(
+                """
+                {
+                  "file": {
+                    "name": "files/uploaded",
+                    "uri": "https://generativelanguage.googleapis.com/v1beta/files/uploaded",
+                    "mimeType": "text/csv",
+                    "displayName": "data.csv"
+                  }
+                }
+                """);
+        using var client = CreateClient(handler);
 
         using var stream = new MemoryStream("hello"u8.ToArray());
 
         // Act
-        var result = await client.UploadAsync(stream, "text/csv", "data.csv");
+        var result = await client.UploadAsync(
+            stream,
+            "text/csv",
+            "data.csv",
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(uploadedFile.Uri, result.FileId);
-        Assert.Equal("text/csv", filesClient.LastUploadOptions?.MimeType);
-        Assert.Equal("data.csv", filesClient.LastUploadOptions?.DisplayName);
+        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/files/uploaded", result.FileId);
+
+        var start = handler.Requests[0];
+        Assert.Equal("text/csv", start.Headers["X-Goog-Upload-Header-Content-Type"]);
+        Assert.Equal("data.csv", start.ReadBodyAsJson()?["file"]?["displayName"]?.GetValue<string>());
     }
 
     [Fact]
     public async Task UploadAsync_ThrowsForNonSeekableStream()
     {
         // Arrange
-        var client = CreateClient(new StubFilesClient());
+        using var client = CreateClient(new ScriptedHttpMessageHandler());
         var nonSeekable = new NonSeekableStream();
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => client.UploadAsync(nonSeekable, "text/plain"));
+        // Act
+        Task Act() => client.UploadAsync(nonSeekable, "text/plain", cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        await Assert.ThrowsAsync<ArgumentException>(Act);
     }
 
     #endregion
@@ -267,60 +264,73 @@ public sealed class GeminiHostedFileClientTests
     public async Task DownloadAsync_ReturnsStreamWithCorrectMetadata()
     {
         // Arrange
-        var file = new File
-        {
-            Uri = "https://generativelanguage.googleapis.com/v1beta/files/dl-test",
-            MimeType = "text/plain",
-            DisplayName = "report.txt",
-            Name = "files/dl-test",
-        };
-
-        var filesClient = new StubFilesClient { FileToReturn = file };
-        var client = CreateClient(filesClient);
+        var handler = RespondToMetadataAndDownload(
+            metadata: () => JsonResponse(
+                """
+                {
+                  "name": "files/dl-test",
+                  "uri": "https://generativelanguage.googleapis.com/v1beta/files/dl-test",
+                  "mimeType": "text/plain",
+                  "displayName": "report.txt"
+                }
+                """),
+            download: () => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("file-content", Encoding.UTF8, "text/plain"),
+            });
+        using var client = CreateClient(handler);
 
         // Act
-        await using var stream = await client.DownloadAsync("dl-test");
+        await using var stream = await client.DownloadAsync(
+            "dl-test",
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("text/plain", stream.MediaType);
         Assert.Equal("report.txt", stream.FileName);
 
         using var reader = new StreamReader(stream);
-        var content = await reader.ReadToEndAsync();
+        var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Equal("file-content", content);
     }
 
     [Fact]
     public async Task DownloadAsync_DisposesDownloadResult_WhenGetFileFails()
     {
-        // Arrange — GetAsync returns a faulted task (404), but DownloadAsync
-        // succeeds. The download must be disposed to avoid leaking its response.
-        var filesClient = new StubFilesClient
-        {
-            FaultGetFileAsync = true,
-        };
-        var client = CreateClient(filesClient);
+        // Arrange — the metadata request fails with a 404, but the download succeeds. The download must be
+        // disposed to avoid leaking its response.
+        var downloaded = new TrackableStream("file-content"u8.ToArray());
+        var handler = RespondToMetadataAndDownload(
+            metadata: () => JsonResponse(NotFoundJson, HttpStatusCode.NotFound),
+            download: () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(downloaded) });
+        using var client = CreateClient(handler);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<GeminiClientException>(() => client.DownloadAsync("nonexistent"));
+        // Act
+        Task Act() => client.DownloadAsync("nonexistent", cancellationToken: TestContext.Current.CancellationToken);
 
-        // The download response should have been disposed by the catch block.
-        Assert.True(filesClient.LastDownloadStream?.IsDisposed ?? false);
+        // Assert
+        await Assert.ThrowsAsync<GeminiClientException>(Act);
+        Assert.True(downloaded.IsDisposed);
     }
 
     [Fact]
     public async Task DownloadAsync_ExtractsResourceIdFromFullUri()
     {
         // Arrange
-        var filesClient = new StubFilesClient();
-        var client = CreateClient(filesClient);
+        var handler = RespondToMetadataAndDownload(
+            metadata: () => JsonResponse("""{ "name": "files/uri-test" }"""),
+            download: () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) });
+        using var client = CreateClient(handler);
 
         // Act
         await using var stream = await client.DownloadAsync(
-            "https://generativelanguage.googleapis.com/v1beta/files/uri-test");
+            "https://generativelanguage.googleapis.com/v1beta/files/uri-test",
+            cancellationToken: TestContext.Current.CancellationToken);
 
-        // Assert — the stub records the resource ID passed to GetAsync
-        Assert.Equal("uri-test", filesClient.LastGetFileId);
+        // Assert
+        Assert.Equal(
+            ["/v1beta/files/uri-test", "/v1beta/files/uri-test:download"],
+            handler.Requests.Select(request => request.RequestUri?.AbsolutePath).Order());
     }
 
     #endregion
@@ -350,7 +360,7 @@ public sealed class GeminiHostedFileClientTests
     public void GetService_ReturnsMetadata()
     {
         // Arrange
-        var client = CreateClient(new StubFilesClient());
+        using var client = CreateClient(new ScriptedHttpMessageHandler());
 
         // Act
         var metadata = client.GetService(typeof(HostedFileClientMetadata));
@@ -364,8 +374,8 @@ public sealed class GeminiHostedFileClientTests
     public void GetService_ReturnsWrappedGeminiClient()
     {
         // Arrange
-        var geminiClient = new StubGeminiClient();
-        var client = new GeminiHostedFileClient(geminiClient);
+        using var geminiClient = new GeminiClient(new ScriptedHttpMessageHandler().CreateHttpClient());
+        using var client = new GeminiHostedFileClient(geminiClient);
 
         // Act
         var result = client.GetService(typeof(IGeminiClient));
@@ -378,7 +388,7 @@ public sealed class GeminiHostedFileClientTests
     public void GetService_ReturnsSelf_ForMatchingType()
     {
         // Arrange
-        var client = CreateClient(new StubFilesClient());
+        using var client = CreateClient(new ScriptedHttpMessageHandler());
 
         // Act
         var result = client.GetService(typeof(GeminiHostedFileClient));
@@ -391,7 +401,7 @@ public sealed class GeminiHostedFileClientTests
     public void GetService_ReturnsNull_ForUnknownType()
     {
         // Arrange
-        var client = CreateClient(new StubFilesClient());
+        using var client = CreateClient(new ScriptedHttpMessageHandler());
 
         // Act
         var result = client.GetService(typeof(string));
@@ -404,7 +414,7 @@ public sealed class GeminiHostedFileClientTests
     public void GetService_ReturnsNull_WhenServiceKeyIsProvided()
     {
         // Arrange
-        var client = CreateClient(new StubFilesClient());
+        using var client = CreateClient(new ScriptedHttpMessageHandler());
 
         // Act — keyed services are not supported
         var result = client.GetService(typeof(HostedFileClientMetadata), serviceKey: "some-key");
@@ -417,165 +427,54 @@ public sealed class GeminiHostedFileClientTests
 
     // -- Test helpers --
 
-    private static GeminiHostedFileClient CreateClient(StubFilesClient filesClient)
+    private const string NotFoundJson =
+        """{ "error": { "code": 404, "message": "File not found.", "status": "NOT_FOUND" } }""";
+
+    private static GeminiHostedFileClient CreateClient(ScriptedHttpMessageHandler handler)
     {
-        var geminiClient = new StubGeminiClient { FilesClientOverride = filesClient };
-        return new GeminiHostedFileClient(geminiClient);
+        return new GeminiHostedFileClient(new GeminiClient(handler.CreateHttpClient()));
     }
 
     /// <summary>
-    /// A minimal <see cref="IGeminiClient"/> stub that delegates to a configurable <see cref="IFilesClient"/>.
+    /// Scripts the two requests that <see cref="GeminiHostedFileClient.DownloadAsync"/> sends concurrently, each
+    /// answered by what it asks for, so the test does not depend on which arrives first.
     /// </summary>
-    private sealed class StubGeminiClient : IGeminiClient
+    private static ScriptedHttpMessageHandler RespondToMetadataAndDownload(
+        Func<HttpResponseMessage> metadata,
+        Func<HttpResponseMessage> download)
     {
-        public StubFilesClient? FilesClientOverride { get; init; }
+        HttpResponseMessage Answer(RecordedRequest request) =>
+            request.RequestUri?.AbsolutePath.EndsWith(":download", StringComparison.Ordinal) is true
+                ? download()
+                : metadata();
 
-        public IGeminiClientOptions Options => throw new NotImplementedException();
-        public Uri? Endpoint => new("https://generativelanguage.googleapis.com");
-        public V1.IGeminiV1Client V1 => throw new NotImplementedException();
-        public IGeminiV1BetaClient V1Beta => new StubV1BetaClient(FilesClientOverride ?? new StubFilesClient());
+        return new ScriptedHttpMessageHandler().RespondWith(Answer).RespondWith(Answer);
     }
 
-    private sealed class StubV1BetaClient : IGeminiV1BetaClient
+    private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK)
     {
-        private readonly IFilesClient _files;
-
-        public StubV1BetaClient(IFilesClient files)
+        return new HttpResponseMessage(statusCode)
         {
-            _files = files;
-        }
+            Content = new StringContent(json, Encoding.UTF8, "application/json"),
+        };
+    }
 
-        public IAuthTokensClient AuthTokens => throw new NotImplementedException();
-        public IBatchesClient Batches => throw new NotImplementedException();
-        public ICachedContentsClient CachedContents => throw new NotImplementedException();
-        public ICorporaClient Corpora => throw new NotImplementedException();
-        public IDynamicClient Dynamic => throw new NotImplementedException();
-        public IEnvironmentsClient Environments => throw new NotImplementedException();
-        public IFilesClient Files => _files;
-        public IFileSearchStoresClient FileSearchStores => throw new NotImplementedException();
-        public IGeneratedFilesClient GeneratedFiles => throw new NotImplementedException();
-        public IMediaClient Media => throw new NotImplementedException();
-        public IModelsClient Models => throw new NotImplementedException();
-        public ITunedModelsClient TunedModels => throw new NotImplementedException();
+    private static string ListFilesJson(string? nextPageToken, params string[] ids)
+    {
+        var files = string.Join(", ", ids.Select(id => $$"""{ "name": "files/{{id}}" }"""));
+        var token = nextPageToken is null ? "" : $$""", "nextPageToken": "{{nextPageToken}}" """;
+        return $$"""{ "files": [{{files}}]{{token}} }""";
     }
 
     /// <summary>
-    /// Configurable stub for <see cref="IFilesClient"/> that records calls and returns pre-set values.
+    /// The API answers the start of a resumable upload with the URL to send the bytes to in a header.
     /// </summary>
-    private sealed class StubFilesClient : IFilesClient
+    private static HttpResponseMessage UploadStarted()
     {
-        public File? FileToReturn { get; set; }
-        public List<File>? FilesToList { get; set; }
-        public List<ListFilesResponse>? PaginatedResults { get; set; }
-        public bool ThrowOnDelete { get; set; }
-        public bool ThrowNotFoundOnGet { get; set; }
-        public bool FaultGetFileAsync { get; set; }
-        public string? LastDeletedFile { get; set; }
-        public string? LastGetFileId { get; set; }
-        public UploadFileOptions? LastUploadOptions { get; set; }
-        public TrackableStream? LastDownloadStream { get; set; }
-
-        private int _paginationIndex;
-
-        public Task<ListFilesResponse> ListAsync(int? pageSize = null, string? pageToken = null, CancellationToken cancellationToken = default)
-        {
-            if (PaginatedResults is not null)
-            {
-                var response = _paginationIndex < PaginatedResults.Count
-                    ? PaginatedResults[_paginationIndex++]
-                    : new ListFilesResponse();
-                return Task.FromResult(response);
-            }
-
-            // Simple single-page response from FilesToList.
-            return Task.FromResult(new ListFilesResponse
-            {
-                Files = FilesToList,
-            });
-        }
-
-        public Task<RegisterFilesResponse> RegisterAsync(RegisterFilesRequest request, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<File> GetAsync(string name, CancellationToken cancellationToken = default)
-        {
-            LastGetFileId = name["files/".Length..];
-
-            if (ThrowNotFoundOnGet)
-            {
-                ThrowGeminiException(HttpStatusCode.NotFound);
-            }
-
-            if (FaultGetFileAsync)
-            {
-                // Return a faulted task instead of throwing synchronously, so that
-                // callers who already started concurrent tasks can observe the fault
-                // via Task.WhenAll.
-                return Task.FromException<File>(CreateGeminiException(HttpStatusCode.NotFound));
-            }
-
-            return Task.FromResult(FileToReturn ?? new File { Name = name });
-        }
-
-        public Task<Empty> DeleteAsync(string name, CancellationToken cancellationToken = default)
-        {
-            if (ThrowOnDelete)
-            {
-                ThrowGeminiException(HttpStatusCode.NotFound);
-            }
-
-            LastDeletedFile = name["files/".Length..];
-            return Task.FromResult(new Empty());
-        }
-
-        public Task<MediaDownload> DownloadAsync(string name, CancellationToken cancellationToken = default)
-        {
-            // A trackable stream, so tests can verify the download is disposed.
-            var stream = new TrackableStream("file-content"u8.ToArray());
-            LastDownloadStream = stream;
-            return Task.FromResult(new MediaDownload(stream, "text/plain", stream.Length));
-        }
-
-        public Task<File> UploadFileAsync(Stream content, long contentLength, UploadFileOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            LastUploadOptions = options;
-            return Task.FromResult(FileToReturn ?? new File { Name = "files/uploaded" });
-        }
+        var response = JsonResponse("{}");
+        response.Headers.Add("X-Goog-Upload-URL", "https://upload.example.com/resume?upload_id=abc123");
+        return response;
     }
-
-    /// <summary>
-    /// Throws a <see cref="GeminiClientException"/> with the given status code.
-    /// Calls the internal <see cref="GeminiClientException.Throw"/> method directly
-    /// via <c>InternalsVisibleTo</c>.
-    /// </summary>
-    private static void ThrowGeminiException(HttpStatusCode statusCode)
-    {
-        GeminiClientException.Throw(CreateErrorDetails(statusCode));
-    }
-
-    /// <summary>
-    /// Creates a <see cref="GeminiClientException"/> that can be used with
-    /// <see cref="Task.FromException{TResult}"/> instead of throwing synchronously.
-    /// </summary>
-    private static GeminiClientException CreateGeminiException(HttpStatusCode statusCode)
-    {
-        try
-        {
-            GeminiClientException.Throw(CreateErrorDetails(statusCode));
-            return null!; // Unreachable
-        }
-        catch (GeminiClientException ex)
-        {
-            return ex;
-        }
-    }
-
-    private static ErrorDetails CreateErrorDetails(HttpStatusCode statusCode) => new()
-    {
-        StatusCode = statusCode,
-        Message = $"Error {(int)statusCode}",
-        Status = statusCode.ToString(),
-    };
 
     /// <summary>
     /// A stream that is not seekable, used to test the seekable-stream requirement.
