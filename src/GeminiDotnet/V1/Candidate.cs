@@ -32,6 +32,16 @@ public sealed record Candidate
     public Content? Content { get; init; }
 
     /// <summary>
+    /// An optional opaque continuation token returned when <c>finish_reason</c> is
+    /// <c>CONTINUATION</c>.
+    /// Clients can pass this token in a subsequent <see cref="V1.GenerateContentRequest"/> to
+    /// continue generation.
+    /// </summary>
+    [JsonPropertyName("continuationToken")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReadOnlyMemory<byte> ContinuationToken { get; init; }
+
+    /// <summary>
     /// Optional. Output only. Details the reason why the model stopped generating tokens.
     /// This is populated only when <c>finish_reason</c> is set.
     /// </summary>

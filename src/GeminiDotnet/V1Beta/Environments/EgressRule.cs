@@ -23,6 +23,15 @@ public sealed record EgressRule
     public string? Domain { get; init; }
 
     /// <summary>
+    /// Network egress mode. Set via the <c>"allowlist": "disabled"</c> short form;
+    /// must be the only rule in the allowlist and cannot be combined with
+    /// <see cref="Domain"/>, <see cref="Transform"/> or <see cref="Credential"/>.
+    /// </summary>
+    [JsonPropertyName("mode")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public EgressRuleMode? Mode { get; init; }
+
+    /// <summary>
     /// Headers to inject into requests matching this rule.
     /// Key: header name (e.g., "Authorization").
     /// Value: header value (e.g., "Bearer your-token").
