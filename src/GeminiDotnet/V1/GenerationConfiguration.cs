@@ -221,6 +221,8 @@ public sealed record GenerationConfiguration
     /// Note: The default value varies by model, see the <c>Model.temperature</c>
     /// attribute of the <see cref="V1.Models.Model"/> returned from the <c>getModel</c> function.
     /// Values can range from [0.0, 2.0].
+    /// This field is no longer supported and is silently ignored on Gemini 3.6
+    /// Flash and newer models.
     /// </summary>
     [JsonPropertyName("temperature")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -244,6 +246,8 @@ public sealed record GenerationConfiguration
     /// the<c>Model.top_p</c> attribute returned from the <c>getModel</c> function. An empty
     /// <c>top_k</c> attribute indicates that the model doesn't apply top-k sampling
     /// and doesn't allow setting <c>top_k</c> on requests.
+    /// This field is no longer supported and is silently ignored on Gemini 3.6
+    /// Flash and newer models.
     /// </summary>
     [JsonPropertyName("topK")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -260,6 +264,8 @@ public sealed record GenerationConfiguration
     /// the<c>Model.top_p</c> attribute returned from the <c>getModel</c> function. An empty
     /// <c>top_k</c> attribute indicates that the model doesn't apply top-k sampling
     /// and doesn't allow setting <c>top_k</c> on requests.
+    /// This field is no longer supported and is silently ignored on Gemini 3.6
+    /// Flash and newer models.
     /// </summary>
     [JsonPropertyName("topP")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
