@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.V1;
@@ -38,6 +39,28 @@ public sealed record FunctionDeclaration
     public Schema? Parameters { get; init; }
 
     /// <summary>
+    /// Optional. Describes the parameters to the function in JSON Schema format. The schema
+    /// must describe an object where the properties are the parameters to the
+    /// function. For example:
+    /// ``<c>
+    /// {
+    /// "type": "object",
+    /// "properties": {
+    /// "name": { "type": "string" },
+    /// "age": { "type": "integer" }
+    /// },
+    /// "additionalProperties": false,
+    /// "required": ["name", "age"],
+    /// "propertyOrdering": ["name", "age"]
+    /// }
+    /// </c>`<c>
+    /// This field is mutually exclusive with </c>parameters`.
+    /// </summary>
+    [JsonPropertyName("parametersJsonSchema")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement ParametersJsonSchema { get; init; }
+
+    /// <summary>
     /// Optional. Describes the output from this function in JSON Schema format. Reflects the
     /// Open API 3.03 Response Object. The Schema defines the type used for the
     /// response value of the function.
@@ -45,5 +68,14 @@ public sealed record FunctionDeclaration
     [JsonPropertyName("response")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Schema? Response { get; init; }
+
+    /// <summary>
+    /// Optional. Describes the output from this function in JSON Schema format. The value
+    /// specified by the schema is the response value of the function.
+    /// This field is mutually exclusive with <see cref="Response"/>.
+    /// </summary>
+    [JsonPropertyName("responseJsonSchema")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement ResponseJsonSchema { get; init; }
 }
 

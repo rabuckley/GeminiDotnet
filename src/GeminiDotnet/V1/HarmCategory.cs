@@ -14,12 +14,14 @@ public enum HarmCategory
     /// <summary>
     /// **PaLM** - Negative or harmful comments targeting identity and/or protected
     /// attribute.
+    /// DEPRECATED: PaLM-only category, not supported by Gemini models.
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_DEROGATORY")]
     Derogatory,
 
     /// <summary>
     /// **PaLM** - Content that is rude, disrespectful, or profane.
+    /// DEPRECATED: PaLM-only category, not supported by Gemini models.
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_TOXICITY")]
     Toxicity,
@@ -27,18 +29,21 @@ public enum HarmCategory
     /// <summary>
     /// **PaLM** - Describes scenarios depicting violence against an individual or
     /// group, or general descriptions of gore.
+    /// DEPRECATED: PaLM-only category, not supported by Gemini models.
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_VIOLENCE")]
     Violence,
 
     /// <summary>
     /// **PaLM** - Contains references to sexual acts or other lewd content.
+    /// DEPRECATED: PaLM-only category, not supported by Gemini models.
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_SEXUAL")]
     Sexual,
 
     /// <summary>
     /// **PaLM** - Promotes unchecked medical advice.
+    /// DEPRECATED: PaLM-only category, not supported by Gemini models.
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_MEDICAL")]
     Medical,
@@ -46,6 +51,7 @@ public enum HarmCategory
     /// <summary>
     /// **PaLM** - Dangerous content that promotes, facilitates, or encourages
     /// harmful acts.
+    /// DEPRECATED: PaLM-only category, not supported by Gemini models.
     /// </summary>
     [JsonStringEnumMemberName("HARM_CATEGORY_DANGEROUS")]
     Dangerous,

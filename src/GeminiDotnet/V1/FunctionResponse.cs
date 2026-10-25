@@ -30,6 +30,14 @@ public sealed record FunctionResponse
     public string? Name { get; init; }
 
     /// <summary>
+    /// Optional. Ordered <c>Parts</c> that constitute a function response. Parts may have
+    /// different IANA MIME types.
+    /// </summary>
+    [JsonPropertyName("parts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<FunctionResponsePart>? Parts { get; init; }
+
+    /// <summary>
     /// Required. The function response in JSON object format.
     /// Callers can use any keys of their choice that fit the function's syntax
     /// to return the function output, e.g. "output", "result", etc.
@@ -37,7 +45,7 @@ public sealed record FunctionResponse
     /// have an "error" key to return error details to the model.
     /// Multimedia can be included by using a subobject containing a single "$ref"
     /// key whose value is the <c>inline_data.display_name</c> of a
-    /// <c>FunctionResponsePart</c> holding the multimedia.
+    /// <see cref="V1.FunctionResponsePart"/> holding the multimedia.
     /// See https://ai.google.dev/gemini-api/docs/function-calling#multimodal.
     /// </summary>
     [JsonPropertyName("response")]

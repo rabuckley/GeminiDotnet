@@ -24,6 +24,13 @@ public sealed record GroundingChunk
     public Maps? Maps { get; init; }
 
     /// <summary>
+    /// Optional. Grounding chunk from context retrieved by the file search tool.
+    /// </summary>
+    [JsonPropertyName("retrievedContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public RetrievedContext? RetrievedContext { get; init; }
+
+    /// <summary>
     /// Grounding chunk from the web.
     /// </summary>
     [JsonPropertyName("web")]
