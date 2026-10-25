@@ -3,10 +3,12 @@ using System.Text.Json.Serialization;
 namespace GeminiDotnet.V1Beta;
 
 /// <summary>
-/// Deprecated: Use <c>GenerateContentRequest.processing_options</c> instead. Metadata
-/// describes the input video content.
+/// Metadata describes the input video content.
+/// Set this in <c>Part.video_metadata</c> or <c>FunctionResponsePart.video_metadata</c>
+/// when <c>inline_data</c> or <c>file_data</c> contains video to configure static video
+/// preprocessing (such as time clipping, frame rate, maximum frame count, or
+/// extracted content layers).
 /// </summary>
-[Obsolete("Use GenerateContentRequest.processing_options instead.")]
 public sealed record VideoMetadata
 {
     /// <summary>

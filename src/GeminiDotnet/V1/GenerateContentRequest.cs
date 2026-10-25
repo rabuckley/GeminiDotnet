@@ -21,7 +21,10 @@ public sealed record GenerateContentRequest
     /// <summary>
     /// Optional. An opaque continuation token used to resume generation from a
     /// previous <c>GenerateContent</c> or <c>StreamGenerateContent</c> response that stopped
-    /// with <c>finish_reason</c> set to <c>CONTINUATION</c>.
+    /// with <c>finish_reason</c> set to <c>CONTINUATION</c>. Note that <see cref="Contents"/> is
+    /// mandatory and must identically replicate the prompt and conversation
+    /// history from the initial request when continuation token is provided in
+    /// a request.
     /// </summary>
     [JsonPropertyName("continuationToken")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

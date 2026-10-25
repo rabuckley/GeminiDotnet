@@ -151,7 +151,8 @@ public enum CandidateFinishReason
     /// Token generation was stopped because the response reached the per-request
     /// token limit, but generation is not yet complete. The model response can
     /// be continued via a subsequent request using the returned
-    /// <c>continuation_token</c>.
+    /// <c>continuation_token</c>. Note, the <c>max_output_tokens</c> is cumulative across
+    /// continuation hops and must be monotonically increased or omitted.
     /// </summary>
     [JsonStringEnumMemberName("CONTINUATION")]
     Continuation,
