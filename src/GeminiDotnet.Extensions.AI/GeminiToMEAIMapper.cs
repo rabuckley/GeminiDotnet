@@ -52,12 +52,24 @@ internal static class GeminiToMEAIMapper
             MessageId = response.ResponseId,
             ConversationId = null,
             CreatedAt = createdAt,
-            FinishReason = CreateMappedChatFinishReason(candidate?.FinishReason),
+            FinishReason = GetChatFinishReason(response),
             ModelId = response.ModelVersion
         };
     }
 
-    private static ChatFinishReason? CreateMappedChatFinishReason(CandidateFinishReason? finishReason)
+    private static ChatFinishReason? GetChatFinishReason(GenerateContentResponse response)
+    {
+        if (response.PromptFeedback?.BlockReason is { } blockReason
+            && blockReason is not PromptFeedbackBlockReason.Unspecified)
+        {
+            return ChatFinishReason.ContentFilter;
+        }
+
+        var candidate = response.Candidates is { Count: > 0 } candidates ? candidates[0] : null;
+        return GetChatFinishReason(candidate?.FinishReason);
+    }
+
+    private static ChatFinishReason? GetChatFinishReason(CandidateFinishReason? finishReason)
     {
         return finishReason switch
         {
@@ -70,14 +82,25 @@ internal static class GeminiToMEAIMapper
             CandidateFinishReason.Safety => ChatFinishReason.ContentFilter,
             CandidateFinishReason.Recitation => ChatFinishReason.ContentFilter,
             CandidateFinishReason.Language => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.Other => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Other => null,
             CandidateFinishReason.Blocklist => ChatFinishReason.ContentFilter,
             CandidateFinishReason.ProhibitedContent => ChatFinishReason.ContentFilter,
             CandidateFinishReason.Spii => ChatFinishReason.ContentFilter,
             CandidateFinishReason.MalformedFunctionCall => null,
             CandidateFinishReason.ImageSafety => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.ImageProhibitedContent => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.ImageOther => null,
+            CandidateFinishReason.NoImage => null,
+            CandidateFinishReason.ImageRecitation => ChatFinishReason.ContentFilter,
             CandidateFinishReason.UnexpectedToolCall => null,
             CandidateFinishReason.TooManyToolCalls => null,
+            CandidateFinishReason.MissingThoughtSignature => null,
+            CandidateFinishReason.MalformedResponse => null,
+            CandidateFinishReason.Escalation => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.PupLimitedDisabled => ChatFinishReason.ContentFilter,
+            CandidateFinishReason.Continuation => ChatFinishReason.Length,
+
+            // Future API revisions may add reasons without a ChatFinishReason equivalent.
             _ => null
         };
     }
@@ -953,8 +976,7 @@ internal static class GeminiToMEAIMapper
             ConversationId = null,
             ModelId = response.ModelVersion,
             CreatedAt = createdAt,
-            FinishReason = CreateMappedChatFinishReason(
-                response.Candidates is { Count: > 0 } candidates ? candidates[0].FinishReason : null),
+            FinishReason = GetChatFinishReason(response),
             Usage = CreateMappedUsageDetails(response.UsageMetadata),
             RawRepresentation = response,
             AdditionalProperties = null
