@@ -8,8 +8,11 @@ namespace GeminiDotnet.Extensions.AI;
 public static class GeminiAdditionalCounts
 {
     /// <summary>
-    /// Number of tokens present in tool-use prompt(s).
+    /// The number of tokens in tool-use prompts.
     /// </summary>
+    /// <remarks>
+    /// This count is included in <see cref="UsageDetails.InputTokenCount"/>. Do not add it again.
+    /// </remarks>
     public const string ToolUsePromptTokenCount = "toolUsePromptTokenCount";
 }
 

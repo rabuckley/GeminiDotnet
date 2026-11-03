@@ -2607,10 +2607,10 @@ public sealed class GeminiToMEAIMapperTests
         Assert.NotNull(usageContent);
 
         var details = usageContent.Details;
-        Assert.Equal(100, details.InputTokenCount);
+        Assert.Equal(110, details.InputTokenCount);
         // OutputTokenCount = candidatesTokenCount (50) + thoughtsTokenCount (30) per M.E.AI convention
         Assert.Equal(80, details.OutputTokenCount);
-        Assert.Equal(150, details.TotalTokenCount);
+        Assert.Equal(190, details.TotalTokenCount);
         Assert.Equal(25, details.CachedInputTokenCount);
         Assert.Equal(30, details.ReasoningTokenCount);
         Assert.NotNull(details.AdditionalCounts);
@@ -2644,10 +2644,10 @@ public sealed class GeminiToMEAIMapperTests
 
         // Assert
         Assert.NotNull(result.Usage);
-        Assert.Equal(100, result.Usage.InputTokenCount);
+        Assert.Equal(110, result.Usage.InputTokenCount);
         // OutputTokenCount = candidatesTokenCount (50) + thoughtsTokenCount (30) per M.E.AI convention
         Assert.Equal(80, result.Usage.OutputTokenCount);
-        Assert.Equal(150, result.Usage.TotalTokenCount);
+        Assert.Equal(190, result.Usage.TotalTokenCount);
         Assert.Equal(25, result.Usage.CachedInputTokenCount);
         Assert.Equal(30, result.Usage.ReasoningTokenCount);
         Assert.NotNull(result.Usage.AdditionalCounts);
@@ -2684,6 +2684,57 @@ public sealed class GeminiToMEAIMapperTests
         Assert.NotNull(result.Usage);
         Assert.Equal(10, result.Usage.InputTokenCount);
         Assert.Null(result.Usage.OutputTokenCount);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithToolUseAndThoughtTokens_InputAndOutputSumToTotal()
+    {
+        var response = new GenerateContentResponse
+        {
+            UsageMetadata = new UsageMetadata
+            {
+                PromptTokenCount = 22,
+                ToolUsePromptTokenCount = 59392,
+                ThoughtsTokenCount = 40,
+                CandidatesTokenCount = 426,
+                TotalTokenCount = 59880,
+            },
+        };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.NotNull(result.Usage);
+        Assert.Equal(59414, result.Usage.InputTokenCount);
+        Assert.Equal(466, result.Usage.OutputTokenCount);
+        Assert.Equal(result.Usage.TotalTokenCount, result.Usage.InputTokenCount + result.Usage.OutputTokenCount);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithOnlyToolUsePromptTokens_InputTokenCountIsToolUseTokens()
+    {
+        var response = new GenerateContentResponse
+        {
+            UsageMetadata = new UsageMetadata { ToolUsePromptTokenCount = 10 },
+        };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.NotNull(result.Usage);
+        Assert.Equal(10, result.Usage.InputTokenCount);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithNoInputCounts_InputTokenCountIsNull()
+    {
+        var response = new GenerateContentResponse
+        {
+            UsageMetadata = new UsageMetadata { CandidatesTokenCount = 5 },
+        };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.NotNull(result.Usage);
+        Assert.Null(result.Usage.InputTokenCount);
     }
 
     #endregion
@@ -2854,7 +2905,7 @@ public sealed class GeminiToMEAIMapperTests
           "usageMetadata": {
             "promptTokenCount": 100,
             "candidatesTokenCount": 50,
-            "totalTokenCount": 150,
+            "totalTokenCount": 190,
             "cachedContentTokenCount": 25,
             "thoughtsTokenCount": 30,
             "toolUsePromptTokenCount": 10
@@ -2903,7 +2954,7 @@ public sealed class GeminiToMEAIMapperTests
           "usageMetadata": {
             "promptTokenCount": 100,
             "candidatesTokenCount": 50,
-            "totalTokenCount": 150,
+            "totalTokenCount": 190,
             "cachedContentTokenCount": 25,
             "thoughtsTokenCount": 30,
             "toolUsePromptTokenCount": 10

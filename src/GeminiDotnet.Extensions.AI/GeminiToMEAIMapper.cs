@@ -1079,13 +1079,11 @@ internal static class GeminiToMEAIMapper
             return null;
         }
 
-        // Per M.E.AI convention (UsageDetails.cs remarks), ReasoningTokenCount should be
-        // counted as part of OutputTokenCount. We include it in both places so that:
-        // 1. OutputTokenCount reflects the total billable output tokens (for telemetry/cost)
-        // 2. ReasoningTokenCount remains available for detailed breakdown reporting
         return new UsageDetails
         {
-            InputTokenCount = usage.PromptTokenCount,
+            InputTokenCount = usage.PromptTokenCount is not null || usage.ToolUsePromptTokenCount is not null
+                ? (usage.PromptTokenCount ?? 0) + (usage.ToolUsePromptTokenCount ?? 0)
+                : null,
             OutputTokenCount = usage.CandidatesTokenCount is not null || usage.ThoughtsTokenCount is not null
                 ? (usage.CandidatesTokenCount ?? 0) + (usage.ThoughtsTokenCount ?? 0)
                 : null,
