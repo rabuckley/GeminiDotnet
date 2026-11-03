@@ -32,6 +32,7 @@ public sealed class GenerateContentResponseTests
         yield return GoogleSearchExampleResponse;
         yield return UrlContextResponse;
         yield return McpToolCallResponse;
+        yield return UnknownEnumValuesResponse;
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
@@ -518,6 +519,66 @@ public sealed class GenerateContentResponseTests
         Assert.Equal("call_318937", toolCall.Id);
         Assert.Equal(ToolType.Unspecified, toolCall.ToolType);
     }
+
+    [Fact]
+    public void Deserialize_WithEnumValuesThisLibraryPredates_ShouldPreserveThem()
+    {
+        // Arrange
+        var typeInfo = V1BetaJsonContext.Default.GenerateContentResponse;
+
+        // Act
+        var response = JsonSerializer.Deserialize(UnknownEnumValuesResponse, typeInfo);
+
+        // Assert
+        var candidate = Assert.Single(response!.Candidates!);
+        Assert.Equal(new CandidateFinishReason("SOME_FUTURE_REASON"), candidate.FinishReason);
+        Assert.Equal("HARM_CATEGORY_SOME_FUTURE_HARM", Assert.Single(candidate.SafetyRatings!).Category.Value);
+    }
+
+    /// <summary>
+    /// A required enum property is non-nullable on the basis that its default is its unspecified
+    /// value, which proto3 JSON leaves off the wire.
+    /// </summary>
+    [Fact]
+    public void Serialize_WithAnEnumPropertyAtItsDefault_ShouldOmitIt()
+    {
+        // Arrange
+        var result = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Unspecified };
+
+        // Act
+        var json = JsonSerializer.Serialize(result, V1BetaJsonContext.Default.CodeExecutionResult);
+
+        // Assert
+        Assert.Equal("{}", json);
+    }
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string UnknownEnumValuesResponse =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "Hello."
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "SOME_FUTURE_REASON",
+              "safetyRatings": [
+                {
+                  "category": "HARM_CATEGORY_SOME_FUTURE_HARM",
+                  "probability": "NEGLIGIBLE"
+                }
+              ]
+            }
+          ],
+          "modelVersion": "gemini-3.1-flash-lite",
+          "responseId": "unknown-enum-values-example"
+        }
+        """;
 
     [StringSyntax(StringSyntaxAttribute.Json)]
     private const string McpToolCallResponse =

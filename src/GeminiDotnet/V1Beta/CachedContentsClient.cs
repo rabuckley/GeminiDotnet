@@ -11,7 +11,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class CachedContentsClient : ICachedContentsClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal CachedContentsClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

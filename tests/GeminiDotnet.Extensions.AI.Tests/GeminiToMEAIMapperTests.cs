@@ -287,15 +287,31 @@ public sealed class GeminiToMEAIMapperTests
     [Fact]
     public void CandidateFinishReasonMappings_ShouldCoverEveryCandidateFinishReason()
     {
-        var unmappedReasons = Enum.GetValues<CandidateFinishReason>()
-            .Where(reason => reason is not CandidateFinishReason.Unspecified)
+        var unmappedReasons = CandidateFinishReason.KnownValues
+            .Where(reason => reason != CandidateFinishReason.Unspecified)
             .Except(CandidateFinishReasonMappings.Keys);
 
         Assert.Empty(unmappedReasons);
     }
 
+    [Fact]
+    public void CreateMappedChatResponse_WithAFinishReasonThisLibraryPredates_ShouldReportNone()
+    {
+        var response = new GenerateContentResponse
+        {
+            Candidates =
+            [
+                new Candidate { Content = null, FinishReason = new CandidateFinishReason("SOME_FUTURE_REASON") },
+            ],
+        };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.Null(result.FinishReason);
+    }
+
     public static TheoryData<PromptFeedbackBlockReason> PromptBlockReasons =>
-        new(Enum.GetValues<PromptFeedbackBlockReason>().Except([PromptFeedbackBlockReason.Unspecified]));
+        new(PromptFeedbackBlockReason.KnownValues.Except([PromptFeedbackBlockReason.Unspecified]));
 
     [Theory]
     [MemberData(nameof(PromptBlockReasons))]

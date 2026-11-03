@@ -12,7 +12,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class EnvironmentsClient : IEnvironmentsClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal EnvironmentsClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

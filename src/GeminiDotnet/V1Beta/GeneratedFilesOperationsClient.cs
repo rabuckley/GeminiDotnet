@@ -10,7 +10,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class GeneratedFilesOperationsClient : IGeneratedFilesOperationsClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal GeneratedFilesOperationsClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

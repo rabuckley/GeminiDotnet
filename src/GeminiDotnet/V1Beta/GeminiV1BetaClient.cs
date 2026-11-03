@@ -10,7 +10,7 @@ namespace GeminiDotnet.V1Beta;
 public sealed partial class GeminiV1BetaClient : IGeminiV1BetaClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal GeminiV1BetaClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

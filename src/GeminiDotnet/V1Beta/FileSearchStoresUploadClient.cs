@@ -10,7 +10,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class FileSearchStoresUploadClient : IFileSearchStoresUploadClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal FileSearchStoresUploadClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

@@ -11,7 +11,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class ModelsClient : IModelsClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal ModelsClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

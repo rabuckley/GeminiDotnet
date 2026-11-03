@@ -10,7 +10,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class DynamicClient : IDynamicClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal DynamicClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

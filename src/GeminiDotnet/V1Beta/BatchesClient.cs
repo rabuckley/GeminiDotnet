@@ -10,7 +10,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class BatchesClient : IBatchesClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal BatchesClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

@@ -11,7 +11,7 @@ namespace GeminiDotnet.V1;
 internal sealed partial class MediaClient : IMediaClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal MediaClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

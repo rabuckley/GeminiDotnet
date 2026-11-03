@@ -173,14 +173,14 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Theory]
-    [InlineData(ReasoningEffort.None, ThinkingConfigThinkingLevel.Minimal)]
-    [InlineData(ReasoningEffort.Low, ThinkingConfigThinkingLevel.Low)]
-    [InlineData(ReasoningEffort.Medium, ThinkingConfigThinkingLevel.Medium)]
-    [InlineData(ReasoningEffort.High, ThinkingConfigThinkingLevel.High)]
-    [InlineData(ReasoningEffort.ExtraHigh, ThinkingConfigThinkingLevel.High)]
+    [InlineData(ReasoningEffort.None, "MINIMAL")]
+    [InlineData(ReasoningEffort.Low, "LOW")]
+    [InlineData(ReasoningEffort.Medium, "MEDIUM")]
+    [InlineData(ReasoningEffort.High, "HIGH")]
+    [InlineData(ReasoningEffort.ExtraHigh, "HIGH")]
     public void CreateMappedGenerateContentRequest_WithReasoningEffort_ShouldMapToThinkingLevel(
         ReasoningEffort effort,
-        ThinkingConfigThinkingLevel expectedLevel)
+        string expectedLevel)
     {
         // Arrange
         var messages = new List<ChatMessage> { new(ChatRole.User, "Think about this.") };
@@ -194,7 +194,9 @@ public sealed class MEAIToGeminiMapperTests
         var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, options);
 
         // Assert
-        Assert.Equal(expectedLevel, request.GenerationConfiguration?.ThinkingConfiguration?.ThinkingLevel);
+        Assert.Equal(
+            new ThinkingConfigThinkingLevel(expectedLevel),
+            request.GenerationConfiguration?.ThinkingConfiguration?.ThinkingLevel);
     }
 
     [Theory]
@@ -2474,13 +2476,14 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Theory]
-    [InlineData(CodeExecutionResultOutcome.Ok)]
-    [InlineData(CodeExecutionResultOutcome.Failed)]
-    [InlineData(CodeExecutionResultOutcome.DeadlineExceeded)]
+    [InlineData("OUTCOME_OK")]
+    [InlineData("OUTCOME_FAILED")]
+    [InlineData("OUTCOME_DEADLINE_EXCEEDED")]
     public void CreateMappedGenerateContentRequest_WithAPersistedOutcome_ShouldRebuildIt(
-        CodeExecutionResultOutcome outcome)
+        string wireOutcome)
     {
         // Arrange
+        var outcome = new CodeExecutionResultOutcome(wireOutcome);
         var properties = MaybeRoundTripThroughJson(
             new AdditionalPropertiesDictionary { [GeminiContentProperties.Outcome] = outcome },
             roundTrip: true);
