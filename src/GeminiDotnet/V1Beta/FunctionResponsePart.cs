@@ -14,10 +14,26 @@ namespace GeminiDotnet.V1Beta;
 public sealed record FunctionResponsePart
 {
     /// <summary>
+    /// URI based data.
+    /// </summary>
+    [JsonPropertyName("fileData")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public FunctionResponseFileData? FileData { get; init; }
+
+    /// <summary>
     /// Inline media bytes.
     /// </summary>
     [JsonPropertyName("inlineData")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public FunctionResponseBlob? InlineData { get; init; }
+
+    /// <summary>
+    /// Optional. How the model processes this part's media for understanding.
+    /// Only meaningful for video parts (<c>inline_data</c> or <c>file_data</c> with video
+    /// mime). Non-video parts ignore this field.
+    /// </summary>
+    [JsonPropertyName("mediaProcessing")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public FunctionResponsePartMediaProcessing? MediaProcessing { get; init; }
 }
 

@@ -10,7 +10,7 @@ public partial interface IModelsClient
     IModelsOperationsClient Operations { get; }
 
     /// <summary>
-    /// Lists the [<see cref="V1Beta.Models.Model"/>s](https://ai.google.dev/gemini-api/docs/models/gemini)
+    /// Lists the [<see cref="V1Beta.Models.Model"/>s](https://aistudio.google.com/docs/models)
     /// available through the Gemini API.
     /// </summary>
     /// <param name="pageSize">
@@ -35,9 +35,9 @@ public partial interface IModelsClient
     /// <summary>
     /// Gets information about a specific <see cref="V1Beta.Models.Model"/> such as its version number, token
     /// limits,
-    /// [parameters](https://ai.google.dev/gemini-api/docs/models/generative-models#model-parameters)
+    /// [parameters](https://aistudio.google.com/docs/prompting-strategies#model-parameters)
     /// and other metadata. Refer to the [Gemini models
-    /// guide](https://ai.google.dev/gemini-api/docs/models/gemini) for detailed
+    /// guide](https://aistudio.google.com/docs/models) for detailed
     /// model information.
     /// </summary>
     /// <param name="name">
@@ -143,7 +143,7 @@ public partial interface IModelsClient
 
     /// <summary>
     /// Runs a model's tokenizer on input <see cref="V1Beta.Content"/> and returns the token count.
-    /// Refer to the [tokens guide](https://ai.google.dev/gemini-api/docs/tokens)
+    /// Refer to the [tokens guide](https://aistudio.google.com/docs/tokens)
     /// to learn more about tokens.
     /// </summary>
     /// <param name="model">
@@ -160,7 +160,7 @@ public partial interface IModelsClient
     /// <summary>
     /// Generates a text embedding vector from the input <see cref="V1Beta.Content"/> using the
     /// specified [Gemini Embedding
-    /// model](https://ai.google.dev/gemini-api/docs/models/gemini#text-embedding).
+    /// model](https://aistudio.google.com/docs/models#specialized-task-models).
     /// </summary>
     /// <param name="model">
     /// Required. The model's resource name. This serves as an ID for the Model to use. This name should match a model name returned by the <c>ListModels</c> method. Format: <c>models/{model}</c>
@@ -207,11 +207,11 @@ public partial interface IModelsClient
     /// <summary>
     /// Generates a model response given an input <see cref="V1Beta.GenerateContentRequest"/>.
     /// Refer to the [text generation
-    /// guide](https://ai.google.dev/gemini-api/docs/text-generation) for detailed
+    /// guide](https://aistudio.google.com/docs/text-generation) for detailed
     /// usage information. Input capabilities differ between models, including
     /// tuned models. Refer to the [model
-    /// guide](https://ai.google.dev/gemini-api/docs/models/gemini) and [tuning
-    /// guide](https://ai.google.dev/gemini-api/docs/model-tuning) for details.
+    /// guide](https://aistudio.google.com/docs/models) and [tuning
+    /// guide](https://aistudio.google.com/docs/model-tuning) for details.
     /// </summary>
     /// <param name="model">
     /// Required. The name of the <see cref="V1Beta.Models.Model"/> to use for generating the completion. Format: <c>models/{model}</c>.
@@ -284,7 +284,7 @@ public partial interface IModelsClient
 
     /// <summary>
     /// Generates a [streamed
-    /// response](https://ai.google.dev/gemini-api/docs/text-generation?lang=python#generate-a-text-stream)
+    /// response](https://aistudio.google.com/docs/text-generation#streaming-responses)
     /// from the model given an input <see cref="V1Beta.GenerateContentRequest"/>.
     /// </summary>
     /// <param name="model">

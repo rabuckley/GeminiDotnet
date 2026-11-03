@@ -9,7 +9,7 @@ public sealed record GenerateContentRequest
 {
     /// <summary>
     /// Optional. The name of the content
-    /// [cached](https://ai.google.dev/gemini-api/docs/caching) to use as context
+    /// [cached](https://aistudio.google.com/docs/caching) to use as context
     /// to serve the prediction. Format: <c>cachedContents/{cachedContent}</c>
     /// </summary>
     [JsonPropertyName("cachedContent")]
@@ -19,7 +19,8 @@ public sealed record GenerateContentRequest
     /// <summary>
     /// Required. The content of the current conversation with the model.
     /// For single-turn queries, this is a single instance. For multi-turn queries
-    /// like [chat](https://ai.google.dev/gemini-api/docs/text-generation#chat),
+    /// like
+    /// [chat](https://aistudio.google.com/docs/text-generation#multi-turn-conversations),
     /// this is a repeated field that contains the conversation history and the
     /// latest request.
     /// </summary>
@@ -83,9 +84,9 @@ public sealed record GenerateContentRequest
     /// HARM_CATEGORY_SEXUALLY_EXPLICIT, HARM_CATEGORY_DANGEROUS_CONTENT,
     /// HARM_CATEGORY_HARASSMENT, HARM_CATEGORY_CIVIC_INTEGRITY,
     /// HARM_CATEGORY_JAILBREAK are supported.
-    /// Refer to the [guide](https://ai.google.dev/gemini-api/docs/safety-settings)
+    /// Refer to the [guide](https://aistudio.google.com/docs/safety-settings)
     /// for detailed information on available safety settings. Also refer to the
-    /// [Safety guidance](https://ai.google.dev/gemini-api/docs/safety-guidance) to
+    /// [Safety guidance](https://aistudio.google.com/docs/safety-guidance) to
     /// learn how to incorporate safety considerations in your AI applications.
     /// </summary>
     [JsonPropertyName("safetySettings")]
@@ -109,7 +110,7 @@ public sealed record GenerateContentRequest
 
     /// <summary>
     /// Optional. Developer set [system
-    /// instruction(s)](https://ai.google.dev/gemini-api/docs/system-instructions).
+    /// instruction(s)](https://aistudio.google.com/docs/text-generation#system-instructions).
     /// Currently, text only.
     /// </summary>
     [JsonPropertyName("systemInstruction")]
@@ -119,7 +120,7 @@ public sealed record GenerateContentRequest
     /// <summary>
     /// Optional. Tool configuration for any <see cref="V1Beta.Tool"/> specified in the request. Refer to the
     /// [Function calling
-    /// guide](https://ai.google.dev/gemini-api/docs/function-calling#function_calling_mode)
+    /// guide](https://aistudio.google.com/docs/function-calling#function_calling_modes)
     /// for a usage example.
     /// </summary>
     [JsonPropertyName("toolConfig")]
@@ -132,8 +133,8 @@ public sealed record GenerateContentRequest
     /// external systems to perform an action, or set of actions, outside of
     /// knowledge and scope of the <see cref="V1Beta.Models.Model"/>. Supported <see cref="V1Beta.Tool"/>s are <c>Function</c> and
     /// <c>code_execution</c>. Refer to the [Function
-    /// calling](https://ai.google.dev/gemini-api/docs/function-calling) and the
-    /// [Code execution](https://ai.google.dev/gemini-api/docs/code-execution)
+    /// calling](https://aistudio.google.com/docs/function-calling) and the
+    /// [Code execution](https://aistudio.google.com/docs/code-execution)
     /// guides to learn more.
     /// </summary>
     [JsonPropertyName("tools")]

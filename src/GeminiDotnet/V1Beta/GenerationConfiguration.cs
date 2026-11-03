@@ -177,7 +177,7 @@ public sealed record GenerationConfiguration
     /// <c>application/json</c>: JSON response in the response candidates.
     /// <c>text/x.enum</c>: ENUM as a string response in the response candidates.
     /// Refer to the
-    /// [docs](https://ai.google.dev/gemini-api/docs/prompting_with_media#plain_text_formats)
+    /// [docs](https://aistudio.google.com/docs/file-input-methods#text-file-types)
     /// for a list of all supported text MIME types.
     /// </summary>
     [JsonPropertyName("responseMimeType")]
@@ -205,7 +205,8 @@ public sealed record GenerationConfiguration
     /// Compatible MIME types:
     /// <c>application/json</c>: Schema for JSON response.
     /// Refer to the [JSON text generation
-    /// guide](https://ai.google.dev/gemini-api/docs/json-mode) for more details.
+    /// guide](https://aistudio.google.com/docs/structured-output) for more
+    /// details.
     /// Deprecated. Use <c>response_format</c> instead.
     /// </summary>
     [Obsolete]

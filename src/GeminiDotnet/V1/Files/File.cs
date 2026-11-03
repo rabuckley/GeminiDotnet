@@ -4,7 +4,6 @@ namespace GeminiDotnet.V1.Files;
 
 /// <summary>
 /// A file uploaded to the API.
-/// Next ID: 15
 /// </summary>
 public sealed record File
 {

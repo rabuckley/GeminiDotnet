@@ -4,7 +4,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 
 /// <summary>
 /// Hyperparameters controlling the tuning process. Read more at
-/// https://ai.google.dev/docs/model_tuning_guidance
+/// https://aistudio.google.com/docs/model-tuning
 /// </summary>
 public sealed record Hyperparameters
 {

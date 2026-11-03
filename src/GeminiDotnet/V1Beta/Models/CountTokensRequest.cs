@@ -20,9 +20,9 @@ public sealed record CountTokensRequest
     /// <summary>
     /// Optional. The overall input given to the <see cref="V1Beta.Models.Model"/>. This includes the prompt as well as
     /// other model steering information like [system
-    /// instructions](https://ai.google.dev/gemini-api/docs/system-instructions),
+    /// instructions](https://aistudio.google.com/docs/text-generation#system-instructions),
     /// and/or function declarations for [function
-    /// calling](https://ai.google.dev/gemini-api/docs/function-calling).
+    /// calling](https://aistudio.google.com/docs/function-calling).
     /// <see cref="V1Beta.Models.Model"/>s/<see cref="V1Beta.Content"/>s and <c>generate_content_request</c>s are mutually
     /// exclusive. You can either send <see cref="V1Beta.Models.Model"/> + <see cref="V1Beta.Content"/>s or a
     /// <c>generate_content_request</c>, but never both.

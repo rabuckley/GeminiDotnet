@@ -48,7 +48,7 @@ public sealed record Model
 
     /// <summary>
     /// Required. The resource name of the <see cref="V1.Models.Model"/>. Refer to [Model
-    /// variants](https://ai.google.dev/gemini-api/docs/models/gemini#model-variations)
+    /// variants](https://aistudio.google.com/docs/models#model-versions)
     /// for all allowed values.
     /// Format: <c>models/{model}</c> with a <c>{model}</c> naming convention of:
     /// * "{base_model_id}-{version}"
@@ -108,7 +108,7 @@ public sealed record Model
 
     /// <summary>
     /// For [Nucleus
-    /// sampling](https://ai.google.dev/gemini-api/docs/prompting-strategies#top-p).
+    /// sampling](https://aistudio.google.com/docs/prompting-strategies#model-parameters).
     /// Nucleus sampling considers the smallest set of tokens whose probability
     /// sum is at least <c>top_p</c>.
     /// This value specifies default to be used by the backend while making the

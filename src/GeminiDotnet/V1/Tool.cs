@@ -7,7 +7,6 @@ namespace GeminiDotnet.V1;
 /// A <see cref="V1.Tool"/> is a piece of code that enables the system to interact with
 /// external systems to perform an action, or set of actions, outside of
 /// knowledge and scope of the model.
-/// Next ID: 17
 /// </summary>
 public sealed record Tool
 {
@@ -17,6 +16,15 @@ public sealed record Tool
     [JsonPropertyName("codeExecution")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public CodeExecution? CodeExecution { get; init; }
+
+    /// <summary>
+    /// Optional. Tool to support the model interacting directly with the computer.
+    /// If enabled, it automatically populates computer-use specific Function
+    /// Declarations.
+    /// </summary>
+    [JsonPropertyName("computerUse")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ComputerUse? ComputerUse { get; init; }
 
     /// <summary>
     /// Optional. FileSearch tool type.
