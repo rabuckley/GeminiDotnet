@@ -12,9 +12,7 @@ namespace GeminiDotnet.Extensions.AI;
 internal static class GeminiToMEAIMapper
 {
     /// <param name="state">
-    /// The state carried across the updates of one stream. Callers must pass the same instance for every
-    /// update, so that a call and the result answering it correlate and a grounding segment resolves
-    /// against the text the whole stream has produced.
+    /// The state instance to reuse for every update in one stream.
     /// </param>
     public static ChatResponseUpdate CreateMappedChatResponseUpdate(
         GenerateContentResponse response,
@@ -35,10 +33,9 @@ internal static class GeminiToMEAIMapper
                 CitationTarget.ForStream(contents, state.Text.ToString()));
         }
 
-        // Add UsageContent for streaming aggregation (consumed by ToChatResponse())
-        if (CreateMappedUsageDetails(response.UsageMetadata) is { } usageDetails)
+        if (response.UsageMetadata is { } usage)
         {
-            contents.Add(new UsageContent(usageDetails));
+            contents.Add(new UsageContent(CreateUnreportedUsage(usage, state)));
         }
 
         return new ChatResponseUpdate
@@ -1032,6 +1029,47 @@ internal static class GeminiToMEAIMapper
             reason: $"Unsupported role: {role}");
 
         return default; // Unreachable
+    }
+
+    private static UsageDetails CreateUnreportedUsage(UsageMetadata usage, CandidateMappingState state)
+    {
+        state.LatestUsage = state.LatestUsage is { } latest
+            ? usage with
+            {
+                PromptTokenCount = usage.PromptTokenCount ?? latest.PromptTokenCount,
+                CandidatesTokenCount = usage.CandidatesTokenCount ?? latest.CandidatesTokenCount,
+                ThoughtsTokenCount = usage.ThoughtsTokenCount ?? latest.ThoughtsTokenCount,
+                ToolUsePromptTokenCount = usage.ToolUsePromptTokenCount ?? latest.ToolUsePromptTokenCount,
+                CachedContentTokenCount = usage.CachedContentTokenCount ?? latest.CachedContentTokenCount,
+                TotalTokenCount = usage.TotalTokenCount ?? latest.TotalTokenCount,
+            }
+            : usage;
+
+        var current = CreateMappedUsageDetails(state.LatestUsage)!;
+        var reported = state.ReportedUsage;
+
+        var unreported = new UsageDetails
+        {
+            InputTokenCount = current.InputTokenCount - (reported.InputTokenCount ?? 0),
+            OutputTokenCount = current.OutputTokenCount - (reported.OutputTokenCount ?? 0),
+            TotalTokenCount = current.TotalTokenCount - (reported.TotalTokenCount ?? 0),
+            CachedInputTokenCount = current.CachedInputTokenCount - (reported.CachedInputTokenCount ?? 0),
+            ReasoningTokenCount = current.ReasoningTokenCount - (reported.ReasoningTokenCount ?? 0),
+        };
+
+        if (current.AdditionalCounts is { } additionalCounts)
+        {
+            unreported.AdditionalCounts = [];
+
+            foreach (var (key, count) in additionalCounts)
+            {
+                unreported.AdditionalCounts[key] = count - (reported.AdditionalCounts?.GetValueOrDefault(key) ?? 0);
+            }
+        }
+
+        reported.Add(unreported);
+
+        return unreported;
     }
 
     private static UsageDetails? CreateMappedUsageDetails(UsageMetadata? usage)

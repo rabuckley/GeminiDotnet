@@ -66,4 +66,8 @@ internal sealed class CandidateMappingState
     /// <see cref="GeminiToMEAIMapper"/> reads it to synthesize at most one pair per candidate.
     /// </remarks>
     public bool HasReportedWebSearch { get; set; }
+
+    public V1Beta.UsageMetadata? LatestUsage { get; set; }
+
+    public UsageDetails ReportedUsage { get; } = new();
 }
