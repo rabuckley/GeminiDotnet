@@ -766,6 +766,80 @@ public sealed class GeminiChatClientTests
         Assert.Empty(sent.Except(replayed));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetResponseAsync_WithAThoughtImageInTheHistory_ShouldSendItBackAsAThought(
+        bool persistHistoryAsJson)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var clientOptions = new GeminiClientOptions { ApiKey = _apiKey, ModelId = TestConfiguration.ImageModel };
+        using var requests = new RequestRecordingHandler();
+        using var httpClient = new HttpClient(requests) { BaseAddress = clientOptions.Endpoint };
+        httpClient.DefaultRequestHeaders.Add("x-goog-api-key", clientOptions.ApiKey);
+
+        IChatClient client = new GeminiChatClient(new GeminiClient(httpClient, clientOptions.ModelId));
+
+        var options = new ChatOptions
+        {
+            Reasoning = new ReasoningOptions { Output = ReasoningOutput.Full },
+            AdditionalProperties = new()
+            {
+                [GeminiAdditionalProperties.ResponseModalities] =
+                    new List<ResponseModality> { ResponseModality.Text, ResponseModality.Image },
+            },
+        };
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User,
+                "Draw an infographic of the water cycle: four labelled stages connected by arrows."),
+        };
+
+        var first = await client.GetResponseAsync(messages, options, cancellationToken);
+
+        Assert.True(
+            first.Messages.SelectMany(m => m.Contents).Any(IsThoughtImage),
+            $"{TestConfiguration.ImageModel} drafted no thought image, so this turn proves nothing about replay. "
+            + $"Parts: {string.Join(", ", first.Messages.SelectMany(m => m.Contents).Select(DescribePart))}");
+
+        messages.AddMessages(first);
+
+        if (persistHistoryAsJson)
+        {
+            var json = JsonSerializer.Serialize(messages, GeminiJsonUtilities.DefaultOptions);
+            messages = JsonSerializer.Deserialize<List<ChatMessage>>(json, GeminiJsonUtilities.DefaultOptions)!;
+
+            Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
+        }
+
+        messages.Add(new ChatMessage(ChatRole.User, "Now make the background light blue."));
+
+        var second = await client.GetResponseAsync(messages, options, cancellationToken);
+
+        var replayed = JsonSerializer.Deserialize<GenerateContentRequest>(requests.Bodies[^1])!
+            .Contents!
+            .Where(content => content.Role is "model")
+            .SelectMany(content => content.Parts ?? [])
+            .ToList();
+
+        Assert.Contains(replayed, part => part is { Thought: true, InlineData: not null });
+        Assert.Contains(
+            second.Messages.SelectMany(m => m.Contents),
+            content => content is DataContent data && data.HasTopLevelMediaType("image") && !IsThoughtImage(content));
+
+        static bool IsThoughtImage(AIContent content) =>
+            content is DataContent
+            && content.AdditionalProperties?.TryGetGeminiValue(GeminiContentProperties.Thought, out bool thought) is true
+            && thought;
+
+        static string DescribePart(AIContent content) =>
+            content.RawRepresentation is Part part
+                ? string.Join("+", GetPartFields(part).Select(field => field.Split('=')[0]))
+                : content.GetType().Name;
+    }
+
     /// <summary>
     /// The JSON fields of a part other than its text, which stream aggregation merges across fragments
     /// and so cannot be matched one for one.

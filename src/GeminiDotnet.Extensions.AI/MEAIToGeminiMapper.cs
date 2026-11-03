@@ -328,8 +328,11 @@ internal static class MEAIToGeminiMapper
                 if (mapped is null)
                     continue;
 
-                // Restored here rather than in each arm, so a new content type cannot forget to. An arm
-                // that echoes the part Gemini sent already carries it and keeps its instance.
+                if (mapped.Thought is null && content is not MEAI.TextReasoningContent && content.IsThought())
+                {
+                    mapped = mapped with { Thought = true };
+                }
+
                 parts.Add(mapped.ThoughtSignature == thoughtSignature
                     ? mapped
                     : mapped with { ThoughtSignature = thoughtSignature });

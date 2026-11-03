@@ -14,6 +14,8 @@ public static class TestConfiguration
     /// </summary>
     public const string TranscriptionModel = "gemini-3.5-transcribe";
 
+    public const string ImageModel = "gemini-3-pro-image";
+
     public static string GetApiKey()
     {
         return Environment.GetEnvironmentVariable(VariableName)

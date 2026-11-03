@@ -213,6 +213,7 @@ internal static class GeminiToMEAIMapper
 
             // Recorded here rather than in each arm, so a new part kind cannot forget to.
             mapped.AttachThoughtSignature(part.ThoughtSignature);
+            mapped.AttachThought(part.Thought);
             AttachAudioTranscription(mapped, part);
 
             contents.Add(mapped);
