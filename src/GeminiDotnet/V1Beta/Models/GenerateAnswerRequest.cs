@@ -45,9 +45,9 @@ public sealed record GenerateAnswerRequest
     /// HARM_CATEGORY_SEXUALLY_EXPLICIT, HARM_CATEGORY_DANGEROUS_CONTENT,
     /// HARM_CATEGORY_HARASSMENT are supported.
     /// Refer to the
-    /// [guide](https://ai.google.dev/gemini-api/docs/safety-settings)
+    /// [guide](https://aistudio.google.com/docs/safety-settings)
     /// for detailed information on available safety settings. Also refer to the
-    /// [Safety guidance](https://ai.google.dev/gemini-api/docs/safety-guidance) to
+    /// [Safety guidance](https://aistudio.google.com/docs/safety-guidance) to
     /// learn how to incorporate safety considerations in your AI applications.
     /// </summary>
     [JsonPropertyName("safetySettings")]

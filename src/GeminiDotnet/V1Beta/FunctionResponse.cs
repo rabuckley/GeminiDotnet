@@ -46,7 +46,7 @@ public sealed record FunctionResponse
     /// Multimedia can be included by using a subobject containing a single "$ref"
     /// key whose value is the <c>inline_data.display_name</c> of a
     /// <see cref="V1Beta.FunctionResponsePart"/> holding the multimedia.
-    /// See https://ai.google.dev/gemini-api/docs/function-calling#multimodal.
+    /// See https://aistudio.google.com/docs/function-calling#multimodal.
     /// </summary>
     [JsonPropertyName("response")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

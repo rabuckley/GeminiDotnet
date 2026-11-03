@@ -86,6 +86,15 @@ public sealed record BidiGenerateContentSetup
     public AudioTranscriptionConfiguration? OutputAudioTranscription { get; init; }
 
     /// <summary>
+    /// Optional. Configures the proactivity of the model.
+    /// This allows the model to respond proactively to the input and to ignore
+    /// irrelevant input.
+    /// </summary>
+    [JsonPropertyName("proactivity")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ProactivityConfiguration? Proactivity { get; init; }
+
+    /// <summary>
     /// Optional. Configures the handling of realtime input.
     /// </summary>
     [JsonPropertyName("realtimeInputConfig")]

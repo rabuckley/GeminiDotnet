@@ -4,7 +4,6 @@ namespace GeminiDotnet.V1Beta;
 
 /// <summary>
 /// A transport that can stream HTTP requests and responses.
-/// Next ID: 6
 /// </summary>
 public sealed record StreamableHttpTransport
 {

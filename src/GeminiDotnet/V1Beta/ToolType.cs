@@ -40,5 +40,12 @@ public enum ToolType
     /// </summary>
     [JsonStringEnumMemberName("FILE_SEARCH")]
     FileSearch,
+
+    /// <summary>
+    /// Media processing tool types (e.g. video, audio, etc.), maps to invisible
+    /// tools used for multimodal understanding like GOOGLE_UNDERSTANDING_VIDEO.
+    /// </summary>
+    [JsonStringEnumMemberName("MEDIA_PROCESSING")]
+    MediaProcessing,
 }
 
