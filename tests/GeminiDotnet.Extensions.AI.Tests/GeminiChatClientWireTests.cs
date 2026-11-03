@@ -234,6 +234,72 @@ public sealed class GeminiChatClientWireTests
     }
 
     [Fact]
+    public async Task GetResponseAsync_WithContinuationFinishReason_ShouldReportLength()
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(ContinuationResponseJson);
+        var client = CreateClient(handler);
+
+        var response = await client.GetResponseAsync(
+            "What's the weather in Paris?",
+            new ChatOptions { ModelId = Model },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ChatFinishReason.Length, response.FinishReason);
+        Assert.Equal("It's 18°C", response.Text);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithContinuationFinishReason_ShouldReportLength()
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithServerSentEvents(ContinuationResponseJson);
+        var client = CreateClient(handler);
+
+        List<ChatResponseUpdate> updates = [];
+        await foreach (var update in client.GetStreamingResponseAsync(
+            "What's the weather in Paris?",
+            new ChatOptions { ModelId = Model },
+            TestContext.Current.CancellationToken))
+        {
+            updates.Add(update);
+        }
+
+        Assert.Equal(ChatFinishReason.Length, updates.ToChatResponse().FinishReason);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithBlockedPrompt_ShouldReportContentFilter()
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(BlockedPromptResponseJson);
+        var client = CreateClient(handler);
+
+        var response = await client.GetResponseAsync(
+            "What's the weather in Paris?",
+            new ChatOptions { ModelId = Model },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ChatFinishReason.ContentFilter, response.FinishReason);
+        Assert.Empty(response.Messages);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithBlockedPrompt_ShouldReportContentFilter()
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithServerSentEvents(BlockedPromptResponseJson);
+        var client = CreateClient(handler);
+
+        List<ChatResponseUpdate> updates = [];
+        await foreach (var update in client.GetStreamingResponseAsync(
+            "What's the weather in Paris?",
+            new ChatOptions { ModelId = Model },
+            TestContext.Current.CancellationToken))
+        {
+            updates.Add(update);
+        }
+
+        Assert.Equal(ChatFinishReason.ContentFilter, updates.ToChatResponse().FinishReason);
+    }
+
+    [Fact]
     public async Task GetStreamingResponseAsync_ShouldYieldAnUpdatePerEventThatAssemblesIntoTheResponse()
     {
         // Arrange
@@ -402,6 +468,32 @@ public sealed class GeminiChatClientWireTests
           "usageMetadata": { "promptTokenCount": 12, "candidatesTokenCount": 9, "totalTokenCount": 21 },
           "modelVersion": "gemini-test-001",
           "responseId": "resp-1"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string ContinuationResponseJson =
+        """
+        {
+          "candidates": [
+            {
+              "content": { "role": "model", "parts": [ { "text": "It's 18°C" } ] },
+              "finishReason": "CONTINUATION",
+              "continuationToken": "AQID"
+            }
+          ],
+          "modelVersion": "gemini-test-001",
+          "responseId": "resp-4"
+        }
+        """;
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string BlockedPromptResponseJson =
+        """
+        {
+          "promptFeedback": { "blockReason": "OTHER" },
+          "modelVersion": "gemini-test-001",
+          "responseId": "resp-5"
         }
         """;
 

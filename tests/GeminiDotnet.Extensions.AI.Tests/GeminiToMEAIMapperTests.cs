@@ -239,6 +239,89 @@ public sealed class GeminiToMEAIMapperTests
         Assert.Null(result.FinishReason);
     }
 
+    private static readonly Dictionary<CandidateFinishReason, ChatFinishReason?> CandidateFinishReasonMappings = new()
+    {
+        [CandidateFinishReason.Stop] = ChatFinishReason.Stop,
+        [CandidateFinishReason.MaxTokens] = ChatFinishReason.Length,
+        [CandidateFinishReason.Safety] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Recitation] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Language] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Other] = null,
+        [CandidateFinishReason.Blocklist] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.ProhibitedContent] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Spii] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.MalformedFunctionCall] = null,
+        [CandidateFinishReason.ImageSafety] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.ImageProhibitedContent] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.ImageOther] = null,
+        [CandidateFinishReason.NoImage] = null,
+        [CandidateFinishReason.ImageRecitation] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.UnexpectedToolCall] = null,
+        [CandidateFinishReason.TooManyToolCalls] = null,
+        [CandidateFinishReason.MissingThoughtSignature] = null,
+        [CandidateFinishReason.MalformedResponse] = null,
+        [CandidateFinishReason.Escalation] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.PupLimitedDisabled] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Continuation] = ChatFinishReason.Length,
+    };
+
+    public static TheoryData<CandidateFinishReason, ChatFinishReason?> CandidateFinishReasons =>
+        new(CandidateFinishReasonMappings.Select(mapping => (mapping.Key, mapping.Value)));
+
+    [Theory]
+    [MemberData(nameof(CandidateFinishReasons))]
+    public void CreateMappedChatResponse_ShouldMapTheCandidateFinishReason(
+        CandidateFinishReason finishReason,
+        ChatFinishReason? expectedFinishReason)
+    {
+        var response = new GenerateContentResponse
+        {
+            Candidates = [new Candidate { Content = null, FinishReason = finishReason }],
+        };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.Equal(expectedFinishReason, result.FinishReason);
+    }
+
+    [Fact]
+    public void CandidateFinishReasonMappings_ShouldCoverEveryCandidateFinishReason()
+    {
+        var unmappedReasons = Enum.GetValues<CandidateFinishReason>()
+            .Where(reason => reason is not CandidateFinishReason.Unspecified)
+            .Except(CandidateFinishReasonMappings.Keys);
+
+        Assert.Empty(unmappedReasons);
+    }
+
+    public static TheoryData<PromptFeedbackBlockReason> PromptBlockReasons =>
+        new(Enum.GetValues<PromptFeedbackBlockReason>().Except([PromptFeedbackBlockReason.Unspecified]));
+
+    [Theory]
+    [MemberData(nameof(PromptBlockReasons))]
+    public void CreateMappedChatResponse_WithBlockedPrompt_ShouldReportContentFilter(PromptFeedbackBlockReason blockReason)
+    {
+        var response = new GenerateContentResponse { PromptFeedback = new PromptFeedback { BlockReason = blockReason } };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.Equal(ChatFinishReason.ContentFilter, result.FinishReason);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithUnspecifiedPromptBlockReason_ShouldUseTheCandidateFinishReason()
+    {
+        var response = new GenerateContentResponse
+        {
+            PromptFeedback = new PromptFeedback { BlockReason = PromptFeedbackBlockReason.Unspecified },
+            Candidates = [new Candidate { Content = null, FinishReason = CandidateFinishReason.Stop }],
+        };
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.Equal(ChatFinishReason.Stop, result.FinishReason);
+    }
+
     [Fact]
     public void CreateMappedChatResponse_WithNullParts_ShouldReturnEmptyContents()
     {
