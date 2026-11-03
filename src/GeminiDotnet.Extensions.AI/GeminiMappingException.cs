@@ -7,14 +7,18 @@ namespace GeminiDotnet.Extensions.AI;
 /// </summary>
 public sealed class GeminiMappingException : Exception
 {
-    private GeminiMappingException(string message) : base(message)
+    private GeminiMappingException(string message, Exception? innerException) : base(message, innerException)
     {
     }
 
     [DoesNotReturn]
-    internal static void Throw(string fromPropertyName, string toPropertyName, string reason)
+    internal static void Throw(
+        string fromPropertyName,
+        string toPropertyName,
+        string reason,
+        Exception? innerException = null)
     {
         var message = $"Mapping from '{fromPropertyName}' to '{toPropertyName}' failed. Reason: {reason}";
-        throw new GeminiMappingException(message);
+        throw new GeminiMappingException(message, innerException);
     }
 }

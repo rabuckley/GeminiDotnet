@@ -1,6 +1,7 @@
 using GeminiDotnet.V1Beta;
 using GeminiDotnet.V1Beta.Models;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
@@ -10,6 +11,8 @@ namespace GeminiDotnet.Extensions.AI;
 
 internal static class MEAIToGeminiMapper
 {
+    private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
     public static GenerateContentRequest CreateMappedGenerateContentRequest(
         string model,
         IEnumerable<MEAI.ChatMessage> chatMessages,
@@ -383,9 +386,10 @@ internal static class MEAIToGeminiMapper
 
             static Part CreateFunctionCallPart(MEAI.FunctionCallContent functionCall)
             {
-                JsonElement arguments = JsonSerializer.SerializeToElement(
+                JsonElement arguments = SerializeCallerValues(
                     functionCall.Arguments,
-                    JsonContext.Default.IDictionaryStringObject);
+                    fromPropertyName: $"{typeof(MEAI.FunctionCallContent)}.{nameof(MEAI.FunctionCallContent.Arguments)}",
+                    toPropertyName: $"{typeof(FunctionCall)}.{nameof(FunctionCall.Arguments)}");
 
                 return new Part
                 {
@@ -398,9 +402,17 @@ internal static class MEAIToGeminiMapper
 
             Part CreateFunctionResponsePart(MEAI.FunctionResultContent functionResult)
             {
-                var response = functionResult.Exception is null
-                    ? new Dictionary<string, object?> { { "result", functionResult.Result } }
-                    : new Dictionary<string, object?> { { "error", functionResult.Result }, };
+                var (result, mediaParts) = SplitFunctionResult(functionResult.Result);
+
+                Dictionary<string, object?> response = [];
+                if (functionResult.Exception is not null)
+                {
+                    response["error"] = result;
+                }
+                else if (result is not null || mediaParts is null)
+                {
+                    response["result"] = result;
+                }
 
                 // Gemini's FunctionResponse.Name requires the function name, but
                 // FunctionResultContent only carries CallId. Resolve the name by
@@ -414,8 +426,11 @@ internal static class MEAIToGeminiMapper
                     {
                         Id = functionResult.CallId,
                         Name = functionName,
-                        Response = JsonSerializer.SerializeToElement(response,
-                            JsonContext.Default.IDictionaryStringObject)
+                        Parts = mediaParts,
+                        Response = SerializeCallerValues(
+                            response,
+                            fromPropertyName: $"{typeof(MEAI.FunctionResultContent)}.{nameof(MEAI.FunctionResultContent.Result)}",
+                            toPropertyName: $"{typeof(FunctionResponse)}.{nameof(FunctionResponse.Response)}")
                     },
                 };
             }
@@ -784,6 +799,147 @@ internal static class MEAIToGeminiMapper
                 MimeType = fileContent.MediaType,
             },
         };
+    }
+
+    // JsonContext.Default alone cannot resolve caller-defined argument and result types.
+    private static JsonElement SerializeCallerValues(
+        IDictionary<string, object?>? values,
+        string fromPropertyName,
+        string toPropertyName)
+    {
+        try
+        {
+            return JsonSerializer.SerializeToElement(
+                values,
+                GeminiJsonUtilities.DefaultOptions.GetTypeInfo(typeof(IDictionary<string, object?>)));
+        }
+        catch (Exception ex) when (ex is NotSupportedException or JsonException)
+        {
+            GeminiMappingException.Throw(fromPropertyName, toPropertyName, ex.Message, ex);
+            return default;
+        }
+    }
+
+    private static (object? Result, List<FunctionResponsePart>? MediaParts) SplitFunctionResult(object? result)
+    {
+        IEnumerable<MEAI.AIContent>? contents = result switch
+        {
+            MEAI.AIContent content => [content],
+            IEnumerable<MEAI.AIContent> items => items,
+            _ => null,
+        };
+
+        if (contents is null)
+        {
+            return (result, null);
+        }
+
+        List<string>? texts = null;
+        List<FunctionResponsePart>? mediaParts = null;
+
+        foreach (var content in contents)
+        {
+            switch (content)
+            {
+                case MEAI.TextContent textContent:
+                    (texts ??= []).Add(textContent.Text);
+                    break;
+
+                // The API requires text in FunctionResponse.Response rather than raw media bytes.
+                case MEAI.DataContent dataContent when dataContent.HasTopLevelMediaType("text"):
+                    (texts ??= []).Add(DecodeFunctionResultText(dataContent));
+                    break;
+
+                default:
+                    (mediaParts ??= []).Add(CreateFunctionResponseMediaPart(content));
+                    break;
+            }
+        }
+
+        return (texts is null ? null : string.Join('\n', texts), mediaParts);
+    }
+
+    private static string DecodeFunctionResultText(MEAI.DataContent dataContent)
+    {
+        var fromPropertyName = $"{typeof(MEAI.DataContent)}.{nameof(MEAI.DataContent.Data)}";
+        var toPropertyName = $"{typeof(FunctionResponse)}.{nameof(FunctionResponse.Response)}";
+
+        var charset = MediaTypeHeaderValue.TryParse(dataContent.MediaType, out var mediaType)
+            ? mediaType.CharSet?.Trim('"')
+            : null;
+
+        if (charset is not null && !charset.Equals("utf-8", StringComparison.OrdinalIgnoreCase))
+        {
+            GeminiMappingException.Throw(
+                fromPropertyName,
+                toPropertyName,
+                reason: $"Text function results must be UTF-8, but the media type declares '{charset}'.");
+        }
+
+        try
+        {
+            return StrictUtf8.GetString(dataContent.Data.Span);
+        }
+        catch (DecoderFallbackException ex)
+        {
+            GeminiMappingException.Throw(fromPropertyName, toPropertyName, ex.Message, ex);
+            return null!;
+        }
+    }
+
+    private static FunctionResponsePart CreateFunctionResponseMediaPart(MEAI.AIContent content)
+    {
+        switch (content)
+        {
+            case MEAI.DataContent dataContent:
+                if (dataContent.Data.IsEmpty)
+                {
+                    GeminiMappingException.Throw(
+                        fromPropertyName: $"{typeof(MEAI.DataContent)}.{nameof(MEAI.DataContent.Data)}",
+                        toPropertyName: $"{typeof(FunctionResponsePart)}.{nameof(FunctionResponsePart.InlineData)}",
+                        reason:
+                        $"{nameof(MEAI.DataContent.Data)} cannot be empty when creating an {nameof(FunctionResponsePart.InlineData)} part.");
+                }
+
+                return new FunctionResponsePart
+                {
+                    InlineData = new FunctionResponseBlob
+                    {
+                        Data = dataContent.Data,
+                        DisplayName = dataContent.Name,
+                        MimeType = dataContent.MediaType,
+                    },
+                };
+
+            case MEAI.UriContent uriContent:
+                return new FunctionResponsePart
+                {
+                    FileData = new FunctionResponseFileData
+                    {
+                        FileUri = uriContent.Uri.ToString(),
+                        MimeType = uriContent.MediaType,
+                    },
+                };
+
+            case MEAI.HostedFileContent fileContent:
+                return new FunctionResponsePart
+                {
+                    FileData = new FunctionResponseFileData
+                    {
+                        DisplayName = fileContent.Name,
+                        FileUri = fileContent.FileId,
+                        MimeType = fileContent.MediaType,
+                    },
+                };
+
+            default:
+                GeminiMappingException.Throw(
+                    fromPropertyName: $"{typeof(MEAI.FunctionResultContent)}.{nameof(MEAI.FunctionResultContent.Result)}",
+                    toPropertyName: $"{typeof(FunctionResponse)}",
+                    reason: $"Unsupported {typeof(MEAI.AIContent)} type in a function result: {content.GetType()}");
+
+                return null!;
+        }
     }
 
     /// <remarks>

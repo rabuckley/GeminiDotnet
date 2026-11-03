@@ -321,6 +321,35 @@ public sealed class GeminiChatClientTests
     record WeatherInfo(string Location, DateOnly Date, string Summary);
 
     [Fact]
+    public async Task GetResponseAsync_WhenAFunctionReturnsAnImage_ShouldLetTheModelSeeIt()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Accepting any colour can pass without an image; require the fixture's colour.
+        const string redPng =
+            "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeUlEQVR4nO3PQQkAMAzAwIqof2UTMxF7HINABFzm7H7dcEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFj12qxUDxeFqrFAAAAABJRU5ErkJggg==";
+
+        [Description("Returns the image to inspect")]
+        static DataContent GetImage() => new(Convert.FromBase64String(redPng), "image/png");
+
+        IChatClient client = new ChatClientBuilder(new GeminiChatClient(new GeminiClientOptions
+        {
+            ApiKey = _apiKey, ModelId = Model,
+        }))
+            .UseFunctionInvocation()
+            .Build();
+
+        var options = new ChatOptions { Tools = [AIFunctionFactory.Create(GetImage, nameof(GetImage))] };
+
+        var response = await client.GetResponseAsync(
+            "Call GetImage, then reply with only the name of the image's dominant colour. If you cannot see an image, reply exactly NO_IMAGE.",
+            options,
+            cancellationToken);
+
+        Assert.Contains("red", response.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task FunctionCalling_WithObjectReturnType()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

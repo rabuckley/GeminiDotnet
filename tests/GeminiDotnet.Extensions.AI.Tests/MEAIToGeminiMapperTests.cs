@@ -907,6 +907,85 @@ public sealed class MEAIToGeminiMapperTests
     }
 
     [Fact]
+    public void CreateMappedGenerateContentRequest_WithEmptyDataContentResult_ShouldThrow()
+    {
+        var messages = ConversationWithFunctionResult(new DataContent(ReadOnlyMemory<byte>.Empty, "image/png"));
+
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithUnsupportedContentInResult_ShouldThrow()
+    {
+        var messages = ConversationWithFunctionResult(new List<AIContent> { new ErrorContent("failed") });
+
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithTextResultInAnotherCharset_ShouldThrow()
+    {
+        var messages = ConversationWithFunctionResult(
+            new DataContent(new byte[] { 0xFF, 0xFE, 0x61, 0x00 }, "text/plain; charset=utf-16"));
+
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithTextResultOfInvalidUtf8_ShouldThrow()
+    {
+        var messages = ConversationWithFunctionResult(new DataContent(new byte[] { 0xC3, 0x28 }, "text/plain"));
+
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithUnserializableResult_ShouldThrow()
+    {
+        var cycle = new Dictionary<string, object?>();
+        cycle["self"] = cycle;
+        var messages = ConversationWithFunctionResult(cycle);
+
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    [Fact]
+    public void CreateMappedGenerateContentRequest_WithUnserializableFunctionCallArgument_ShouldThrow()
+    {
+        var cycle = new Dictionary<string, object?>();
+        cycle["self"] = cycle;
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, "Hi"),
+            new(ChatRole.Assistant, [new FunctionCallContent("call-1", "get_image", cycle)]),
+        ];
+
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, null);
+
+        Assert.Throws<GeminiMappingException>(Act);
+    }
+
+    private static List<ChatMessage> ConversationWithFunctionResult(object? result)
+    {
+        return
+        [
+            new(ChatRole.User, "Get the image."),
+            new(ChatRole.Assistant, [new FunctionCallContent("call-1", "get_image")]),
+            new(ChatRole.Tool, [new FunctionResultContent("call-1", result)]),
+        ];
+    }
+
+    [Fact]
     public void CreateMappedGenerateContentRequest_WithFunctionResult_ShouldResolveFunctionName()
     {
         // Arrange — the assistant message contains a FunctionCallContent with a known
