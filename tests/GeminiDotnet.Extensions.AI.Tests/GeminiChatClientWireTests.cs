@@ -2,6 +2,8 @@ using GeminiDotnet.Testing;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text;
+using System.Text.Json;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
@@ -372,6 +374,328 @@ public sealed class GeminiChatClientWireTests
         var ex = await Assert.ThrowsAsync<GeminiClientException>(Act);
         Assert.Contains("Please use a valid role: user, model.", ex.Message);
     }
+
+    [Fact]
+    public async Task GetResponseAsync_WithDataContentResult_ShouldSendInlineDataAndAnEmptyResponse()
+    {
+        var functionResponse = await SendFunctionResultAsync(
+            new FunctionResultContent("call-1", new DataContent(new byte[] { 1, 2, 3 }, "image/png") { Name = "a.png" }));
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": {},
+                  "parts": [ { "inlineData": { "data": "AQID", "displayName": "a.png", "mimeType": "image/png" } } ]
+                }
+                """),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithUriContentResult_ShouldSendFileData()
+    {
+        var functionResponse = await SendFunctionResultAsync(
+            new FunctionResultContent("call-1", new UriContent("https://example.com/a.png", "image/png")));
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": {},
+                  "parts": [ { "fileData": { "fileUri": "https://example.com/a.png", "mimeType": "image/png" } } ]
+                }
+                """),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithHostedFileContentResult_ShouldSendFileDataWithTheDisplayName()
+    {
+        var functionResponse = await SendFunctionResultAsync(new FunctionResultContent(
+            "call-1",
+            new HostedFileContent("https://example.com/files/a") { MediaType = "application/pdf", Name = "a.pdf" }));
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": {},
+                  "parts": [
+                    { "fileData": { "displayName": "a.pdf", "fileUri": "https://example.com/files/a", "mimeType": "application/pdf" } }
+                  ]
+                }
+                """),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithMixedContentsResult_ShouldJoinTextAndKeepMediaInOrder()
+    {
+        List<AIContent> result =
+        [
+            new TextContent("first"),
+            new DataContent(new byte[] { 1, 2, 3 }, "image/png"),
+            new DataContent("second"u8.ToArray(), "text/csv"),
+            new UriContent("https://example.com/a.png", "image/png"),
+        ];
+
+        var functionResponse = await SendFunctionResultAsync(new FunctionResultContent("call-1", result));
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": { "result": "first\nsecond" },
+                  "parts": [
+                    { "inlineData": { "data": "AQID", "mimeType": "image/png" } },
+                    { "fileData": { "fileUri": "https://example.com/a.png", "mimeType": "image/png" } }
+                  ]
+                }
+                """),
+            functionResponse);
+    }
+
+    [Theory]
+    [InlineData("text/plain")]
+    [InlineData("text/plain; charset=utf-8")]
+    [InlineData("text/csv")]
+    public async Task GetResponseAsync_WithTextDataContentResult_ShouldDecodeItIntoTheResponse(string mediaType)
+    {
+        var functionResponse = await SendFunctionResultAsync(
+            new FunctionResultContent("call-1", new DataContent(Encoding.UTF8.GetBytes("18°C"), mediaType)));
+
+        Assert.Equal(
+            JsonText.Normalize("""{ "id": "call-1", "name": "get_image", "response": { "result": "18°C" } }"""),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithTextContentResult_ShouldSendTheSameShapeAsAString()
+    {
+        var fromContent = await SendFunctionResultAsync(new FunctionResultContent("call-1", new TextContent("sunny")));
+        var fromString = await SendFunctionResultAsync(new FunctionResultContent("call-1", "sunny"));
+
+        Assert.Equal(fromString, fromContent);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithEmptyContentsResult_ShouldSendTheSameShapeAsNull()
+    {
+        var fromContents = await SendFunctionResultAsync(new FunctionResultContent("call-1", new List<AIContent>()));
+        var fromNull = await SendFunctionResultAsync(new FunctionResultContent("call-1", null));
+
+        Assert.Equal(fromNull, fromContents);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithFailedMediaOnlyResult_ShouldKeepTheErrorKey()
+    {
+        var functionResponse = await SendFunctionResultAsync(
+            new FunctionResultContent("call-1", new DataContent(new byte[] { 1, 2, 3 }, "image/png"))
+            {
+                Exception = new InvalidOperationException(),
+            });
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": { "error": null },
+                  "parts": [ { "inlineData": { "data": "AQID", "mimeType": "image/png" } } ]
+                }
+                """),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithFailedTextResult_ShouldSendTheTextAsTheError()
+    {
+        var functionResponse = await SendFunctionResultAsync(
+            new FunctionResultContent("call-1", new TextContent("failed")) { Exception = new InvalidOperationException() });
+
+        Assert.Equal(
+            JsonText.Normalize("""{ "id": "call-1", "name": "get_image", "response": { "error": "failed" } }"""),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithPocoResult_ShouldSerializeItIntoTheResponse()
+    {
+        var functionResponse = await SendFunctionResultAsync(
+            new FunctionResultContent("call-1", new WireWeather("Paris", new DateOnly(2000, 10, 1))));
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": { "result": { "city": "Paris", "date": "2000-10-01" } }
+                }
+                """),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithPocoFunctionCallArgument_ShouldSerializeItIntoTheArgs()
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(TextResponseJson);
+        var client = CreateClient(handler);
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, "Hi"),
+            new(ChatRole.Assistant,
+            [
+                new FunctionCallContent(
+                    "call-1",
+                    "get_weather",
+                    new Dictionary<string, object?> { ["request"] = new WireWeather("Paris", new DateOnly(2000, 10, 1)) }),
+            ]),
+        ];
+
+        await client.GetResponseAsync(messages, new ChatOptions { ModelId = Model }, TestContext.Current.CancellationToken);
+
+        using var body = JsonDocument.Parse(Assert.Single(handler.Requests).ReadBodyAsString());
+        var args = body.RootElement.GetProperty("contents")[1].GetProperty("parts")[0]
+            .GetProperty("functionCall").GetProperty("args");
+        Assert.Equal(
+            JsonText.Normalize("""{ "request": { "city": "Paris", "date": "2000-10-01" } }"""),
+            JsonText.Normalize(args.GetRawText()));
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WhenAFunctionReturnsDataContent_ShouldSendInlineData()
+    {
+        static DataContent GetImage() => new(new byte[] { 1, 2, 3 }, "image/png");
+
+        var function = AIFunctionFactory.Create(GetImage, "get_image");
+
+        var functionResponse = await InvokeFunctionAsync(function);
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": {},
+                  "parts": [ { "inlineData": { "data": "AQID", "mimeType": "image/png" } } ]
+                }
+                """),
+            functionResponse);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WhenAnAIFunctionReturnsContentsAsObject_ShouldSplitThem()
+    {
+        var function = new ContentsFunction(
+        [
+            new TextContent("caption"),
+            new DataContent(new byte[] { 1, 2, 3 }, "image/png"),
+        ]);
+
+        var functionResponse = await InvokeFunctionAsync(function);
+
+        Assert.Equal(
+            JsonText.Normalize(
+                """
+                {
+                  "id": "call-1",
+                  "name": "get_image",
+                  "response": { "result": "caption" },
+                  "parts": [ { "inlineData": { "data": "AQID", "mimeType": "image/png" } } ]
+                }
+                """),
+            functionResponse);
+    }
+
+    private static async Task<string> SendFunctionResultAsync(FunctionResultContent result)
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(TextResponseJson);
+        var client = CreateClient(handler);
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.User, "Get the image."),
+            new(ChatRole.Assistant, [new FunctionCallContent("call-1", "get_image")]),
+            new(ChatRole.Tool, [result]),
+        ];
+
+        await client.GetResponseAsync(messages, new ChatOptions { ModelId = Model }, TestContext.Current.CancellationToken);
+
+        return ReadLastFunctionResponse(Assert.Single(handler.Requests));
+    }
+
+    private static async Task<string> InvokeFunctionAsync(AIFunction function)
+    {
+        var handler = new ScriptedHttpMessageHandler()
+            .RespondWithJson(GetImageCallResponseJson)
+            .RespondWithJson(TextResponseJson);
+        var client = new ChatClientBuilder(CreateClient(handler)).UseFunctionInvocation().Build();
+
+        await client.GetResponseAsync(
+            "Get the image.",
+            new ChatOptions { ModelId = Model, Tools = [function] },
+            TestContext.Current.CancellationToken);
+
+        return ReadLastFunctionResponse(handler.Requests[^1]);
+    }
+
+    private static string ReadLastFunctionResponse(RecordedRequest request)
+    {
+        using var body = JsonDocument.Parse(request.ReadBodyAsString());
+        var lastContent = body.RootElement.GetProperty("contents").EnumerateArray().Last();
+        return JsonText.Normalize(lastContent.GetProperty("parts")[0].GetProperty("functionResponse").GetRawText());
+    }
+
+    private sealed record WireWeather(string City, DateOnly Date);
+
+    private sealed class ContentsFunction : AIFunction
+    {
+        private readonly AIContent[] _contents;
+
+        public ContentsFunction(AIContent[] contents)
+        {
+            _contents = contents;
+        }
+
+        public override string Name => "get_image";
+
+        protected override ValueTask<object?> InvokeCoreAsync(
+            AIFunctionArguments arguments,
+            CancellationToken cancellationToken)
+        {
+            return new ValueTask<object?>(_contents);
+        }
+    }
+
+    [StringSyntax(StringSyntaxAttribute.Json)]
+    private const string GetImageCallResponseJson =
+        """
+        {
+          "candidates": [
+            {
+              "content": {
+                "role": "model",
+                "parts": [ { "functionCall": { "id": "call-1", "name": "get_image", "args": {} } } ]
+              },
+              "finishReason": "STOP"
+            }
+          ],
+          "modelVersion": "gemini-test-001",
+          "responseId": "resp-6"
+        }
+        """;
 
     private static GeminiChatClient CreateClient(ScriptedHttpMessageHandler handler)
     {
