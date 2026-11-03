@@ -73,6 +73,18 @@ public static class GeminiContentProperties
     public const string ThoughtSignature = "thoughtSignature";
 
     /// <summary>
+    /// Key for whether the part is a thought, as a <see cref="bool"/>. Read from every
+    /// <see cref="AIContent"/> except <see cref="TextReasoningContent"/>, which is always a thought, and
+    /// <see cref="FunctionCallContent"/>, which reports it as
+    /// <see cref="FunctionCallContent.InformationalOnly"/>. Present only when Gemini marked the part as a
+    /// thought; a value of <see langword="false"/> is the same as no value.
+    /// </summary>
+    /// <remarks>
+    /// Preserve this property when replaying conversation history to Gemini.
+    /// </remarks>
+    public const string Thought = "thought";
+
+    /// <summary>
     /// Key for the <see cref="V1Beta.AudioTranscription"/> stored in
     /// <see cref="AIAnnotation.AdditionalProperties"/> on the mapped content.
     /// </summary>

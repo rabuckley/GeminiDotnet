@@ -1015,6 +1015,33 @@ public sealed class GeminiToMEAIMapperTests
     }
 
     [Fact]
+    public void CreateMappedChatResponse_WithAThoughtImage_ShouldMarkOnlyThatImageAsAThought()
+    {
+        var response = ResponseWithParts(
+            new Part
+            {
+                Thought = true,
+                InlineData = new Blob { Data = new byte[] { 1 }, MimeType = "image/png" },
+            },
+            new Part
+            {
+                InlineData = new Blob { Data = new byte[] { 2 }, MimeType = "image/png" },
+            });
+
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        Assert.Collection(
+            Assert.Single(result.Messages).Contents,
+            draft =>
+            {
+                var properties = Assert.IsType<DataContent>(draft).AdditionalProperties!;
+                Assert.True(properties.TryGetGeminiValue(GeminiContentProperties.Thought, out bool thought));
+                Assert.True(thought);
+            },
+            final => Assert.Null(Assert.IsType<DataContent>(final).AdditionalProperties));
+    }
+
+    [Fact]
     public void CreateMappedChatResponse_WithASignatureOnlyPart_ShouldMapToAnEmptyReasoningContent()
     {
         var response = ResponseWithParts(new Part { ThoughtSignature = "signature" });

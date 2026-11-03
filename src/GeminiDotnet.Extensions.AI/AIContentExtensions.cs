@@ -3,19 +3,6 @@ using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
 
-/// <summary>
-/// Stores and retrieves the <see cref="Part.ThoughtSignature"/> associated with mapped
-/// <see cref="AIContent"/>.
-/// </summary>
-/// <remarks>
-/// <see cref="AIContent.RawRepresentation"/> is not serialized and can be discarded by stream
-/// aggregation. M.E.AI preserves the last fragment's <see cref="TextReasoningContent.ProtectedData"/>
-/// when merging reasoning content, but only the first fragment's
-/// <see cref="AIContent.AdditionalProperties"/> when merging text. Annotated text is excluded from
-/// merging, so storing its signature in an annotation preserves the fragment it covers. Other mapped
-/// content uses <see cref="AIContent.AdditionalProperties"/>. These storage locations survive JSON
-/// serialization.
-/// </remarks>
 internal static class AIContentExtensions
 {
     public static void AttachThoughtSignature(this AIContent content, string? signature)
@@ -31,6 +18,7 @@ internal static class AIContentExtensions
                 reasoning.ProtectedData = signature;
                 break;
 
+            // Text signatures use annotations to prevent stream aggregation from merging signed fragments.
             case TextContent:
                 (content.Annotations ??= []).Add(new AIAnnotation
                 {
@@ -80,6 +68,27 @@ internal static class AIContentExtensions
                 toPropertyName: $"{typeof(Part)}.{nameof(Part.ThoughtSignature)}")
             ?? (content.RawRepresentation as Part)?.ThoughtSignature;
     }
+
+    public static void AttachThought(this AIContent content, bool? thought)
+    {
+        if (thought is not true || content is TextReasoningContent or FunctionCallContent)
+        {
+            return;
+        }
+
+        (content.AdditionalProperties ??= [])[GeminiContentProperties.Thought] = true;
+    }
+
+    public static bool IsThought(this AIContent content) => content switch
+    {
+        TextReasoningContent => true,
+        FunctionCallContent functionCall => functionCall.InformationalOnly,
+        _ => content.AdditionalProperties?.GetValueOrThrow<bool>(
+                GeminiContentProperties.Thought,
+                fromPropertyName: $"{content.GetType()}.{nameof(AIContent.AdditionalProperties)}",
+                toPropertyName: $"{typeof(Part)}.{nameof(Part.Thought)}") is true
+            || content.RawRepresentation is Part { Thought: true },
+    };
 
     private static string? ReadAnnotated(TextContent content)
     {

@@ -2879,6 +2879,102 @@ public sealed class MEAIToGeminiMapperTests
             });
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAThoughtFunctionCall_ShouldSendItBackAsAThought(
+        bool persistAsJson)
+    {
+        var response = ResponseWithModelParts(
+            new Part
+            {
+                Thought = true,
+                FunctionCall = new FunctionCall
+                {
+                    Id = "call-1",
+                    Name = "get_weather",
+                    Arguments = JsonDocument.Parse("""{"city":"Paris"}""").RootElement,
+                },
+            },
+            new Part
+            {
+                FunctionCall = new FunctionCall
+                {
+                    Id = "call-2",
+                    Name = "get_time",
+                    Arguments = JsonDocument.Parse("{}").RootElement,
+                },
+            });
+
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Collection(
+            Assert.Single(request.Contents!).Parts!,
+            thought =>
+            {
+                Assert.True(thought.Thought);
+                Assert.Equal("get_weather", thought.FunctionCall!.Name);
+            },
+            call =>
+            {
+                Assert.Null(call.Thought);
+                Assert.Equal("get_time", call.FunctionCall!.Name);
+            });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateMappedGenerateContentRequest_WithAThoughtImage_ShouldSendItBackAsAThought(
+        bool persistAsJson)
+    {
+        var response = ResponseWithModelParts(
+            new Part
+            {
+                Thought = true,
+                InlineData = new Blob { Data = new byte[] { 1 }, MimeType = "image/png" },
+            },
+            new Part
+            {
+                InlineData = new Blob { Data = new byte[] { 2 }, MimeType = "image/png" },
+                ThoughtSignature = "signature",
+            });
+
+        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
+
+        if (persistAsJson)
+        {
+            messages = RoundTripThroughJson(messages);
+        }
+
+        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
+
+        Assert.Collection(
+            Assert.Single(request.Contents!).Parts!,
+            draft =>
+            {
+                Assert.True(draft.Thought);
+                Assert.Equal([1], draft.InlineData!.Data.ToArray());
+            },
+            final =>
+            {
+                Assert.Null(final.Thought);
+                Assert.Equal("signature", final.ThoughtSignature);
+            });
+    }
+
+    private static GenerateContentResponse ResponseWithModelParts(params Part[] parts) => new()
+    {
+        Candidates = [new Candidate { Content = new Content { Role = "model", Parts = parts } }],
+    };
+
     [Fact]
     public void CreateMappedGenerateContentRequest_WithASignatureOnlyPart_ShouldSendBackTheSignatureAlone()
     {
