@@ -335,6 +335,120 @@ public sealed class GeminiChatClientWireTests
     }
 
     [Fact]
+    public async Task GetStreamingResponseAsync_WithCumulativeUsageOnEveryChunk_ShouldAssembleIntoTheLastUsage()
+    {
+        var chunks = new[]
+        {
+            StreamedUsageChunk("""{"promptTokenCount":15,"candidatesTokenCount":2,"totalTokenCount":17}"""),
+            StreamedUsageChunk("""{"promptTokenCount":15,"candidatesTokenCount":21,"totalTokenCount":36}"""),
+            StreamedUsageChunk("""{"promptTokenCount":15,"candidatesTokenCount":187,"totalTokenCount":202}"""),
+            StreamedUsageChunk("""{"promptTokenCount":15,"candidatesTokenCount":187,"totalTokenCount":202}"""),
+        };
+
+        var usage = await GetStreamedUsageAsync(chunks);
+
+        Assert.Equal(15, usage.InputTokenCount);
+        Assert.Equal(187, usage.OutputTokenCount);
+        Assert.Equal(202, usage.TotalTokenCount);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithEveryCumulativeCount_ShouldAssembleIntoTheLastCounts()
+    {
+        var chunks = new[]
+        {
+            StreamedUsageChunk(
+                """{"promptTokenCount":10,"cachedContentTokenCount":4,"thoughtsTokenCount":3,"toolUsePromptTokenCount":5,"candidatesTokenCount":1,"totalTokenCount":19}"""),
+            StreamedUsageChunk(
+                """{"promptTokenCount":10,"cachedContentTokenCount":4,"thoughtsTokenCount":8,"toolUsePromptTokenCount":20,"candidatesTokenCount":9,"totalTokenCount":47}"""),
+        };
+
+        var usage = await GetStreamedUsageAsync(chunks);
+
+        Assert.Equal(17, usage.OutputTokenCount);
+        Assert.Equal(47, usage.TotalTokenCount);
+        Assert.Equal(4, usage.CachedInputTokenCount);
+        Assert.Equal(8, usage.ReasoningTokenCount);
+        Assert.NotNull(usage.AdditionalCounts);
+        Assert.Equal(20, usage.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WhenALaterChunkOmitsACount_ShouldKeepItsLastValue()
+    {
+        var chunks = new[]
+        {
+            StreamedUsageChunk(
+                """{"promptTokenCount":10,"cachedContentTokenCount":4,"thoughtsTokenCount":3,"candidatesTokenCount":1,"totalTokenCount":14}"""),
+            StreamedUsageChunk("""{"candidatesTokenCount":9,"totalTokenCount":22}"""),
+        };
+
+        var usage = await GetStreamedUsageAsync(chunks);
+
+        Assert.Equal(10, usage.InputTokenCount);
+        Assert.Equal(4, usage.CachedInputTokenCount);
+        Assert.Equal(3, usage.ReasoningTokenCount);
+        Assert.Equal(12, usage.OutputTokenCount);
+        Assert.Equal(22, usage.TotalTokenCount);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WhenALaterChunkOmitsToolUseTokens_ShouldKeepTheirLastValue()
+    {
+        var chunks = new[]
+        {
+            StreamedUsageChunk(
+                """{"promptTokenCount":10,"toolUsePromptTokenCount":5,"candidatesTokenCount":1,"totalTokenCount":16}"""),
+            StreamedUsageChunk("""{"promptTokenCount":10,"candidatesTokenCount":9,"totalTokenCount":24}"""),
+        };
+
+        var usage = await GetStreamedUsageAsync(chunks);
+
+        Assert.Equal(24, usage.TotalTokenCount);
+        Assert.NotNull(usage.AdditionalCounts);
+        Assert.Equal(5, usage.AdditionalCounts[GeminiAdditionalCounts.ToolUsePromptTokenCount]);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithNoCountsForAField_ShouldLeaveItNull()
+    {
+        var chunks = new[]
+        {
+            StreamedUsageChunk("""{"promptTokenCount":10,"totalTokenCount":10}"""),
+            StreamedUsageChunk("""{"promptTokenCount":10,"totalTokenCount":10}"""),
+        };
+
+        var usage = await GetStreamedUsageAsync(chunks);
+
+        Assert.Equal(10, usage.InputTokenCount);
+        Assert.Null(usage.OutputTokenCount);
+        Assert.Null(usage.ReasoningTokenCount);
+        Assert.Null(usage.AdditionalCounts);
+    }
+
+    private static string StreamedUsageChunk(string usageMetadataJson) =>
+        $$$"""{"candidates":[{"content":{"role":"model","parts":[{"text":"x"}]}}],"usageMetadata":{{{usageMetadataJson}}},"modelVersion":"gemini-test-001","responseId":"resp-usage"}""";
+
+    private static async Task<UsageDetails> GetStreamedUsageAsync(string[] chunks)
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithServerSentEvents(chunks);
+        var client = CreateClient(handler);
+
+        List<ChatResponseUpdate> updates = [];
+        await foreach (var update in client.GetStreamingResponseAsync(
+            "Hello",
+            new ChatOptions { ModelId = Model },
+            TestContext.Current.CancellationToken))
+        {
+            updates.Add(update);
+        }
+
+        var usage = updates.ToChatResponse().Usage;
+        Assert.NotNull(usage);
+        return usage;
+    }
+
+    [Fact]
     public async Task GetResponseAsync_WhenTheApiReturnsAnError_ShouldThrowWithTheApiMessage()
     {
         // Arrange
