@@ -98,6 +98,35 @@ public sealed class GeminiChatClientWireTests
     }
 
     [Fact]
+    public async Task GetResponseAsync_WithARawRepresentation_ShouldSendFieldsThatHaveNoMappedSource()
+    {
+        var handler = new ScriptedHttpMessageHandler().RespondWithJson(TextResponseJson);
+        var client = CreateClient(handler);
+        var options = new ChatOptions
+        {
+            ModelId = Model,
+            RawRepresentationFactory = _ => new V1Beta.GenerateContentRequest
+            {
+                Contents = [],
+                ContinuationToken = new byte[] { 1, 2, 3 },
+                Labels = new Dictionary<string, string> { ["team"] = "weather" },
+                ServiceTier = V1Beta.ServiceTier.Flex,
+                Store = true,
+            },
+        };
+
+        await client.GetResponseAsync("What's the weather in Paris?", options, TestContext.Current.CancellationToken);
+
+        var body = Assert.Single(handler.Requests).ReadBodyAsJson();
+        Assert.Equal("AQID", body?["continuationToken"]?.GetValue<string>());
+        Assert.Equal("weather", body?["labels"]?["team"]?.GetValue<string>());
+        Assert.Equal("flex", body?["serviceTier"]?.GetValue<string>());
+        Assert.True(body?["store"]?.GetValue<bool>());
+        var content = Assert.Single(body?["contents"]?.AsArray() ?? []);
+        Assert.Equal("What's the weather in Paris?", content?["parts"]?[0]?["text"]?.GetValue<string>());
+    }
+
+    [Fact]
     public async Task GetResponseAsync_WithNoModel_ShouldThrowArgumentExceptionWithoutSending()
     {
         // Arrange

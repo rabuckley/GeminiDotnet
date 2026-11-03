@@ -16,13 +16,11 @@ internal static class MEAIToGeminiMapper
         MEAI.ChatOptions? options,
         GenerateContentRequest? rawRepresentation = null)
     {
+        var request = rawRepresentation ?? new GenerateContentRequest();
         Content? systemInstruction = null;
         List<Content>? contents = null;
 
-        // GenerateContentRequest.Contents is required, so a caller reaching for the raw representation to
-        // set one other field has to give it a value. An empty list is the only one they can give that
-        // says nothing, and the API rejects a request with no contents anyway, so it means "map them".
-        if (rawRepresentation?.Contents is not { Count: > 0 })
+        if (request.Contents is not { Count: > 0 })
         {
             contents = chatMessages.TryGetNonEnumeratedCount(out var count)
                 ? new List<Content>(count)
@@ -47,13 +45,6 @@ internal static class MEAIToGeminiMapper
                 ? new Content { Role = null, Parts = systemInstructionParts }
                 : null;
 
-            // In Gemini's API, files for code execution are passed as Parts in
-            // the user Content — not in the tool configuration. When
-            // HostedCodeInterpreterTool.Inputs has items, inject those as
-            // additional Parts into the last user Content.
-            //
-            // This is intentionally skipped when rawRepresentation provides its
-            // own Contents, as the caller has full control in that case.
             InjectToolInputParts(options, contents);
 
             // A message whose contents all mapped away (an empty text carrier for citations, or web
@@ -62,19 +53,17 @@ internal static class MEAIToGeminiMapper
             contents.RemoveAll(static content => content.Parts is not { Count: > 0 });
         }
 
-        var tools = rawRepresentation?.Tools ?? CreateMappedTools(options?.Tools);
+        var tools = request.Tools ?? CreateMappedTools(options?.Tools);
 
-        return new GenerateContentRequest
+        return request with
         {
-            Model = rawRepresentation?.Model ?? model,
-            SystemInstruction = rawRepresentation?.SystemInstruction ?? systemInstruction,
+            Model = request.Model ?? model,
+            SystemInstruction = request.SystemInstruction ?? systemInstruction,
             GenerationConfiguration =
-                rawRepresentation?.GenerationConfiguration ?? CreateMappedGenerationConfiguration(options),
-            CachedContent = rawRepresentation?.CachedContent,
-            Contents = rawRepresentation?.Contents is { Count: > 0 } rawContents ? rawContents : contents!,
+                request.GenerationConfiguration ?? CreateMappedGenerationConfiguration(options),
+            Contents = request.Contents is { Count: > 0 } rawContents ? rawContents : contents!,
             Tools = tools,
-            ToolConfiguration = rawRepresentation?.ToolConfiguration ?? CreateMappedToolConfiguration(options, tools),
-            SafetySettings = rawRepresentation?.SafetySettings,
+            ToolConfiguration = request.ToolConfiguration ?? CreateMappedToolConfiguration(options, tools),
         };
 
         static IReadOnlyList<Tool>? CreateMappedTools(IList<MEAI.AITool>? tools)
