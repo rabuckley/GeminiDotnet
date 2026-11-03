@@ -748,8 +748,6 @@ public sealed class MEAIToGeminiMapperTests
     [Fact]
     public void CreateMappedGenerateContentRequest_WithAnEmptyRawContents_ShouldMapTheMessages()
     {
-        // Arrange — Contents is a required member, so a caller reaching for the raw representation to set
-        // one other field has to give it a value, and an empty list is the only one that says nothing.
         List<ChatMessage> messages = [new(ChatRole.User, "Goodbye!")];
 
         var rawRepresentation = new GenerateContentRequest
