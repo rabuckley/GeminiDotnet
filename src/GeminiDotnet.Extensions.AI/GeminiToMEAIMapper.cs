@@ -57,7 +57,7 @@ internal static class GeminiToMEAIMapper
     private static ChatFinishReason? GetChatFinishReason(GenerateContentResponse response)
     {
         if (response.PromptFeedback?.BlockReason is { } blockReason
-            && blockReason is not PromptFeedbackBlockReason.Unspecified)
+            && blockReason != PromptFeedbackBlockReason.Unspecified)
         {
             return ChatFinishReason.ContentFilter;
         }
@@ -66,40 +66,50 @@ internal static class GeminiToMEAIMapper
         return GetChatFinishReason(candidate?.FinishReason);
     }
 
+    // Future API revisions may add reasons without a ChatFinishReason equivalent, so a reason
+    // missing from this table maps to null rather than failing the response.
+    private static readonly Dictionary<CandidateFinishReason, ChatFinishReason?> s_chatFinishReasons = new()
+    {
+        [CandidateFinishReason.Stop] = ChatFinishReason.Stop,
+        [CandidateFinishReason.MaxTokens] = ChatFinishReason.Length,
+        [CandidateFinishReason.Safety] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Recitation] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Language] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Other] = null,
+        [CandidateFinishReason.Blocklist] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.ProhibitedContent] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Spii] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.MalformedFunctionCall] = null,
+        [CandidateFinishReason.ImageSafety] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.ImageProhibitedContent] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.ImageOther] = null,
+        [CandidateFinishReason.NoImage] = null,
+        [CandidateFinishReason.ImageRecitation] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.UnexpectedToolCall] = null,
+        [CandidateFinishReason.TooManyToolCalls] = null,
+        [CandidateFinishReason.MissingThoughtSignature] = null,
+        [CandidateFinishReason.MalformedResponse] = null,
+        [CandidateFinishReason.Escalation] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.PupLimitedDisabled] = ChatFinishReason.ContentFilter,
+        [CandidateFinishReason.Continuation] = ChatFinishReason.Length,
+    };
+
     private static ChatFinishReason? GetChatFinishReason(CandidateFinishReason? finishReason)
     {
-        return finishReason switch
+        if (finishReason is not { } reason)
         {
-            CandidateFinishReason.Unspecified => throw new ArgumentOutOfRangeException(
+            return null;
+        }
+
+        if (reason == CandidateFinishReason.Unspecified)
+        {
+            throw new ArgumentOutOfRangeException(
                 nameof(finishReason),
                 finishReason,
-                "Unspecified is not a valid finish reason."),
-            CandidateFinishReason.Stop => ChatFinishReason.Stop,
-            CandidateFinishReason.MaxTokens => ChatFinishReason.Length,
-            CandidateFinishReason.Safety => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.Recitation => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.Language => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.Other => null,
-            CandidateFinishReason.Blocklist => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.ProhibitedContent => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.Spii => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.MalformedFunctionCall => null,
-            CandidateFinishReason.ImageSafety => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.ImageProhibitedContent => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.ImageOther => null,
-            CandidateFinishReason.NoImage => null,
-            CandidateFinishReason.ImageRecitation => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.UnexpectedToolCall => null,
-            CandidateFinishReason.TooManyToolCalls => null,
-            CandidateFinishReason.MissingThoughtSignature => null,
-            CandidateFinishReason.MalformedResponse => null,
-            CandidateFinishReason.Escalation => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.PupLimitedDisabled => ChatFinishReason.ContentFilter,
-            CandidateFinishReason.Continuation => ChatFinishReason.Length,
+                "Unspecified is not a valid finish reason.");
+        }
 
-            // Future API revisions may add reasons without a ChatFinishReason equivalent.
-            _ => null
-        };
+        return s_chatFinishReasons.GetValueOrDefault(reason);
     }
 
     /// <summary>
@@ -173,7 +183,7 @@ internal static class GeminiToMEAIMapper
                 var callId = part.ToolCall.Id ?? $"{part.ToolCall.ToolType}/{Guid.NewGuid()}";
                 unansweredToolCallIds.Enqueue(callId);
 
-                if (part.ToolCall.ToolType is ToolType.GoogleSearchWeb)
+                if (part.ToolCall.ToolType == ToolType.GoogleSearchWeb)
                 {
                     state.HasReportedWebSearch = true;
                     mapped = CreateMappedWebSearchToolCallContent(part, callId);
@@ -191,7 +201,7 @@ internal static class GeminiToMEAIMapper
                     ?? unansweredCallId
                     ?? $"{part.ToolResponse.ToolType}/{Guid.NewGuid()}";
 
-                mapped = part.ToolResponse.ToolType is ToolType.GoogleSearchWeb
+                mapped = part.ToolResponse.ToolType == ToolType.GoogleSearchWeb
                     ? CreateMappedWebSearchToolResultContent(part, callId)
                     : CreateMappedToolResultContent(part, callId);
             }
@@ -361,11 +371,9 @@ internal static class GeminiToMEAIMapper
             var executableCode = part.ExecutableCode!;
 
             // Map language to a MIME type for the DataContent input.
-            var mediaType = executableCode.Language switch
-            {
-                ExecutableCodeLanguage.Python => "text/x-python",
-                _ => "text/plain",
-            };
+            var mediaType = executableCode.Language == ExecutableCodeLanguage.Python
+                ? "text/x-python"
+                : "text/plain";
 
             // proto3 omits a string field at its default, so an empty program arrives as no
             // "code" at all rather than as "".
@@ -395,9 +403,9 @@ internal static class GeminiToMEAIMapper
                 outputs.Add(new TextContent(output));
             }
 
-            // Unspecified is the enum's default, not null, so it has to be dropped by hand for the
+            // Unspecified is the type's default, not null, so it has to be dropped by hand for the
             // "present only when Gemini reported one" contract to hold.
-            object? outcome = codeExecutionResult.Outcome is CodeExecutionResultOutcome.Unspecified
+            object? outcome = codeExecutionResult.Outcome == CodeExecutionResultOutcome.Unspecified
                 ? null
                 : codeExecutionResult.Outcome;
 

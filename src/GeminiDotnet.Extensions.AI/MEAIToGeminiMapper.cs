@@ -760,7 +760,7 @@ internal static class MEAIToGeminiMapper
             fromPropertyName,
             toPropertyName);
 
-        if (toolType is ToolType.Unspecified)
+        if (toolType == ToolType.Unspecified)
         {
             GeminiMappingException.Throw(
                 fromPropertyName: $"{fromPropertyName}[\"{GeminiContentProperties.ToolType}\"]",

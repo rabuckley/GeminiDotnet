@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.V1Beta.Media;
@@ -5,85 +6,93 @@ namespace GeminiDotnet.V1Beta.Media;
 /// <summary>
 /// Describes what the field reference contains.
 /// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter<GdataMediaReferenceType>))]
-public enum GdataMediaReferenceType
+/// <remarks>
+/// Unknown API values are preserved.
+/// </remarks>
+[JsonConverter(typeof(GdataMediaReferenceType.Converter))]
+public readonly struct GdataMediaReferenceType : IEquatable<GdataMediaReferenceType>
 {
+    private readonly string? _value;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GdataMediaReferenceType"/> structure.
+    /// </summary>
+    /// <param name="value">
+    /// The wire value, including values not declared by this type.
+    /// </param>
+    /// <exception cref="global::System.ArgumentNullException">
+    /// <paramref name="value"/> is <see langword="null"/>.
+    /// </exception>
+    public GdataMediaReferenceType(string value)
+    {
+        global::System.ArgumentNullException.ThrowIfNull(value);
+        _value = value;
+    }
+
     /// <summary>
     /// Reference contains a GFS path or a local path.
     /// </summary>
-    [JsonStringEnumMemberName("PATH")]
-    Path,
+    public static GdataMediaReferenceType Path { get; } = new("PATH");
 
     /// <summary>
     /// Reference points to a blobstore object. This could be either
     /// a v1 blob_ref or a v2 blobstore2_info. Clients should check
     /// blobstore2_info first, since v1 is being deprecated.
     /// </summary>
-    [JsonStringEnumMemberName("BLOB_REF")]
-    BlobRef,
+    public static GdataMediaReferenceType BlobRef { get; } = new("BLOB_REF");
 
     /// <summary>
     /// Data is included into this proto buffer
     /// </summary>
-    [JsonStringEnumMemberName("INLINE")]
-    Inline,
+    public static GdataMediaReferenceType Inline { get; } = new("INLINE");
 
     /// <summary>
     /// Data should be accessed from the current service
     /// using the operation GetMedia.
     /// </summary>
-    [JsonStringEnumMemberName("GET_MEDIA")]
-    GetMedia,
+    public static GdataMediaReferenceType GetMedia { get; } = new("GET_MEDIA");
 
     /// <summary>
     /// The content for this media object is stored across
     /// multiple partial media objects under the
     /// composite_media field.
     /// </summary>
-    [JsonStringEnumMemberName("COMPOSITE_MEDIA")]
-    CompositeMedia,
+    public static GdataMediaReferenceType CompositeMedia { get; } = new("COMPOSITE_MEDIA");
 
     /// <summary>
     /// Reference points to a bigstore object
     /// </summary>
-    [JsonStringEnumMemberName("BIGSTORE_REF")]
-    BigstoreRef,
+    public static GdataMediaReferenceType BigstoreRef { get; } = new("BIGSTORE_REF");
 
     /// <summary>
     /// Indicates the data is stored in diff_version_response.
     /// </summary>
-    [JsonStringEnumMemberName("DIFF_VERSION_RESPONSE")]
-    DiffVersionResponse,
+    public static GdataMediaReferenceType DiffVersionResponse { get; } = new("DIFF_VERSION_RESPONSE");
 
     /// <summary>
     /// Indicates the data is stored in diff_checksums_response.
     /// </summary>
-    [JsonStringEnumMemberName("DIFF_CHECKSUMS_RESPONSE")]
-    DiffChecksumsResponse,
+    public static GdataMediaReferenceType DiffChecksumsResponse { get; } = new("DIFF_CHECKSUMS_RESPONSE");
 
     /// <summary>
     /// Indicates the data is stored in diff_download_response.
     /// </summary>
-    [JsonStringEnumMemberName("DIFF_DOWNLOAD_RESPONSE")]
-    DiffDownloadResponse,
+    public static GdataMediaReferenceType DiffDownloadResponse { get; } = new("DIFF_DOWNLOAD_RESPONSE");
 
     /// <summary>
     /// Indicates the data is stored in diff_upload_request.
     /// </summary>
-    [JsonStringEnumMemberName("DIFF_UPLOAD_REQUEST")]
-    DiffUploadRequest,
+    public static GdataMediaReferenceType DiffUploadRequest { get; } = new("DIFF_UPLOAD_REQUEST");
 
     /// <summary>
     /// Indicates the data is stored in diff_upload_response.
     /// </summary>
-    [JsonStringEnumMemberName("DIFF_UPLOAD_RESPONSE")]
-    DiffUploadResponse,
+    public static GdataMediaReferenceType DiffUploadResponse { get; } = new("DIFF_UPLOAD_RESPONSE");
 
     /// <summary>
     /// Indicates the data is stored in cosmo_binary_reference.
     /// </summary>
-    [JsonStringEnumMemberName("COSMO_BINARY_REFERENCE")]
-    CosmoBinaryReference,
+    public static GdataMediaReferenceType CosmoBinaryReference { get; } = new("COSMO_BINARY_REFERENCE");
 
     /// <summary>
     /// Informs Scotty to generate a response payload with the size specified
@@ -92,7 +101,77 @@ public enum GdataMediaReferenceType
     /// between the user and Scotty without involving a real payload source.
     /// Note: range is not supported when using arbitrary_bytes.
     /// </summary>
-    [JsonStringEnumMemberName("ARBITRARY_BYTES")]
-    ArbitraryBytes,
+    public static GdataMediaReferenceType ArbitraryBytes { get; } = new("ARBITRARY_BYTES");
+
+    /// <summary>
+    /// Gets the declared values in schema order.
+    /// </summary>
+    public static IReadOnlyList<GdataMediaReferenceType> KnownValues { get; } =
+    [
+        Path,
+        BlobRef,
+        Inline,
+        GetMedia,
+        CompositeMedia,
+        BigstoreRef,
+        DiffVersionResponse,
+        DiffChecksumsResponse,
+        DiffDownloadResponse,
+        DiffUploadRequest,
+        DiffUploadResponse,
+        CosmoBinaryReference,
+        ArbitraryBytes,
+    ];
+
+    /// <summary>
+    /// Gets the wire value.
+    /// </summary>
+    /// <value>
+    /// The default instance has the value of <see cref="Path"/>.
+    /// </value>
+    public string Value => _value ?? "PATH";
+
+    /// <summary>
+    /// Compares wire values using ordinal equality.
+    /// </summary>
+    /// <param name="left">The first value to compare.</param>
+    /// <param name="right">The second value to compare.</param>
+    public static bool operator ==(GdataMediaReferenceType left, GdataMediaReferenceType right) => left.Equals(right);
+
+    /// <summary>
+    /// Compares wire values using ordinal inequality.
+    /// </summary>
+    /// <param name="left">The first value to compare.</param>
+    /// <param name="right">The second value to compare.</param>
+    public static bool operator !=(GdataMediaReferenceType left, GdataMediaReferenceType right) => !left.Equals(right);
+
+    /// <inheritdoc/>
+    public bool Equals(GdataMediaReferenceType other) => string.Equals(Value, other.Value, global::System.StringComparison.Ordinal);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is GdataMediaReferenceType other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => global::System.StringComparer.Ordinal.GetHashCode(Value);
+
+    /// <summary>
+    /// Returns <see cref="Value"/>.
+    /// </summary>
+    public override string ToString() => Value;
+
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    public sealed class Converter : JsonConverter<GdataMediaReferenceType>
+    {
+        /// <inheritdoc/>
+        public override GdataMediaReferenceType Read(ref Utf8JsonReader reader, global::System.Type typeToConvert, JsonSerializerOptions options)
+            => new(reader.GetString() ?? throw new JsonException("Expected a string for GdataMediaReferenceType."));
+
+        /// <inheritdoc/>
+        public override void Write(Utf8JsonWriter writer, GdataMediaReferenceType value, JsonSerializerOptions options)
+        {
+            global::System.ArgumentNullException.ThrowIfNull(writer);
+            writer.WriteStringValue(value.Value);
+        }
+    }
 }
 

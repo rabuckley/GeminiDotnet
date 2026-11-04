@@ -12,7 +12,7 @@ namespace GeminiDotnet.V1;
 internal sealed partial class FilesClient : IFilesClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal FilesClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

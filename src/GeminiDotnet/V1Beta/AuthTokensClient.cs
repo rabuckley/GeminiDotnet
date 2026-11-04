@@ -11,7 +11,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class AuthTokensClient : IAuthTokensClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal AuthTokensClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);

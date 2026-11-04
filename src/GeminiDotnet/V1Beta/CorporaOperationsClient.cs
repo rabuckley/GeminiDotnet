@@ -10,7 +10,7 @@ namespace GeminiDotnet.V1Beta;
 internal sealed partial class CorporaOperationsClient : ICorporaOperationsClient
 {
     private readonly IGeminiRequester _requester;
-    
+
     internal CorporaOperationsClient(IGeminiRequester requester)
     {
         ArgumentNullException.ThrowIfNull(requester);
