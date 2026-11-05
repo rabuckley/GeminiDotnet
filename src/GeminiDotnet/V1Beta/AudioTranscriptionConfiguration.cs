@@ -69,6 +69,16 @@ public sealed record AudioTranscriptionConfiguration
     public AudioTranscriptionConfigMode? Mode { get; init; }
 
     /// <summary>
+    /// Optional. The source text to be edited or rewritten via voice instructions.
+    /// When provided in <c>SMART</c> mode, the model evaluates the audio input against
+    /// this text and emits the complete replacement text in the candidate response
+    /// rather than appending to it.
+    /// </summary>
+    [JsonPropertyName("sourceText")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? SourceText { get; init; }
+
+    /// <summary>
     /// Optional. Configures word-level timestamp generation.
     /// </summary>
     [JsonPropertyName("wordTimestamp")]

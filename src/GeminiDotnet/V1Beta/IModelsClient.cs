@@ -255,7 +255,8 @@ public partial interface IModelsClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Performs a prediction request.
+    /// Deprecated: Performs a prediction request. Use
+    /// <c>GenerativeService.GenerateContent</c> instead.
     /// </summary>
     /// <param name="model">
     /// Required. The name of the model for prediction. Format: <c>name=models/{model}</c>.
@@ -263,13 +264,15 @@ public partial interface IModelsClient
     /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete("Performs a prediction request.")]
     Task<PredictResponse> PredictAsync(
         string model,
         PredictRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Same as Predict but returns an LRO.
+    /// Deprecated: Same as Predict but returns an LRO. Use the Interactions API
+    /// instead.
     /// </summary>
     /// <param name="model">
     /// Required. The name of the model for prediction. Format: <c>name=models/{model}</c>.
@@ -277,6 +280,7 @@ public partial interface IModelsClient
     /// </param>
     /// <param name="request">The request body.</param>
     /// <param name="cancellationToken"></param>
+    [Obsolete("Same as Predict but returns an LRO.")]
     Task<PredictLongRunningOperation> PredictLongRunningAsync(
         string model,
         PredictLongRunningRequest request,

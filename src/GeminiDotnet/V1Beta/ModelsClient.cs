@@ -248,6 +248,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<GenerateTextRequest, GenerateTextResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete("Performs a prediction request.")]
     public Task<PredictResponse> PredictAsync(
         string model,
         PredictRequest request,
@@ -263,6 +264,7 @@ internal sealed partial class ModelsClient : IModelsClient
         return _requester.ExecuteAsync<PredictRequest, PredictResponse>(HttpMethod.Post, path, request, cancellationToken);
     }
 
+    [Obsolete("Same as Predict but returns an LRO.")]
     public Task<PredictLongRunningOperation> PredictLongRunningAsync(
         string model,
         PredictLongRunningRequest request,
