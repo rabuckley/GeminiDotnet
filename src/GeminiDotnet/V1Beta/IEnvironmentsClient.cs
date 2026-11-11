@@ -45,10 +45,12 @@ public partial interface IEnvironmentsClient
     /// If unspecified, defaults to 50. Maximum is 1000.
     /// </param>
     /// <param name="pageToken">Optional. Pagination token.</param>
+    /// <param name="mode">Optional. Filter environments by compute lifecycle mode.</param>
     /// <param name="cancellationToken"></param>
     Task<ListEnvironmentsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
+        EnvironmentsListMode? mode = null,
         CancellationToken cancellationToken = default);
 
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.V1Beta.Environments;
@@ -14,6 +15,26 @@ public sealed record Environment
     [JsonPropertyName("created")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Created { get; init; }
+
+    /// <summary>
+    /// Output only. Arbitrary customer-defined JSON configuration passed through to the
+    /// self-hosted environment poller. Only populated for <c>self_hosted</c>
+    /// environments when configured.
+    /// </summary>
+    [JsonPropertyName("customConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement CustomConfiguration { get; init; }
+
+    /// <summary>
+    /// Output only. Secret token generated upon environment creation for self_hosted
+    /// environments. Used by the self-hosted sandbox daemon to authenticate
+    /// polling and streaming requests. Only returned in the CreateEnvironment
+    /// response; omitted from subsequent GetEnvironment and ListEnvironments
+    /// calls.
+    /// </summary>
+    [JsonPropertyName("environmentKey")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? EnvironmentKey { get; init; }
 
     /// <summary>
     /// Output only. The number of files in the environment, output only.
@@ -37,6 +58,13 @@ public sealed record Environment
     [JsonPropertyName("lastAccessed")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? LastAccessed { get; init; }
+
+    /// <summary>
+    /// Output only. The compute lifecycle mode for this environment.
+    /// </summary>
+    [JsonPropertyName("mode")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public EnvironmentMode? Mode { get; init; }
 
     /// <summary>
     /// Allow only specific domains.

@@ -15,5 +15,15 @@ public sealed record ProactivityConfiguration
     [JsonPropertyName("proactiveAudio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool? ProactiveAudio { get; init; }
+
+    /// <summary>
+    /// Optional. If enabled, the system might trigger a generation on each received image.
+    /// This requires that <c>proactive_audio</c> is enabled. The rate of
+    /// generation depends on the rate of incoming images and can cause a
+    /// significant increase in cost.
+    /// </summary>
+    [JsonPropertyName("proactiveVideo")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool? ProactiveVideo { get; init; }
 }
 

@@ -44,9 +44,10 @@ public sealed record FunctionResponse
     /// In particular, if the function call failed to execute, the response can
     /// have an "error" key to return error details to the model.
     /// Multimedia can be included by using a subobject containing a single "$ref"
-    /// key whose value is the <c>inline_data.display_name</c> of a
-    /// <see cref="V1Beta.FunctionResponsePart"/> holding the multimedia.
-    /// See https://aistudio.google.com/docs/function-calling#multimodal.
+    /// key whose value is the <c>inline_data.display_name</c> or
+    /// <c>file_data.display_name</c> of a <see cref="V1Beta.FunctionResponsePart"/> holding the
+    /// multimedia. See [Multimodal function
+    /// responses](https://aistudio.google.com/docs/function-calling#multimodal).
     /// </summary>
     [JsonPropertyName("response")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

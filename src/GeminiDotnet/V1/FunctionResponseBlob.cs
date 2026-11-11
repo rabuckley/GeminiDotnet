@@ -18,7 +18,9 @@ public sealed record FunctionResponseBlob
 
     /// <summary>
     /// Optional. Display name of the blob.
-    /// Used to provide a label or filename to distinguish blobs.
+    /// Used to provide a label or filename to distinguish blobs, and to reference
+    /// the blob from <c>FunctionResponse.response</c> (for example, via
+    /// <c>{"$ref": "DISPLAY_NAME"}</c>).
     /// </summary>
     [JsonPropertyName("displayName")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

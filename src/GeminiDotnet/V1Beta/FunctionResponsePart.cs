@@ -7,9 +7,8 @@ namespace GeminiDotnet.V1Beta;
 /// A <see cref="V1Beta.FunctionResponsePart"/> consists of data which has an associated datatype. A
 /// <see cref="V1Beta.FunctionResponsePart"/> can only contain one of the accepted types in
 /// <c>FunctionResponsePart.data</c>.
-/// A <see cref="V1Beta.FunctionResponsePart"/> must have a fixed IANA MIME type identifying the
-/// type and subtype of the media if the <c>inline_data</c> field is filled with raw
-/// bytes.
+/// Media can be passed as raw bytes (<c>inline_data</c>) or by URI (<c>file_data</c>) with
+/// an IANA MIME type identifying the type and subtype of the media.
 /// </summary>
 public sealed record FunctionResponsePart
 {

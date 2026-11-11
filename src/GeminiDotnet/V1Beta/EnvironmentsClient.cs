@@ -51,11 +51,13 @@ internal sealed partial class EnvironmentsClient : IEnvironmentsClient
     public Task<ListEnvironmentsResponse> ListAsync(
         int? pageSize = null,
         string? pageToken = null,
+        EnvironmentsListMode? mode = null,
         CancellationToken cancellationToken = default)
     {
         var query = new QueryStringBuilder()
             .Add("pageSize", pageSize)
             .Add("pageToken", pageToken)
+            .Add("mode", mode?.ToString())
             .ToString();
         var path = $"/v1beta/environments:list{query}";
         return _requester.ExecuteAsync<ListEnvironmentsResponse>(HttpMethod.Get, path, cancellationToken);
