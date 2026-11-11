@@ -125,12 +125,6 @@ internal static class GeminiToMEAIMapper
 
         List<AIContent> contents = new(parts.Count);
 
-        // Gemini emits an ExecutableCode followed by the CodeExecutionResult that answers it, and a
-        // server-side ToolCall followed by its ToolResponse. The state carries the unanswered calls
-        // because streaming splits a call and its result across chunks.
-        var unansweredCodeExecutionCallIds = state.UnansweredCodeExecutionCallIds;
-        var unansweredToolCallIds = state.UnansweredToolCallIds;
-
         foreach (var part in parts)
         {
             // The data oneof determines the content type. Thought metadata and transcription can
@@ -164,26 +158,20 @@ internal static class GeminiToMEAIMapper
             }
             else if (part.ExecutableCode is not null)
             {
-                var callId = part.ExecutableCode.Id ?? $"code_execution/{Guid.NewGuid()}";
-                unansweredCodeExecutionCallIds.Enqueue(callId);
+                var callId = state.CodeExecutionCallIds.ForCall(part.ExecutableCode.Id, "code_execution");
                 mapped = CreateMappedCodeInterpreterToolCallContent(part, callId);
             }
             else if (part.CodeExecutionResult is not null)
             {
-                unansweredCodeExecutionCallIds.TryDequeue(out var unansweredCallId);
-
-                var callId = part.CodeExecutionResult.Id
-                    ?? unansweredCallId
-                    ?? $"code_execution/{Guid.NewGuid()}";
-
+                var callId = state.CodeExecutionCallIds.ForResult(part.CodeExecutionResult.Id, "code_execution");
                 mapped = CreateMappedCodeInterpreterToolResultContent(part, callId);
             }
             else if (part.ToolCall is not null)
             {
-                var callId = part.ToolCall.Id ?? $"{part.ToolCall.ToolType}/{Guid.NewGuid()}";
-                unansweredToolCallIds.Enqueue(callId);
+                var toolType = part.ToolCall.ToolType;
+                var callId = state.ToolCallIds(toolType).ForCall(part.ToolCall.Id, toolType.ToString());
 
-                if (part.ToolCall.ToolType == ToolType.GoogleSearchWeb)
+                if (toolType == ToolType.GoogleSearchWeb)
                 {
                     state.HasReportedWebSearch = true;
                     mapped = CreateMappedWebSearchToolCallContent(part, callId);
@@ -195,13 +183,11 @@ internal static class GeminiToMEAIMapper
             }
             else if (part.ToolResponse is not null)
             {
-                unansweredToolCallIds.TryDequeue(out var unansweredCallId);
+                // The spec requires a response's tool type to match its call's.
+                var toolType = part.ToolResponse.ToolType;
+                var callId = state.ToolCallIds(toolType).ForResult(part.ToolResponse.Id, toolType.ToString());
 
-                var callId = part.ToolResponse.Id
-                    ?? unansweredCallId
-                    ?? $"{part.ToolResponse.ToolType}/{Guid.NewGuid()}";
-
-                mapped = part.ToolResponse.ToolType == ToolType.GoogleSearchWeb
+                mapped = toolType == ToolType.GoogleSearchWeb
                     ? CreateMappedWebSearchToolResultContent(part, callId)
                     : CreateMappedToolResultContent(part, callId);
             }

@@ -558,6 +558,77 @@ public sealed class GeminiToMEAIMapperTests
     }
 
     [Fact]
+    public void CreateMappedChatResponse_WithAResultNamingALaterCodeExecution_ShouldLeaveTheIdLessCallForTheIdLessResult()
+    {
+        // Arrange — a result carries an id only when its call did, so the one naming "b" answers the second
+        // call and the id-less one answers the first.
+        var response = ResponseWithParts(
+            new Part { ExecutableCode = new ExecutableCode { Language = ExecutableCodeLanguage.Python, Code = "a" } },
+            new Part { ExecutableCode = new ExecutableCode { Language = ExecutableCodeLanguage.Python, Code = "b", Id = "b" } },
+            new Part { CodeExecutionResult = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Ok, Id = "b" } },
+            new Part { CodeExecutionResult = new CodeExecutionResult { Outcome = CodeExecutionResultOutcome.Ok } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var idLessCall = Assert.IsType<CodeInterpreterToolCallContent>(contents[0]);
+        var namedResult = Assert.IsType<CodeInterpreterToolResultContent>(contents[2]);
+        var idLessResult = Assert.IsType<CodeInterpreterToolResultContent>(contents[3]);
+
+        Assert.Equal("b", namedResult.CallId);
+        Assert.Equal(idLessCall.CallId, idLessResult.CallId);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithAResultNamingALaterToolCall_ShouldLeaveTheIdLessCallForTheIdLessResult()
+    {
+        // Arrange
+        var response = ResponseWithParts(
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext, Id = "b" } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext, Id = "b" } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var idLessCall = Assert.IsType<ToolCallContent>(contents[0]);
+        var namedResult = Assert.IsType<ToolResultContent>(contents[2]);
+        var idLessResult = Assert.IsType<ToolResultContent>(contents[3]);
+
+        Assert.Equal("b", namedResult.CallId);
+        Assert.Equal(idLessCall.CallId, idLessResult.CallId);
+    }
+
+    [Fact]
+    public void CreateMappedChatResponse_WithIdLessResponsesInReverseToolTypeOrder_ShouldPairEachWithItsOwnToolType()
+    {
+        // Arrange — a response's tool type matches its call's, so order matters only within one tool type.
+        var response = ResponseWithParts(
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.GoogleSearchWeb } },
+            new Part { ToolCall = new ToolCall { ToolType = ToolType.UrlContext } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.UrlContext } },
+            new Part { ToolResponse = new ToolResponse { ToolType = ToolType.GoogleSearchWeb } });
+
+        // Act
+        var result = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow);
+
+        // Assert
+        var contents = Assert.Single(result.Messages).Contents;
+        var searchCall = Assert.IsType<WebSearchToolCallContent>(contents[0]);
+        var urlCall = Assert.IsType<ToolCallContent>(contents[1]);
+        var urlResult = Assert.IsType<ToolResultContent>(contents[2]);
+        var searchResult = Assert.IsType<WebSearchToolResultContent>(contents[3]);
+
+        Assert.Equal(urlCall.CallId, urlResult.CallId);
+        Assert.Equal(searchCall.CallId, searchResult.CallId);
+    }
+
+    [Fact]
     public void CreateMappedChatResponse_WithCodeExecutionThoughtSignature_ShouldPreserveItInAdditionalProperties()
     {
         // Arrange — Gemini needs the signature echoed back, and RawRepresentation does not survive JSON.

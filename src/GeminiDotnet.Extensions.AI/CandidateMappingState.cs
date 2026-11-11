@@ -34,18 +34,20 @@ namespace GeminiDotnet.Extensions.AI;
 /// </remarks>
 internal sealed class CandidateMappingState
 {
-    /// <summary>
-    /// The ids of the code execution calls that have not yet been answered by a result, oldest first.
-    /// </summary>
-    /// <remarks>
-    /// Gemini can run several tools in one turn and the ids are optional on the wire, so an id-less result
-    /// is paired with the oldest unanswered call. The queue outlives one response because a streamed call
-    /// and its result arrive in separate chunks.
-    /// </remarks>
-    public Queue<string> UnansweredCodeExecutionCallIds { get; } = [];
+    public ServerToolCallIds CodeExecutionCallIds { get; } = new();
 
-    /// <inheritdoc cref="UnansweredCodeExecutionCallIds"/>
-    public Queue<string> UnansweredToolCallIds { get; } = [];
+    private readonly Dictionary<V1Beta.ToolType, ServerToolCallIds> _toolCallIds = [];
+
+    public ServerToolCallIds ToolCallIds(V1Beta.ToolType toolType)
+    {
+        if (!_toolCallIds.TryGetValue(toolType, out var callIds))
+        {
+            callIds = new ServerToolCallIds();
+            _toolCallIds.Add(toolType, callIds);
+        }
+
+        return callIds;
+    }
 
     /// <summary>
     /// The text a grounding segment's byte offsets index: every non-thought <see cref="V1Beta.Part.Text"/>
