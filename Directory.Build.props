@@ -5,11 +5,19 @@
     <Nullable>enable</Nullable>
     <LangVersion>15</LangVersion>
     <AnalysisLevel>preview</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup>
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
+
+  <!-- The .NET 11 SDK adds this to the implicit usings; adding it for every target keeps a single
+       using list valid across all of them. -->
+  <ItemGroup>
+    <Using Include="System.Net.Http.Json" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MinVer" PrivateAssets="all"/>

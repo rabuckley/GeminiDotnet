@@ -68,7 +68,7 @@ internal static class GeminiToMEAIMapper
 
     // Future API revisions may add reasons without a ChatFinishReason equivalent, so a reason
     // missing from this table maps to null rather than failing the response.
-    private static readonly Dictionary<CandidateFinishReason, ChatFinishReason?> s_chatFinishReasons = new()
+    private static readonly Dictionary<CandidateFinishReason, ChatFinishReason?> ChatFinishReasons = new()
     {
         [CandidateFinishReason.Stop] = ChatFinishReason.Stop,
         [CandidateFinishReason.MaxTokens] = ChatFinishReason.Length,
@@ -109,7 +109,7 @@ internal static class GeminiToMEAIMapper
                 "Unspecified is not a valid finish reason.");
         }
 
-        return s_chatFinishReasons.GetValueOrDefault(reason);
+        return ChatFinishReasons.GetValueOrDefault(reason);
     }
 
     /// <summary>
@@ -123,7 +123,7 @@ internal static class GeminiToMEAIMapper
             return null;
         }
 
-        List<AIContent> contents = new(parts.Count);
+        List<AIContent> contents = [with(parts.Count)];
 
         foreach (var part in parts)
         {

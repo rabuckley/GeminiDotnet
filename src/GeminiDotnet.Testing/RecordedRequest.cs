@@ -57,7 +57,7 @@ public sealed class RecordedRequest
     /// <exception cref="InvalidOperationException">The request has no body.</exception>
     public byte[] ReadBodyAsBytes()
     {
-        return RequireBody().ToArray();
+        return [.. RequireBody()];
     }
 
     /// <summary>

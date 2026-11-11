@@ -10,7 +10,6 @@
         <PackageProjectUrl>https://github.com/rabuckley/GeminiDotnet</PackageProjectUrl>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageLicenseFile>LICENCE</PackageLicenseFile>
-        <NoWarn>$(NoWarn);CA1041</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

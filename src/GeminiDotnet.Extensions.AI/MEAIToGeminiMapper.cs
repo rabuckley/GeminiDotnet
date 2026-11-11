@@ -25,9 +25,7 @@ internal static class MEAIToGeminiMapper
 
         if (request.Contents is not { Count: > 0 })
         {
-            contents = chatMessages.TryGetNonEnumeratedCount(out var count)
-                ? new List<Content>(count)
-                : [];
+            contents = chatMessages.TryGetNonEnumeratedCount(out var count) ? [with(count)] : [];
 
             List<Part> systemInstructionParts = options?.Instructions is { Length: > 0 } instructions
                 ? [new Part { Text = instructions }]
@@ -76,7 +74,7 @@ internal static class MEAIToGeminiMapper
                 return null;
             }
 
-            List<Tool> mappedTools = new(tools.Count);
+            List<Tool> mappedTools = [with(tools.Count)];
             List<FunctionDeclaration>? functionDeclarations = null;
             List<McpServer>? mcpServers = null;
             MEAI.AITool? builtInTool = null;
@@ -174,16 +172,17 @@ internal static class MEAIToGeminiMapper
 #pragma warning restore CS0618 // Type or member is obsolete
                 ?? CreateMappedThinkingConfiguration(options.Reasoning);
 
-            var responseModalities = ReadGenerationConfigurationValue<IEnumerable<ResponseModality>>(
-                    options,
-                    GeminiAdditionalProperties.ResponseModalities,
-                    nameof(GenerationConfiguration.ResponseModalities))
-                switch
-                {
-                    IReadOnlyList<ResponseModality> list => list,
-                    IEnumerable<ResponseModality> enumerable => enumerable.ToList(),
-                    _ => null
-                };
+            var requestedModalities = ReadGenerationConfigurationValue<IEnumerable<ResponseModality>>(
+                options,
+                GeminiAdditionalProperties.ResponseModalities,
+                nameof(GenerationConfiguration.ResponseModalities));
+
+            IReadOnlyList<ResponseModality>? responseModalities = requestedModalities switch
+            {
+                IReadOnlyList<ResponseModality> list => list,
+                IEnumerable<ResponseModality> enumerable => [.. enumerable],
+                _ => null
+            };
 
             var imageConfiguration = ReadGenerationConfigurationValue<ImageConfiguration>(
                 options,
@@ -246,7 +245,8 @@ internal static class MEAIToGeminiMapper
         {
             return new Content
             {
-                Role = CreateMappedRole(chatMessage.Role), Parts = CreateMappedParts(chatMessage.Contents),
+                Role = CreateMappedRole(chatMessage.Role),
+                Parts = CreateMappedParts(chatMessage.Contents),
             };
         }
 
@@ -277,7 +277,7 @@ internal static class MEAIToGeminiMapper
 
         IReadOnlyList<Part> CreateMappedParts(IList<MEAI.AIContent> contents)
         {
-            List<Part> parts = new(contents.Count);
+            List<Part> parts = [with(contents.Count)];
 
             foreach (var content in contents)
             {
@@ -286,7 +286,9 @@ internal static class MEAIToGeminiMapper
                 // reported, and Gemini needs the invocation back.
                 if (content is MEAI.WebSearchToolCallContent or MEAI.WebSearchToolResultContent
                     && content.AdditionalProperties?.ContainsKey(GeminiContentProperties.ToolType) is not true)
+                {
                     continue;
+                }
 
                 var thoughtSignature = content.GetThoughtSignature();
 
@@ -296,7 +298,9 @@ internal static class MEAIToGeminiMapper
                 // answer can end with its signature on an empty text part, and Gemini needs that part
                 // back.
                 if (content is MEAI.TextContent { Text: null or "" } && thoughtSignature is null)
+                {
                     continue;
+                }
 
                 Part? mapped = content switch
                 {
@@ -326,7 +330,9 @@ internal static class MEAIToGeminiMapper
                 };
 
                 if (mapped is null)
+                {
                     continue;
+                }
 
                 if (mapped.Thought is null && content is not MEAI.TextReasoningContent && content.IsThought())
                 {
@@ -382,7 +388,8 @@ internal static class MEAIToGeminiMapper
                 {
                     FileData = new FileData
                     {
-                        FileUri = uriContent.Uri.ToString(), MimeType = uriContent.MediaType,
+                        FileUri = uriContent.Uri.ToString(),
+                        MimeType = uriContent.MediaType,
                     },
                 };
             }
@@ -398,7 +405,9 @@ internal static class MEAIToGeminiMapper
                 {
                     FunctionCall = new FunctionCall
                     {
-                        Id = functionCall.CallId, Name = functionCall.Name, Arguments = arguments
+                        Id = functionCall.CallId,
+                        Name = functionCall.Name,
+                        Arguments = arguments
                     },
                 };
             }

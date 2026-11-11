@@ -21,7 +21,11 @@ public sealed class ScriptedHttpMessageHandler : HttpMessageHandler
 
     private readonly Queue<Func<RecordedRequest, HttpResponseMessage>> _responses = new();
     private readonly List<RecordedRequest> _requests = [];
+#if NET9_0_OR_GREATER
+    private readonly Lock _gate = new();
+#else
     private readonly object _gate = new();
+#endif
 
     /// <summary>
     /// Gets a snapshot of the requests received so far, in the order they arrived.

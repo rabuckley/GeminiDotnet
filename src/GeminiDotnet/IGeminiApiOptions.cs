@@ -8,12 +8,12 @@ public interface IGeminiClientOptions
     /// <summary>
     /// The model id to use unless overridden in by the caller.
     /// </summary>
-    public string? ModelId { get; }
+    string? ModelId { get; }
 
     /// <summary>
     /// The endpoint to use for the Gemini API.
     /// </summary>
-    public Uri? Endpoint { get; }
+    Uri? Endpoint { get; }
 
     /// <summary>
     /// The embedding dimensions to use unless overridden by the caller.
