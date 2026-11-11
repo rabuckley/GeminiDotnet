@@ -202,6 +202,27 @@ public sealed class GeminiHostedFileClientTests
             handler.Requests.Select(request => request.RequestUri?.Query));
     }
 
+    [Fact]
+    public async Task ListFilesAsync_StopsWhenNextPageTokenIsEmpty()
+    {
+        // Arrange — a second scripted page would only be requested if "" were sent back.
+        var handler = new ScriptedHttpMessageHandler()
+            .RespondWithJson(ListFilesJson(nextPageToken: "", "a"))
+            .RespondWithJson(ListFilesJson(nextPageToken: null, "a"));
+        using var client = CreateClient(handler);
+
+        // Act
+        List<HostedFileContent> results = [];
+        await foreach (var item in client.ListFilesAsync(cancellationToken: TestContext.Current.CancellationToken))
+        {
+            results.Add(item);
+        }
+
+        // Assert
+        Assert.Equal(["files/a"], results.Select(file => file.FileId));
+        Assert.Single(handler.Requests);
+    }
+
     #endregion
 
     #region UploadAsync

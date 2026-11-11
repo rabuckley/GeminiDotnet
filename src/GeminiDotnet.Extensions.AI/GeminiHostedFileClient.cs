@@ -185,9 +185,11 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
                 }
             }
 
+            // AIP-158 signals the last page with an empty token, which proto3 JSON usually
+            // omits but may send as "". Sending "" back would restart from the first page.
             pageToken = response.NextPageToken;
         }
-        while (pageToken is not null);
+        while (!string.IsNullOrEmpty(pageToken));
     }
 
     /// <inheritdoc />
