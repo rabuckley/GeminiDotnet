@@ -54,9 +54,8 @@ internal sealed class GeminiRequester : IGeminiRequester
     {
         var responseJsonTypeInfo = _jsonSerializerContext.GetTypeInfo<TResponse>();
 
-        var response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
-
-        response = await EnsureSuccessOrThrow(response, cancellationToken).ConfigureAwait(false);
+        using var response = await SendCheckedAsync(message, HttpCompletionOption.ResponseContentRead, cancellationToken)
+            .ConfigureAwait(false);
 
         var result = await response.Content
             .ReadFromJsonAsync(responseJsonTypeInfo, cancellationToken: cancellationToken)
@@ -98,11 +97,8 @@ internal sealed class GeminiRequester : IGeminiRequester
         HttpRequestMessage message,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var response = await _httpClient
-            .SendAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+        using var response = await SendCheckedAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
             .ConfigureAwait(false);
-
-        response = await EnsureSuccessOrThrow(response, cancellationToken).ConfigureAwait(false);
 
         var stream = await response.Content
             .ReadAsStreamAsync(cancellationToken)
@@ -119,21 +115,10 @@ internal sealed class GeminiRequester : IGeminiRequester
             => JsonSerializer.Deserialize(data, _jsonSerializerContext.GetTypeInfo<TResponse>())!;
     }
 
-    public async Task<HttpResponseMessage> SendAsync(
+    public Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage message,
         CancellationToken cancellationToken = default)
-    {
-        var response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
-        try
-        {
-            return await EnsureSuccessOrThrow(response, cancellationToken).ConfigureAwait(false);
-        }
-        catch
-        {
-            response.Dispose();
-            throw;
-        }
-    }
+        => SendCheckedAsync(message, HttpCompletionOption.ResponseContentRead, cancellationToken);
 
     public async Task<TResponse> UploadAsync<TMetadata, TResponse>(
         HttpMethod method,
@@ -196,14 +181,11 @@ internal sealed class GeminiRequester : IGeminiRequester
     {
         using var message = new HttpRequestMessage(method, path);
 
-        var response = await _httpClient
-            .SendAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+        var response = await SendCheckedAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
             .ConfigureAwait(false);
 
         try
         {
-            response = await EnsureSuccessOrThrow(response, cancellationToken).ConfigureAwait(false);
-
             // Disposing the content stream of an unbuffered response is what releases its
             // connection, so the download owning the stream is enough.
             var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -220,11 +202,31 @@ internal sealed class GeminiRequester : IGeminiRequester
         }
     }
 
-    private async Task<HttpResponseMessage> EnsureSuccessOrThrow(HttpResponseMessage response, CancellationToken cancellationToken)
+    // Returns only successful responses, which the caller must dispose. A failed response is
+    // disposed here before its error is thrown.
+    private async Task<HttpResponseMessage> SendCheckedAsync(
+        HttpRequestMessage message,
+        HttpCompletionOption completionOption,
+        CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.SendAsync(message, completionOption, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await ThrowIfFailedAsync(response, cancellationToken).ConfigureAwait(false);
+            return response;
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
+
+    private async Task ThrowIfFailedAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)
         {
-            return response;
+            return;
         }
 
         var errorResponseTypeInfo = _jsonSerializerContext.GetTypeInfo<ErrorResponse>();
@@ -236,7 +238,6 @@ internal sealed class GeminiRequester : IGeminiRequester
                 cancellationToken).ConfigureAwait(false);
 
             GeminiClientException.Throw(errorResponse!.Error);
-            return null!; // unreachable
         }
         catch (JsonException)
         {
@@ -244,7 +245,6 @@ internal sealed class GeminiRequester : IGeminiRequester
 
         // Fall back to throwing the HttpRequestException
         response.EnsureSuccessStatusCode();
-        return null!; // unreachable
     }
 
     /// <summary>
