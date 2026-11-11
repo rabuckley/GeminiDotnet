@@ -1,5 +1,4 @@
 using GeminiDotnet.Testing;
-using GeminiDotnet.V1Beta.Files;
 using Microsoft.Extensions.AI;
 using System.Net;
 using System.Text;

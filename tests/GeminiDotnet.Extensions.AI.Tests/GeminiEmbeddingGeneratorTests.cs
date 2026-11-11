@@ -6,13 +6,6 @@ namespace GeminiDotnet.Extensions.AI;
 [IntegrationTest]
 public sealed class GeminiEmbeddingGeneratorTests
 {
-    private readonly ITestOutputHelper _output;
-
-    public GeminiEmbeddingGeneratorTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Theory]
     [InlineData("gemini-embedding-001")]
     public async Task GenerateAsync_ShouldReturnEmbeddings(string model)
@@ -22,7 +15,8 @@ public sealed class GeminiEmbeddingGeneratorTests
 
         var options = new GeminiClientOptions
         {
-            ApiKey = TestConfiguration.GetApiKey(), DefaultEmbeddingDimensions = 768
+            ApiKey = TestConfiguration.GetApiKey(),
+            DefaultEmbeddingDimensions = 768
         };
 
         var client = new GeminiEmbeddingGenerator(options);
@@ -69,7 +63,8 @@ public sealed class GeminiEmbeddingGeneratorTests
 
         var embeddingOptions = new EmbeddingGenerationOptions
         {
-            ModelId = "gemini-embedding-001", Dimensions = dimensions
+            ModelId = "gemini-embedding-001",
+            Dimensions = dimensions
         };
 
         var inputs = new[] { "Input one", "Input two", "Input three" };

@@ -663,13 +663,13 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equal(responseFormat.Schema, request.GenerationConfiguration?.ResponseJsonSchema);
     }
 
-    class Parent
+    private sealed class Parent
     {
         public Child[] Children { get; set; } = [];
         public Child[] StepChildren { get; set; } = [];
     }
 
-    class Child
+    private sealed class Child
     {
         public string Name { get; set; } = string.Empty;
     }
@@ -1334,10 +1334,10 @@ public sealed class MEAIToGeminiMapperTests
         var options = new ChatOptions { Tools = [codeInterpreter] };
 
         // Act
-        Action act = () => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
+        void Act() => MEAIToGeminiMapper.CreateMappedGenerateContentRequest("model", messages, options);
 
         // Assert
-        Assert.Throws<InvalidOperationException>(act);
+        Assert.Throws<InvalidOperationException>(Act);
     }
 
     [Fact]
@@ -1747,11 +1747,11 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Single(request.Tools!.SelectMany(t => t.FunctionDeclarations ?? []));
     }
 
-    public static TheoryData<IList<string>> AllowedToolLists => new()
-    {
+    public static TheoryData<IList<string>> AllowedToolLists =>
+    [
         new List<string> { "get_weather" },
         new List<string>(),
-    };
+    ];
 
     [Theory]
     [MemberData(nameof(AllowedToolLists))]
@@ -1775,15 +1775,15 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Throws<GeminiMappingException>(Act);
     }
 
-    public static TheoryData<HostedMcpServerToolApprovalMode?> ApprovalModesGeminiCannotHonour => new()
-    {
+    public static TheoryData<HostedMcpServerToolApprovalMode?> ApprovalModesGeminiCannotHonour =>
+    [
         // Null is the default, and M.E.AI documents it as a value providers may read as AlwaysRequire, so
         // it has to be rejected rather than resolved into consent the caller never gave.
-        null,
+        (HostedMcpServerToolApprovalMode?)null,
         HostedMcpServerToolApprovalMode.AlwaysRequire,
         HostedMcpServerToolApprovalMode.RequireSpecific(alwaysRequireApprovalToolNames: ["get_weather"],
             neverRequireApprovalToolNames: null),
-    };
+    ];
 
     [Theory]
     [MemberData(nameof(ApprovalModesGeminiCannotHonour))]
@@ -1824,12 +1824,12 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Equal("weather", mcpServer.Name);
     }
 
-    public static TheoryData<AITool> BuiltInTools => new()
-    {
+    public static TheoryData<AITool> BuiltInTools =>
+    [
         new HostedWebSearchTool(),
         new HostedCodeInterpreterTool(),
         new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")] },
-    };
+    ];
 
     [Theory]
     [MemberData(nameof(BuiltInTools))]
@@ -1855,14 +1855,14 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Throws<GeminiMappingException>(Act);
     }
 
-    public static TheoryData<AITool> ToolsThatDeclareNoFunctions => new()
-    {
+    public static TheoryData<AITool> ToolsThatDeclareNoFunctions =>
+    [
         new HostedMcpServerTool("weather", "https://example.com/mcp")
             { ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire },
         new HostedWebSearchTool(),
         new HostedCodeInterpreterTool(),
         new HostedFileSearchTool { Inputs = [new HostedVectorStoreContent("fileSearchStores/poems")] },
-    };
+    ];
 
     [Theory]
     [MemberData(nameof(ToolsThatDeclareNoFunctions))]

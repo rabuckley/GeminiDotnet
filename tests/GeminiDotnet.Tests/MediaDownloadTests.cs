@@ -21,7 +21,7 @@ public sealed class MediaDownloadTests
         using var reader = new StreamReader(download.Stream);
 
         // Assert
-        Assert.Equal("file bytes", await reader.ReadToEndAsync());
+        Assert.Equal("file bytes", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
         Assert.Equal("text/plain", download.MimeType);
         Assert.Equal(Encoding.UTF8.GetByteCount("file bytes"), download.Length);
     }
@@ -37,7 +37,7 @@ public sealed class MediaDownloadTests
 
         // Act
         var ex = await Assert.ThrowsAsync<GeminiClientException>(
-            () => client.DownloadAsync("files/missing"));
+            () => client.DownloadAsync("files/missing", TestContext.Current.CancellationToken));
 
         // Assert
         Assert.Contains("No such file.", ex.Message);

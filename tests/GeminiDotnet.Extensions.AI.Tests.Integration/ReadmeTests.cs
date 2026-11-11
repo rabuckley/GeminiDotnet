@@ -20,8 +20,6 @@ public sealed class ReadmeTests
     [Fact]
     public async Task GetResponseStreamingExample()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-
         var options = new GeminiClientOptions { ApiKey = _apiKey, ModelId = TestConfiguration.DefaultModel };
 
         IChatClient client = new GeminiChatClient(options);
@@ -86,7 +84,7 @@ public sealed class ReadmeTests
             [new(ChatRole.User, "What is the sum of the first 42 fibonacci numbers? Generate and run code to do the calculation.")],
             chatOptions,
             cancellationToken);
-        
+
         Assert.NotEmpty(response.Messages);
         var contents = response.Messages.SelectMany(m => m.Contents).ToList();
 

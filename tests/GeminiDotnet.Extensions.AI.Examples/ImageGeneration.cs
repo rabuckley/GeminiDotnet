@@ -31,7 +31,7 @@ public sealed class ImageGenerationExample
             Console.WriteLine($"Unexpected number of candidates: {response.Candidates?.Count}");
             return;
         }
-        
+
         var candidate = response.Candidates?[0];
 
         foreach (var part in candidate!.Content!.Parts!)

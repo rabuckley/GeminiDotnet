@@ -29,7 +29,8 @@ public sealed class GeminiChatClientTests
 
         var geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = Model,
+            ApiKey = _apiKey,
+            ModelId = Model,
         });
 
         const string weather = "It's raining.";
@@ -95,7 +96,8 @@ public sealed class GeminiChatClientTests
 
         var geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = Model,
+            ApiKey = _apiKey,
+            ModelId = Model,
         });
 
         var arguments = new List<(string Location, DateOnly Date)>();
@@ -191,7 +193,8 @@ public sealed class GeminiChatClientTests
 
         var geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = Model,
+            ApiKey = _apiKey,
+            ModelId = Model,
         });
 
         var messages = new List<ChatMessage>
@@ -306,7 +309,10 @@ public sealed class GeminiChatClientTests
 
         Assert.All(messages.SelectMany(m => m.Contents), c => Assert.Null(c.RawRepresentation));
 
+        // IDE0028 proposes a collection expression, but AIFunctionArguments has no single-argument Add.
+#pragma warning disable IDE0028
         var result = await tool.InvokeAsync(new AIFunctionArguments(functionCall.Arguments), cancellationToken);
+#pragma warning restore IDE0028
         messages.Add(new ChatMessage(ChatRole.Tool, [new FunctionResultContent(functionCall.CallId, result)]));
 
         // Act
@@ -318,7 +324,7 @@ public sealed class GeminiChatClientTests
         Assert.False(string.IsNullOrWhiteSpace(followUp.Text));
     }
 
-    record WeatherInfo(string Location, DateOnly Date, string Summary);
+    private sealed record WeatherInfo(string Location, DateOnly Date, string Summary);
 
     [Fact]
     public async Task GetResponseAsync_WhenAFunctionReturnsAnImage_ShouldLetTheModelSeeIt()
@@ -334,7 +340,8 @@ public sealed class GeminiChatClientTests
 
         IChatClient client = new ChatClientBuilder(new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = Model,
+            ApiKey = _apiKey,
+            ModelId = Model,
         }))
             .UseFunctionInvocation()
             .Build();
@@ -356,7 +363,8 @@ public sealed class GeminiChatClientTests
 
         IChatClient geminiClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = Model,
+            ApiKey = _apiKey,
+            ModelId = Model,
         });
 
         [Description("Gets the current weather")]
@@ -527,7 +535,8 @@ public sealed class GeminiChatClientTests
 
             IChatClient chatClient = new GeminiChatClient(new GeminiClientOptions
             {
-                ApiKey = _apiKey, ModelId = Model,
+                ApiKey = _apiKey,
+                ModelId = Model,
             });
 
             var options = new ChatOptions
@@ -588,7 +597,8 @@ public sealed class GeminiChatClientTests
 
         IChatClient chatClient = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = Model,
+            ApiKey = _apiKey,
+            ModelId = Model,
         });
 
         var options = new ChatOptions
@@ -899,7 +909,8 @@ public sealed class GeminiChatClientTests
 
         IChatClient client = new GeminiChatClient(new GeminiClientOptions
         {
-            ApiKey = _apiKey, ModelId = TestConfiguration.TranscriptionModel,
+            ApiKey = _apiKey,
+            ModelId = TestConfiguration.TranscriptionModel,
         });
 
         var audio = await File.ReadAllBytesAsync(

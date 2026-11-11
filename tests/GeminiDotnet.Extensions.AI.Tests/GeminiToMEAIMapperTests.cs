@@ -266,7 +266,7 @@ public sealed class GeminiToMEAIMapperTests
     };
 
     public static TheoryData<CandidateFinishReason, ChatFinishReason?> CandidateFinishReasons =>
-        new(CandidateFinishReasonMappings.Select(mapping => (mapping.Key, mapping.Value)));
+        [.. CandidateFinishReasonMappings.Select(mapping => (mapping.Key, mapping.Value))];
 
     [Theory]
     [MemberData(nameof(CandidateFinishReasons))]
@@ -311,7 +311,7 @@ public sealed class GeminiToMEAIMapperTests
     }
 
     public static TheoryData<PromptFeedbackBlockReason> PromptBlockReasons =>
-        new(PromptFeedbackBlockReason.KnownValues.Except([PromptFeedbackBlockReason.Unspecified]));
+        [.. PromptFeedbackBlockReason.KnownValues.Except([PromptFeedbackBlockReason.Unspecified])];
 
     [Theory]
     [MemberData(nameof(PromptBlockReasons))]
@@ -505,14 +505,18 @@ public sealed class GeminiToMEAIMapperTests
             {
                 ExecutableCode = new ExecutableCode
                 {
-                    Id = "call_318937", Language = ExecutableCodeLanguage.Python, Code = "print(1)",
+                    Id = "call_318937",
+                    Language = ExecutableCodeLanguage.Python,
+                    Code = "print(1)",
                 },
             },
             new Part
             {
                 CodeExecutionResult = new CodeExecutionResult
                 {
-                    Id = "call_318937", Outcome = CodeExecutionResultOutcome.Ok, Output = "1",
+                    Id = "call_318937",
+                    Outcome = CodeExecutionResultOutcome.Ok,
+                    Output = "1",
                 },
             });
 
@@ -1248,7 +1252,7 @@ public sealed class GeminiToMEAIMapperTests
             ],
         };
 
-        Assert.Throws<GeminiMappingException>(() => content.GetAudioTranscription());
+        Assert.Throws<GeminiMappingException>(content.GetAudioTranscription);
     }
 
     /// <summary>
@@ -2588,10 +2592,9 @@ public sealed class GeminiToMEAIMapperTests
 
     private static List<CitationAnnotation> GetCitations(ChatResponse response)
     {
-        return Assert.Single(response.Messages).Contents
+        return [.. Assert.Single(response.Messages).Contents
             .SelectMany(content => content.Annotations ?? [])
-            .OfType<CitationAnnotation>()
-            .ToList();
+            .OfType<CitationAnnotation>()];
     }
 
     /// <summary>
@@ -2600,10 +2603,9 @@ public sealed class GeminiToMEAIMapperTests
     /// </summary>
     private static List<string> GetRegionTexts(ChatResponse response, CitationAnnotation citation)
     {
-        return citation.AnnotatedRegions!
+        return [.. citation.AnnotatedRegions!
             .Cast<TextSpanAnnotatedRegion>()
-            .Select(region => response.Text[region.StartIndex!.Value..region.EndIndex!.Value])
-            .ToList();
+            .Select(region => response.Text[region.StartIndex!.Value..region.EndIndex!.Value])];
     }
 
     [Fact]

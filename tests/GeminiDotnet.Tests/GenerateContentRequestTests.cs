@@ -1,6 +1,4 @@
 using GeminiDotnet.Testing;
-using GeminiDotnet.Text.Json;
-using GeminiDotnet.V1Beta;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
@@ -45,7 +43,7 @@ public sealed class GenerateContentRequestTests
     }
 
     [StringSyntax(StringSyntaxAttribute.Json)]
-    const string ChatExample1Json =
+    private const string ChatExample1Json =
         """
         {
           "model": "models/gemini-1.5-pro",
@@ -82,7 +80,7 @@ public sealed class GenerateContentRequestTests
     /// Sets every top-level field of the request, so that the round trip catches one the model drops.
     /// </summary>
     [StringSyntax(StringSyntaxAttribute.Json)]
-    const string EveryFieldExampleJson =
+    private const string EveryFieldExampleJson =
         """
         {
           "model": "models/gemini-2.5-flash",

@@ -1,6 +1,5 @@
 using GeminiDotnet.Testing;
 using GeminiDotnet.V1Beta;
-using GeminiDotnet.V1Beta.Media;
 using System.Net;
 using System.Text;
 
