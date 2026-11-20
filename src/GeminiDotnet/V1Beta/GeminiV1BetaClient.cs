@@ -35,6 +35,8 @@ public sealed partial class GeminiV1BetaClient : IGeminiV1BetaClient
 
     public IGeneratedFilesClient GeneratedFiles => field ??= new GeneratedFilesClient(_requester);
 
+    public IInteractionsClient Interactions => field ??= new InteractionsClient(_requester);
+
     public IMediaClient Media => field ??= new MediaClient(_requester);
 
     public IModelsClient Models => field ??= new ModelsClient(_requester);

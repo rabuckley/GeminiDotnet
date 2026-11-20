@@ -12,6 +12,14 @@ namespace GeminiDotnet.V1Beta;
 public sealed record VideoMetadata
 {
     /// <summary>
+    /// Optional. Content layers to return.
+    /// If empty, defaults to [FRAMES, AUDIO].
+    /// </summary>
+    [JsonPropertyName("contentLayers")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyList<VideoMetadataContentLayers>? ContentLayers { get; init; }
+
+    /// <summary>
     /// Optional. The end offset of the video.
     /// </summary>
     [JsonPropertyName("endOffset")]

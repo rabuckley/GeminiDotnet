@@ -13,6 +13,22 @@ namespace GeminiDotnet.V1Beta;
 public sealed record FunctionResponsePart
 {
     /// <summary>
+    /// Optional. Audio metadata. The metadata should only be specified while the audio
+    /// data is presented in inline_data or file_data.
+    /// </summary>
+    [JsonPropertyName("audioMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public AudioMetadata? AudioMetadata { get; init; }
+
+    /// <summary>
+    /// Optional. Document metadata. The metadata should only be specified while the
+    /// document data is presented in inline_data or file_data.
+    /// </summary>
+    [JsonPropertyName("documentMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public DocumentMetadata? DocumentMetadata { get; init; }
+
+    /// <summary>
     /// URI based data.
     /// </summary>
     [JsonPropertyName("fileData")]
@@ -34,5 +50,28 @@ public sealed record FunctionResponsePart
     [JsonPropertyName("mediaProcessing")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public FunctionResponsePartMediaProcessing? MediaProcessing { get; init; }
+
+    /// <summary>
+    /// Optional. Media resolution for the input media.
+    /// </summary>
+    [JsonPropertyName("mediaResolution")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public MediaResolution? MediaResolution { get; init; }
+
+    /// <summary>
+    /// Optional. Spreadsheet metadata. The metadata should only be specified while the
+    /// spreadsheet data is presented in inline_data or file_data.
+    /// </summary>
+    [JsonPropertyName("spreadsheetMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SpreadsheetMetadata? SpreadsheetMetadata { get; init; }
+
+    /// <summary>
+    /// Optional. Video metadata. The metadata should only be specified while the video
+    /// data is presented in inline_data or file_data.
+    /// </summary>
+    [JsonPropertyName("videoMetadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public VideoMetadata? VideoMetadata { get; init; }
 }
 

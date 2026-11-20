@@ -30,6 +30,13 @@ public sealed record SpeechConfiguration
     public MultiSpeakerVoiceConfiguration? MultiSpeakerVoiceConfiguration { get; init; }
 
     /// <summary>
+    /// Optional. Controls text normalization before speech synthesis.
+    /// </summary>
+    [JsonPropertyName("textNormalization")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SpeechConfigTextNormalization? TextNormalization { get; init; }
+
+    /// <summary>
     /// The configuration in case of single-voice output.
     /// </summary>
     [JsonPropertyName("voiceConfig")]

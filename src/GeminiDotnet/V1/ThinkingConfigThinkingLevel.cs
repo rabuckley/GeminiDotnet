@@ -60,6 +60,11 @@ public readonly struct ThinkingConfigThinkingLevel : IEquatable<ThinkingConfigTh
     public static ThinkingConfigThinkingLevel High { get; } = new("HIGH");
 
     /// <summary>
+    /// XHigh thinking level.
+    /// </summary>
+    public static ThinkingConfigThinkingLevel Xhigh { get; } = new("XHIGH");
+
+    /// <summary>
     /// Gets the declared values in schema order.
     /// </summary>
     public static IReadOnlyList<ThinkingConfigThinkingLevel> KnownValues { get; } =
@@ -69,6 +74,7 @@ public readonly struct ThinkingConfigThinkingLevel : IEquatable<ThinkingConfigTh
         Low,
         Medium,
         High,
+        Xhigh,
     ];
 
     /// <summary>
