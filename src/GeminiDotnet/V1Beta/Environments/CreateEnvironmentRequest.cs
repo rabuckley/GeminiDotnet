@@ -18,9 +18,16 @@ public sealed record CreateEnvironmentRequest
     public JsonElement CustomConfiguration { get; init; }
 
     /// <summary>
+    /// Environment variables to set in the sandbox environment.
+    /// </summary>
+    [JsonPropertyName("env")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyDictionary<string, EnvVar>? Env { get; init; }
+
+    /// <summary>
     /// Optional. The source environment to copy/fork from.
     /// Format: <c>environments/{environment_id}</c> or <c>{environment_id}</c>.
-    /// When specified, <see cref="Sources"/> and <c>env</c> must be empty.
+    /// When specified, <see cref="Sources"/> and <see cref="Env"/> must be empty.
     /// </summary>
     [JsonPropertyName("fromEnvironment")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

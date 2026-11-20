@@ -92,9 +92,12 @@ public sealed class PartReplayTests
         [nameof(Part.AudioTranscription)] = "Output only; Gemini does not accept it in a request.",
         [nameof(Part.FunctionResponse)] = "Never in model output; the client sends it in a user turn.",
         [nameof(Part.PartMetadata)] = "Gap: kept only on RawRepresentation and never sent back.",
+        [nameof(Part.AudioMetadata)] = "Request-only setting with no M.E.AI source.",
+        [nameof(Part.DocumentMetadata)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.MediaProcessing)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.MediaResolution)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.SpeechMetadata)] = "Request-only setting with no M.E.AI source.",
+        [nameof(Part.SpreadsheetMetadata)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.VideoMetadata)] = "Request-only setting with no M.E.AI source.",
     };
 

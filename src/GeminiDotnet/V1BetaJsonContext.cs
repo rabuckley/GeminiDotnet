@@ -45,6 +45,7 @@ namespace GeminiDotnet;
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.Files.RegisterFilesResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.GeneratedFiles.ListGeneratedFilesResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.GeneratedFiles.GeneratedFile))]
+[JsonSerializable(typeof(GeminiDotnet.V1Beta.Interactions.HttpBody))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.Models.ListModelsResponse))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.Models.Model))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.AsyncBatchEmbedContentRequest))]

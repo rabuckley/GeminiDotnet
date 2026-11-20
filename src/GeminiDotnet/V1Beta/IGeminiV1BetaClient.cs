@@ -49,6 +49,11 @@ public interface IGeminiV1BetaClient
     IGeneratedFilesClient GeneratedFiles { get; }
 
     /// <summary>
+    /// Provides access to the Interactions API operations.
+    /// </summary>
+    IInteractionsClient Interactions { get; }
+
+    /// <summary>
     /// Provides access to the Media API operations.
     /// </summary>
     IMediaClient Media { get; }
