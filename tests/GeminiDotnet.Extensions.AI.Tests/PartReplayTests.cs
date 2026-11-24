@@ -1,4 +1,4 @@
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 using Microsoft.Extensions.AI;
 using System.Reflection;
 using System.Text.Json;
@@ -7,11 +7,8 @@ using System.Text.Json.Serialization;
 
 namespace GeminiDotnet.Extensions.AI;
 
-// Part is generated, so a new field can appear in a regeneration without either mapper handling it.
-// The classification test fails until the field is placed in ReplayedSamples or NotReplayed.
 public sealed class PartReplayTests
 {
-    // One model part per replayed property, each setting that property to a non-default value.
     private static readonly Dictionary<string, Part> ReplayedSamples = new()
     {
         [nameof(Part.Text)] = new Part { Text = "Hello." },
@@ -68,7 +65,7 @@ public sealed class PartReplayTests
                 Output = "2",
             },
         },
-        // On an image rather than text: reasoning text always carried the flag, other content did not.
+        // TextReasoningContent implies Thought, so use an image to test explicit flag replay.
         [nameof(Part.Thought)] = new Part
         {
             Thought = true,
@@ -86,18 +83,12 @@ public sealed class PartReplayTests
         },
     };
 
-    // Each reason records a decision; moving a property to ReplayedSamples is the fix for a gap.
     private static readonly Dictionary<string, string> NotReplayed = new()
     {
-        [nameof(Part.AudioTranscription)] = "Output only; Gemini does not accept it in a request.",
         [nameof(Part.FunctionResponse)] = "Never in model output; the client sends it in a user turn.",
         [nameof(Part.PartMetadata)] = "Gap: kept only on RawRepresentation and never sent back.",
-        [nameof(Part.AudioMetadata)] = "Request-only setting with no M.E.AI source.",
-        [nameof(Part.DocumentMetadata)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.MediaProcessing)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.MediaResolution)] = "Request-only setting with no M.E.AI source.",
-        [nameof(Part.SpeechMetadata)] = "Request-only setting with no M.E.AI source.",
-        [nameof(Part.SpreadsheetMetadata)] = "Request-only setting with no M.E.AI source.",
         [nameof(Part.VideoMetadata)] = "Request-only setting with no M.E.AI source.",
     };
 

@@ -1,4 +1,4 @@
-﻿using GeminiDotnet.V1Beta.Models;
+﻿using GeminiDotnet.V1.Models;
 using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI;
@@ -69,9 +69,11 @@ public sealed class GeminiEmbeddingGenerator : IEmbeddingGenerator<string, Embed
             values,
             options,
             _client.Options,
-            options?.RawRepresentationFactory?.Invoke(this) as BatchEmbedContentsRequest);
+            MEAIToGeminiMapper.CreateRawRepresentation<BatchEmbedContentsRequest>(
+                options?.RawRepresentationFactory?.Invoke(this),
+                $"{typeof(EmbeddingGenerationOptions)}.{nameof(EmbeddingGenerationOptions.RawRepresentationFactory)}"));
 
-        var response = await _client.V1Beta.Models
+        var response = await _client.V1.Models
             .BatchEmbedContentsAsync($"models/{modelId}", request, cancellationToken)
             .ConfigureAwait(false);
 

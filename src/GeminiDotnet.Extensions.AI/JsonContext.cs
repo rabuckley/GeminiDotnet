@@ -1,5 +1,5 @@
 using GeminiDotnet.Extensions.AI.Contents;
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -21,7 +21,6 @@ namespace GeminiDotnet.Extensions.AI;
 // Types used in ChatOptions.AdditionalProperties (for SK PromptExecutionSettings compatibility)
 [JsonSerializable(typeof(ThinkingConfiguration))]
 [JsonSerializable(typeof(ImageConfiguration))]
-[JsonSerializable(typeof(AudioTranscriptionConfiguration))]
 [JsonSerializable(typeof(ResponseModality))]
 [JsonSerializable(typeof(IEnumerable<ResponseModality>))]
 [JsonSerializable(typeof(List<ResponseModality>))]
@@ -30,6 +29,4 @@ namespace GeminiDotnet.Extensions.AI;
 // through AdditionalPropertiesDictionaryExtensions.TryConvertValue<T>.
 [JsonSerializable(typeof(ToolType))]
 [JsonSerializable(typeof(CodeExecutionResultOutcome))]
-// Stored in AIAnnotation.AdditionalProperties.
-[JsonSerializable(typeof(AudioTranscription))]
 internal sealed partial class JsonContext : JsonSerializerContext;

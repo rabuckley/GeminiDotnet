@@ -1,4 +1,4 @@
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 using Microsoft.Extensions.AI;
 using System.Text.Json;
 
@@ -10,35 +10,23 @@ namespace GeminiDotnet.Extensions.AI;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Gemini requires the parts it generated for a server-side tool run, a <see cref="Part.ToolCall"/> with
-/// its <see cref="Part.ToolResponse"/> or a <see cref="Part.ExecutableCode"/> with its
-/// <see cref="Part.CodeExecutionResult"/>, to be sent back unchanged on every later turn. The typed
-/// <see cref="Part"/> on <see cref="AIContent.RawRepresentation"/> supplies the tool fields when it
-/// survives; these entries rebuild the part when it does not, as after a round trip through JSON.
-/// A recorded <see cref="ThoughtSignature"/> takes precedence over the raw part's signature.
+/// Preserve these entries when saving chat history. Gemini requires server-side tool calls and
+/// results on later turns. The adapter reuses the <see cref="Part"/> in
+/// <see cref="AIContent.RawRepresentation"/> when available and rebuilds it from these entries
+/// after deserialization. A recorded <see cref="ThoughtSignature"/> overrides the raw part's signature.
 /// </para>
 /// <para>
-/// After such a round trip each value arrives as a <see cref="JsonElement"/> holding it. Read it with
-/// <see cref="AdditionalPropertiesDictionaryExtensions.TryGetGeminiValue{T}"/>, which handles both forms.
-/// A value of any other type throws a <see cref="GeminiMappingException"/> when the part is rebuilt rather
-/// than being dropped, because a turn that silently loses a tool run still succeeds, with the model no
-/// longer knowing what it already looked up or computed.
+/// Use <see cref="AdditionalPropertiesDictionaryExtensions.TryGetGeminiValue{T}"/> to read both typed
+/// values and deserialized <see cref="JsonElement"/> values. An invalid value can throw
+/// <see cref="GeminiMappingException"/> during replay.
 /// </para>
 /// <para>
-/// <see cref="ToolType"/> and <see cref="Outcome"/> hold <see cref="V1Beta"/> enum values. In a
-/// reflection-enabled application they serialize under any <see cref="JsonSerializerOptions"/>, because
-/// the enum types carry their own <see cref="System.Text.Json.Serialization.JsonConverterAttribute"/>.
-/// Under Native AOT the history must be persisted with <see cref="GeminiJsonUtilities.DefaultOptions"/>,
-/// whose resolver knows the <see cref="V1Beta"/> types; the options of
-/// <see cref="AIJsonUtilities.DefaultOptions"/> alone cannot write them.
+/// Under Native AOT, use <see cref="GeminiJsonUtilities.DefaultOptions"/> to serialize history
+/// containing the <see cref="V1"/> enum values under <see cref="ToolType"/> or <see cref="Outcome"/>.
 /// </para>
 /// <para>
-/// These entries also tell the two kinds of web search content apart. A
-/// <see cref="WebSearchToolCallContent"/> or <see cref="WebSearchToolResultContent"/> carrying them is a
-/// Google Search invocation Gemini reported, and is echoed back on the next turn; one without them was
-/// synthesized from <see cref="V1Beta.GroundingMetadata"/>, has no part behind it, and is dropped. A
-/// pipeline that strips <see cref="AIContent.AdditionalProperties"/>, or a history the caller rebuilds
-/// from its own store without them, therefore loses the search from the next turn without an error.
+/// Keep <see cref="ToolType"/> on stored web search calls and results. The adapter skips web search
+/// content without this key, including content it creates from <see cref="V1.GroundingMetadata"/>.
 /// </para>
 /// </remarks>
 public static class GeminiContentProperties
@@ -85,47 +73,8 @@ public static class GeminiContentProperties
     public const string Thought = "thought";
 
     /// <summary>
-    /// Key for the <see cref="V1Beta.AudioTranscription"/> stored in
-    /// <see cref="AIAnnotation.AdditionalProperties"/> on the mapped content.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The annotation covers the entire text when the content has nonempty text equal to the transcript.
-    /// Otherwise, it has no region. Speaker labels and word timings are included when requested.
-    /// </para>
-    /// <para>
-    /// Use <see cref="GeminiContentExtensions.GetAudioTranscription"/> to read the transcription,
-    /// including after JSON serialization. <see cref="Part.AudioTranscription"/> is output only and is
-    /// omitted when the content is sent back to Gemini.
-    /// </para>
-    /// </remarks>
-    /// <example>
-    /// Streaming aggregation preserves each speaker segment as a separate content:
-    /// <code>
-    /// List&lt;ChatResponseUpdate&gt; updates = [];
-    ///
-    /// await foreach (var update in client.GetStreamingResponseAsync(messages, options))
-    /// {
-    ///     updates.Add(update);
-    /// }
-    ///
-    /// foreach (var content in updates.ToChatResponse().Messages.SelectMany(message =&gt; message.Contents))
-    /// {
-    ///     if (content is TextContent text &amp;&amp; text.GetAudioTranscription() is { } transcription)
-    ///     {
-    ///         Console.WriteLine($"{transcription.SpeakerLabel}: {text.Text}");
-    ///     }
-    /// }
-    /// </code>
-    /// </example>
-    public const string AudioTranscription = "audioTranscription";
-
-    /// <summary>
-    /// Key for the kind of tool that was invoked, as a <see cref="V1Beta.ToolType"/>. Read from
-    /// <see cref="ToolCallContent"/>, <see cref="ToolResultContent"/>,
-    /// <see cref="WebSearchToolCallContent"/> and <see cref="WebSearchToolResultContent"/>, and required
-    /// on all four: Gemini rejects an invocation echoed back without it. See the remarks on this class
-    /// for the serialization requirement under Native AOT.
+    /// A <see cref="V1.ToolType"/> required on web search calls and results for replay, and on
+    /// other server-side tool calls and results when rebuilding them without the raw <see cref="Part"/>.
     /// </summary>
     public const string ToolType = "toolType";
 

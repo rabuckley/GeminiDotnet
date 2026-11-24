@@ -1,4 +1,4 @@
-﻿using GeminiDotnet.V1Beta;
+﻿using GeminiDotnet.V1;
 using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -16,7 +16,7 @@ public sealed class GeminiChatClient : IChatClient
     private readonly TimeProvider _timeProvider;
     private readonly ChatClientMetadata _metadata;
 
-    private IModelsClient ModelsClient => _client.V1Beta.Models;
+    private IModelsClient ModelsClient => _client.V1.Models;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiChatClient"/> class.
@@ -84,12 +84,9 @@ public sealed class GeminiChatClient : IChatClient
 
     /// <inheritdoc />
     /// <remarks>
-    /// Grounding citations are indexed differently here than by <see cref="GetResponseAsync"/>. Gemini
-    /// gives a streamed citation offsets into the text of the whole stream rather than of one part, so
-    /// each <see cref="TextSpanAnnotatedRegion"/> is attached to an empty <see cref="TextContent"/> of its
-    /// own and indexes <see cref="ChatMessage.Text"/> of the aggregated response, not the text of the
-    /// content it sits on. A whole response keeps the Gemini convention: its regions sit on the grounded
-    /// <see cref="TextContent"/> and index that content's own text.
+    /// Streamed grounding citations attach to empty <see cref="TextContent"/>. Their
+    /// <see cref="TextSpanAnnotatedRegion"/> offsets index <see cref="ChatMessage.Text"/> after aggregation.
+    /// <see cref="GetResponseAsync"/> returns offsets into each grounded content item.
     /// </remarks>
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
@@ -102,8 +99,6 @@ public sealed class GeminiChatClient : IChatClient
 
         var results = ModelsClient.StreamGenerateContentAsync($"models/{model}", request, cancellationToken);
 
-        // One state for the whole stream, so that a tool call correlates with the result that arrives in a
-        // later chunk and a grounding segment resolves against the text every chunk has produced.
         var state = new CandidateMappingState();
 
         await foreach (var response in results.ConfigureAwait(false))
@@ -125,7 +120,9 @@ public sealed class GeminiChatClient : IChatClient
             model,
             messages,
             options,
-            options?.RawRepresentationFactory?.Invoke(this) as GenerateContentRequest);
+            MEAIToGeminiMapper.CreateRawRepresentation<GenerateContentRequest>(
+                options?.RawRepresentationFactory?.Invoke(this),
+                $"{typeof(ChatOptions)}.{nameof(ChatOptions.RawRepresentationFactory)}"));
 
         return (model, request);
     }

@@ -1,5 +1,5 @@
-using GeminiDotnet.V1Beta;
-using GeminiDotnet.V1Beta.Models;
+using GeminiDotnet.V1;
+using GeminiDotnet.V1.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -191,13 +191,6 @@ internal static class GeminiToMEAIMapper
                     ? CreateMappedWebSearchToolResultContent(part, callId)
                     : CreateMappedToolResultContent(part, callId);
             }
-            else if (part.AudioTranscription is not null)
-            {
-                // System.Text.Json enforces the required property's presence, but permits null.
-                var transcript = part.AudioTranscription.Text ?? string.Empty;
-
-                mapped = CreateMappedTextContent(part, transcript);
-            }
             else if (part.ThoughtSignature is not null || part.Thought is true)
             {
                 mapped = CreateMappedSignatureContent(part);
@@ -210,43 +203,12 @@ internal static class GeminiToMEAIMapper
             // Recorded here rather than in each arm, so a new part kind cannot forget to.
             mapped.AttachThoughtSignature(part.ThoughtSignature);
             mapped.AttachThought(part.Thought);
-            AttachAudioTranscription(mapped, part);
 
             contents.Add(mapped);
         }
 
         return contents;
 
-        static void AttachAudioTranscription(AIContent mapped, Part part)
-        {
-            if (part.AudioTranscription is not { } transcription)
-            {
-                return;
-            }
-
-            // ToChatResponse does not coalesce annotated content, so each speaker segment keeps its
-            // label and word timings. A region is valid only when the content's text is the transcript.
-            var mappedText = mapped switch
-            {
-                TextContent text => text.Text,
-                TextReasoningContent reasoning => reasoning.Text,
-                _ => null,
-            };
-
-            var annotation = new AIAnnotation
-            {
-                AnnotatedRegions = mappedText is { Length: > 0 } && mappedText == transcription.Text
-                    ? [new TextSpanAnnotatedRegion { StartIndex = 0, EndIndex = mappedText.Length }]
-                    : null,
-                RawRepresentation = part,
-                AdditionalProperties = new()
-                {
-                    [GeminiContentProperties.AudioTranscription] = transcription,
-                },
-            };
-
-            (mapped.Annotations ??= []).Add(annotation);
-        }
 
         static DataContent CreateMappedDataContent(Part part)
         {

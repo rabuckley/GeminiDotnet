@@ -1,4 +1,4 @@
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 
 namespace GeminiDotnet.Extensions.AI.Examples;
 
@@ -24,7 +24,7 @@ public sealed class ImageGenerationExample
             ],
         };
 
-        var response = await client.V1Beta.Models.GenerateContentAsync($"models/{model}", request, cancellationToken);
+        var response = await client.V1.Models.GenerateContentAsync($"models/{model}", request, cancellationToken);
 
         if (response.Candidates?.Count != 1)
         {

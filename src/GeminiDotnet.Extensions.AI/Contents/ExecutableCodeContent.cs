@@ -1,4 +1,4 @@
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 using Microsoft.Extensions.AI;
 
 namespace GeminiDotnet.Extensions.AI.Contents;
