@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// well as the lowest HarmProbability that should be allowed in order to return
 /// a result.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SafetyFeedback
 {
     /// <summary>

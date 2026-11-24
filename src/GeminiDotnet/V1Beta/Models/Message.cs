@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// The <see cref="Author"/> is used to tag messages when they are fed to the
 /// model as text.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Message
 {
     /// <summary>

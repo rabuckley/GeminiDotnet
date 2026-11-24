@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.Corpora;
 /// A <see cref="V1Beta.Corpora.Corpus"/> is a collection of <see cref="V1Beta.FileSearchStores.Document"/>s.
 /// A project can create up to 10 corpora.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Corpus
 {
     /// <summary>

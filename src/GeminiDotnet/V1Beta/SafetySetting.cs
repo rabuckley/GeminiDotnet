@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// Passing a safety setting for a category changes the allowed probability that
 /// content is blocked.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SafetySetting
 {
     /// <summary>

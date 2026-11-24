@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// have Wifi" or "is Foo Bar wheelchair accessible?"). Currently we only
 /// support review snippets as sources.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record PlaceAnswerSources
 {
     /// <summary>

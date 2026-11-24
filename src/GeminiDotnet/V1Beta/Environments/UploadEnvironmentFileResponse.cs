@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Environments;
 /// <summary>
 /// Response for <c>UploadEnvironmentFile</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record UploadEnvironmentFileResponse
 {
     /// <summary>

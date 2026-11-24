@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// ContentFilter contains a reason and an optional supporting string. The reason
 /// may be unspecified.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ContentFilter
 {
     /// <summary>

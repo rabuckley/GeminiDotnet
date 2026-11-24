@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// <summary>
 /// A repeated list of passages.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GroundingPassages
 {
     /// <summary>

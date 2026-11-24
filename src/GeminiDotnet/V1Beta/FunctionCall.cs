@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// a string representing the <c>FunctionDeclaration.name</c> with the
 /// arguments and their values.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FunctionCall
 {
     /// <summary>

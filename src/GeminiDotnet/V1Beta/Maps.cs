@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// A grounding chunk from Google Maps. A Maps chunk corresponds to a single
 /// place.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Maps
 {
     /// <summary>

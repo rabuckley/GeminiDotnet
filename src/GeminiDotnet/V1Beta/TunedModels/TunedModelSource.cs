@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// <summary>
 /// Tuned model as a source for training a new model.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record TunedModelSource
 {
     /// <summary>

@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// An input/output example used to instruct the Model.
 /// It demonstrates how the model should respond or format its response.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Example
 {
     /// <summary>

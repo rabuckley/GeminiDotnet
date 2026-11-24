@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Configuration for the response output format. This is a flat object
 /// where each optional sub-field configures a specific output modality.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ResponseFormatConfiguration
 {
     /// <summary>

@@ -1,24 +1,18 @@
 # GeminiDotnet
 
-This package provides the tools to interact with the [Google Gemini models](https://deepmind.google/technologies/gemini/) in .NET.
+GeminiDotnet maps directly to Google's Gemini API and supports Native AOT through System.Text.Json source generation. For a common API across model providers, use [`GeminiDotnet.Extensions.AI`](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI).
 
-This package is lightweight, has no external dependencies, is Native AOT compatible, uses System.Text.Json for performant serialization, and provides a model directly mapping to the Google Gemini API's structure.
-
-For an API you can use with other models and a more user-friendly API, you should consider interacting with this library through the [`GeminiDotnet.Extensions.AI` package](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI), which exposes [`Microsoft.Extensions.AI.Abstractions`](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/) API implementations, including a full [`IChatClient`](https://learn.microsoft.com/dotnet/api/microsoft.extensions.ai.ichatclient) implementation. For more information about why this may be preferred, you can read the `Microsoft.Extensions.AI` announcement [blog post](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/).
-
-## Getting Started
-
-You can install this package into your project as follows.
+## Get started
 
 ```sh
 dotnet add package GeminiDotnet
 ```
 
-Then, you can create and use the `GeminiClient` to interact with the Google Gemini API as follows.
+Create a `GeminiClient` and call the V1 models client to stream a response.
 
 ```cs
 using GeminiDotnet;
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 
 var options = new GeminiClientOptions
 {
@@ -39,10 +33,12 @@ var request = new GenerateContentRequest
     ]
 };
 
-await foreach (var result in client.V1Beta.Models.StreamGenerateContentAsync("models/gemini-3.7-flash", request, cancellationToken))
+await foreach (var result in client.V1.Models.StreamGenerateContentAsync("models/gemini-3.7-flash", request, cancellationToken))
 {
     // Use the result as it is returned.
 }
 ```
 
-Methods are grouped into clients by API resource, such as `client.V1Beta.Models` and `client.V1Beta.Files`. A method that acts on a resource takes its full resource name (`models/gemini-3.7-flash`, `files/abc123`), not a bare id, and throws an `ArgumentException` if the name doesn't match the expected form.
+Use the client for the resource, such as `client.V1.Models` or `client.V1.Files`. Pass a full resource name such as `models/gemini-3.7-flash` or `files/abc123`. A malformed name throws `ArgumentException`.
+
+`client.V1Beta` can change in any release. To use it, suppress the `GEMINI001` diagnostic. See the [V1Beta stability policy](https://github.com/rabuckley/GeminiDotnet#v1beta-stability).

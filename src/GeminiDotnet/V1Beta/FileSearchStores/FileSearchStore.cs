@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.FileSearchStores;
 /// <summary>
 /// A <see cref="V1Beta.FileSearchStores.FileSearchStore"/> is a collection of <see cref="V1Beta.FileSearchStores.Document"/>s.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FileSearchStore
 {
     /// <summary>

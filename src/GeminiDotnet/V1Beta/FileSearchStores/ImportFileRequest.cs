@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.FileSearchStores;
 /// <summary>
 /// Request for <c>ImportFile</c> to import a File API file with a <see cref="V1Beta.FileSearchStores.FileSearchStore"/>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ImportFileRequest
 {
     /// <summary>

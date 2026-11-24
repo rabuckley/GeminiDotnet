@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// Feedback related to the input data used to answer the question, as opposed
 /// to the model-generated response to the question.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record InputFeedback
 {
     /// <summary>

@@ -9,6 +9,7 @@ using File = GeminiDotnet.V1Beta.Files.File;
 
 namespace GeminiDotnet.V1Beta;
 
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 internal sealed partial class FilesClient : IFilesClient
 {
     private readonly IGeminiRequester _requester;

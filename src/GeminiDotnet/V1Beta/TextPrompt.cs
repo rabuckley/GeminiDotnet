@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Text given to the model as a prompt.
 /// The Model will use this TextPrompt to Generate a text completion.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record TextPrompt
 {
     /// <summary>

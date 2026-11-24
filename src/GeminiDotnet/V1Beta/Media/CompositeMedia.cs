@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// Introduced to support Bigstore composite objects. For details, visit
 /// http://go/bigstore-composites.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CompositeMedia
 {
     /// <summary>

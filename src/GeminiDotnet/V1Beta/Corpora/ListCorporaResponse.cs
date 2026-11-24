@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.Corpora;
 /// Response from <c>ListCorpora</c> containing a paginated list of <c>Corpora</c>.
 /// The results are sorted by ascending <c>corpus.create_time</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ListCorporaResponse
 {
     /// <summary>

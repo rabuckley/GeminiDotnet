@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Environments;
 /// <summary>
 /// A single domain allowlist rule with optional header injection.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record EgressRule
 {
     /// <summary>

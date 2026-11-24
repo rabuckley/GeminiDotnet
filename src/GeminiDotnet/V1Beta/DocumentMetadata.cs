@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// <c>FunctionResponsePart.document_metadata</c> when <c>inline_data</c> or <c>file_data</c>
 /// contains a document to configure static document preprocessing.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record DocumentMetadata
 {
     /// <summary>

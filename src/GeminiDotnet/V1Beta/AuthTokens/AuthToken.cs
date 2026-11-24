@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <summary>
 /// A request to create an ephemeral authentication token.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record AuthToken
 {
     /// <summary>

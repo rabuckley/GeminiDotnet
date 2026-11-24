@@ -53,6 +53,7 @@ public sealed class GeminiClient : IGeminiClient, IDisposable
 
     public IGeminiV1Client V1 => field ??= new GeminiV1Client(new GeminiRequester(_httpClient, V1JsonContext.Default));
 
+    [System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
     public IGeminiV1BetaClient V1Beta =>
         field ??= new GeminiV1BetaClient(new GeminiRequester(_httpClient, V1BetaJsonContext.Default));
 

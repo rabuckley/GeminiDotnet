@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// conditions = [{string_value = "drama", operation = EQUAL},
 /// {string_value = "action", operation = EQUAL}]
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record MetadataFilter
 {
     /// <summary>

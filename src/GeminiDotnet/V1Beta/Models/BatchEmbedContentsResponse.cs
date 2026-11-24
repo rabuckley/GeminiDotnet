@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// <summary>
 /// The response to a <see cref="V1Beta.Models.BatchEmbedContentsRequest"/>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record BatchEmbedContentsResponse
 {
     /// <summary>

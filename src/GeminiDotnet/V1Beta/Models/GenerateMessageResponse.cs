@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// This includes candidate messages and
 /// conversation history in the form of chronologically-ordered messages.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GenerateMessageResponse
 {
     /// <summary>

@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// harm categories and the probability of the harm classification is included
 /// here.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SafetyRating
 {
     /// <summary>

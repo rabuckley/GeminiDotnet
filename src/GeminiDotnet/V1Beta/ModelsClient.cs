@@ -8,6 +8,7 @@ using GeminiDotnet.V1Beta.Models;
 
 namespace GeminiDotnet.V1Beta;
 
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 internal sealed partial class ModelsClient : IModelsClient
 {
     private readonly IGeminiRequester _requester;

@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// specified otherwise, this object must conform to the
 /// WGS84 standard. Values must be within normalized ranges.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record LatLng
 {
     /// <summary>

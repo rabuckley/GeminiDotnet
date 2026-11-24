@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// The status of the underlying model. This is used to indicate the stage of the
 /// underlying model and the retirement time if applicable.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ModelStatus
 {
     /// <summary>

@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// the model's response. It can be a chunk from the web, a retrieved context
 /// from a file, or information from Google Maps.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GroundingChunk
 {
     /// <summary>

@@ -81,4 +81,5 @@ namespace GeminiDotnet;
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.TunedModels.CreateTunedModelOperation))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.TunedModels.TransferOwnershipRequest))]
 [JsonSerializable(typeof(GeminiDotnet.V1Beta.TunedModels.TransferOwnershipResponse))]
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 internal partial class V1BetaJsonContext : JsonSerializerContext;

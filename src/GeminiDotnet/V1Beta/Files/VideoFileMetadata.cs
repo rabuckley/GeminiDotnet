@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Files;
 /// <summary>
 /// Metadata for a video <see cref="V1Beta.Files.File"/>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record VideoFileMetadata
 {
     /// <summary>

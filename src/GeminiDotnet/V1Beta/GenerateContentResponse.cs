@@ -13,6 +13,7 @@ namespace GeminiDotnet.V1Beta;
 /// - Reports feedback on each candidate in <c>finish_reason</c> and
 /// <c>safety_ratings</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GenerateContentResponse
 {
     /// <summary>

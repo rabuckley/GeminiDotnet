@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// in a subsequent turn within a <see cref="V1Beta.Content"/> message, along with the corresponding
 /// <see cref="V1Beta.ToolCall"/>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ToolResponse
 {
     /// <summary>

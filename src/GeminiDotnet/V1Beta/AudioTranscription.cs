@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// For multi-speaker audio, each speaker segment is a separate Part with its
 /// own AudioTranscription carrying the speaker_label.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record AudioTranscription
 {
     /// <summary>

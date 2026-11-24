@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.CachedContents;
 /// to GenerativeService.
 /// Cached content can be only used with model it was created for.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CachedContent
 {
     /// <summary>

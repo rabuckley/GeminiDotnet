@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// Metadata about the state and progress of creating a tuned model returned from
 /// the long-running operation
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CreateTunedModelMetadata
 {
     /// <summary>

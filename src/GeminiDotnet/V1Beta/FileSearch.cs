@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// The FileSearch tool that retrieves knowledge from Semantic Retrieval corpora.
 /// Files are imported to Semantic Retrieval corpora using the ImportFile API.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FileSearch
 {
     /// <summary>

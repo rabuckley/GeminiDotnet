@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Files;
 /// <summary>
 /// A file uploaded to the API.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record File
 {
     /// <summary>

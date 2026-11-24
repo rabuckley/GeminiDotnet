@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// This resource represents a long-running operation that is the result of a
 /// network API call.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Operation : BaseOperation
 {
     /// <summary>

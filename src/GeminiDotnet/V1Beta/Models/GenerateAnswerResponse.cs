@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// <summary>
 /// Response from the model for a grounded answer.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GenerateAnswerResponse
 {
     /// <summary>

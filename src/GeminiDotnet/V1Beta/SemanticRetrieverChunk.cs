@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Identifier for a <c>Chunk</c> retrieved via Semantic Retriever specified in the
 /// <see cref="V1Beta.Models.GenerateAnswerRequest"/> using <see cref="V1Beta.Models.SemanticRetrieverConfiguration"/>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SemanticRetrieverChunk
 {
     /// <summary>

@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Provides hints to the model about possible languages present in the audio.
 /// </summary>
 [Obsolete]
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record LanguageHints
 {
     /// <summary>

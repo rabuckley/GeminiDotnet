@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Raw media bytes.
 /// Text should not be sent as raw bytes, use the 'text' field.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Blob
 {
     /// <summary>

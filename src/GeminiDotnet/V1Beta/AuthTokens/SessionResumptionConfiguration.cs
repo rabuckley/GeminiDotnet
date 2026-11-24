@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <c>BidiGenerateContentSetup.session_resumption</c>. If configured, the server
 /// will send <c>SessionResumptionUpdate</c> messages.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SessionResumptionConfiguration
 {
     /// <summary>

@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// client should pass this <see cref="V1Beta.ToolCall"/> back to the API in a subsequent turn
 /// within a <see cref="V1Beta.Content"/> message, along with the corresponding <see cref="V1Beta.ToolResponse"/>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ToolCall
 {
     /// <summary>

@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// Hyperparameters controlling the tuning process. Read more at
 /// https://aistudio.google.com/docs/model-tuning
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Hyperparameters
 {
     /// <summary>

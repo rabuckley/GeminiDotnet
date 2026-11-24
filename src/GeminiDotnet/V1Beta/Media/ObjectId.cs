@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// be used directly here due to transitive closure issues with
 /// JavaScript support; see http://b/8801763.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ObjectId
 {
     /// <summary>

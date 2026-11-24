@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// <summary>
 /// Tuning tasks that create tuned models.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record TuningTask
 {
     /// <summary>

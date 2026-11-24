@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta;
 /// be automatically executed, and a corresponding <see cref="V1Beta.CodeExecutionResult"/> will
 /// also be generated.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ExecutableCode
 {
     /// <summary>

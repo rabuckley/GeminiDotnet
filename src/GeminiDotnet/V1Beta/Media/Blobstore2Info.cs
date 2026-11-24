@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// <summary>
 /// Information to read/write to blobstore2.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Blobstore2Info
 {
     /// <summary>

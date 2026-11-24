@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// inspired by
 /// google3/cloud/ai/platform/extension/lib/retrieval/config/chunker_config.proto
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ChunkingConfiguration
 {
     /// <summary>
