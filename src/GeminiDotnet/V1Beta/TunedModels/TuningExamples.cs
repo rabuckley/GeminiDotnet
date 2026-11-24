@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// <summary>
 /// A set of tuning examples. Can be training or validation data.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record TuningExamples
 {
     /// <summary>

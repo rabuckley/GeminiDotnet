@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta;
 /// <summary>
 /// A citation to a source for a portion of a specific response.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CitationSource
 {
     /// <summary>

@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <c>BidiGenerateContentSetup.history_config</c>. Configures the exchange of
 /// history messages.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record HistoryConfiguration
 {
     /// <summary>

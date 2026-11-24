@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta;
 /// <summary>
 /// Describes the options to customize dynamic retrieval.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record DynamicRetrievalConfiguration
 {
     /// <summary>

@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// A <see cref="V1Beta.Part"/> must have a fixed IANA MIME type identifying the type and subtype
 /// of the media if the <c>inline_data</c> field is filled with raw bytes.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Part
 {
     /// <summary>

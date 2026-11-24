@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.GeneratedFiles;
 /// <summary>
 /// A file generated on behalf of a user.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GeneratedFile
 {
     /// <summary>

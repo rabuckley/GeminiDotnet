@@ -8,6 +8,7 @@ using GeminiDotnet.V1Beta.Media;
 
 namespace GeminiDotnet.V1Beta;
 
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 internal sealed partial class MediaClient : IMediaClient
 {
     private readonly IGeminiRequester _requester;

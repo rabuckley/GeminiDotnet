@@ -5,6 +5,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- IDE0005 (unnecessary usings) only runs at build when documentation is generated. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;GEMINI001</NoWarn>
   </PropertyGroup>
 </Project>

@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// Models may tokenize text differently, so each model may return a different
 /// <c>token_count</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CountTokensRequest
 {
     /// <summary>

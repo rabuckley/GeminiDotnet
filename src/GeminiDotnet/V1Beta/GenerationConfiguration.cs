@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// Configuration options for model generation and outputs. Not all parameters
 /// are configurable for every model.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GenerationConfiguration
 {
     /// <summary>

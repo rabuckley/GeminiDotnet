@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.FileSearchStores;
 /// Response from <c>ListDocuments</c> containing a paginated list of <see cref="V1Beta.FileSearchStores.Document"/>s.
 /// The <see cref="V1Beta.FileSearchStores.Document"/>s are sorted by ascending <c>document.create_time</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ListDocumentsResponse
 {
     /// <summary>

@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Environments;
 /// <summary>
 /// Metadata for a file or directory within an environment.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record EnvironmentFile
 {
     /// <summary>

@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// Media can be passed as raw bytes (<c>inline_data</c>) or by URI (<c>file_data</c>) with
 /// an IANA MIME type identifying the type and subtype of the media.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FunctionResponsePart
 {
     /// <summary>

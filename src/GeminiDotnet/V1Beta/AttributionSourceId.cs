@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta;
 /// <summary>
 /// Identifier for the source contributing to this attribution.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record AttributionSourceId
 {
     /// <summary>

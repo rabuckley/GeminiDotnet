@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// Enables context window compression — a mechanism for managing the model's
 /// context window so that it does not exceed a given length.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ContextWindowCompressionConfiguration
 {
     /// <summary>

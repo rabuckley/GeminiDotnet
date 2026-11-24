@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta;
 /// <summary>
 /// Google search entry point.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SearchEntryPoint
 {
     /// <summary>

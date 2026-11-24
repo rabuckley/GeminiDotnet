@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// can make a better decision if needed. This is only used on media upload
 /// requests from Scotty.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ContentTypeInfo
 {
     /// <summary>

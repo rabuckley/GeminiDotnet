@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta.Environments;
 /// <remarks>
 /// Unknown API values are preserved.
 /// </remarks>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 [JsonConverter(typeof(EnvironmentStatus.Converter))]
 public readonly struct EnvironmentStatus : IEquatable<EnvironmentStatus>
 {

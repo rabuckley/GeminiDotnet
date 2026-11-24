@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta;
 /// <summary>
 /// Attribution for a source that contributed to an answer.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GroundingAttribution
 {
     /// <summary>

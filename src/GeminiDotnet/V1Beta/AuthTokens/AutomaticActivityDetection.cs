@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <summary>
 /// Configures automatic detection of activity.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record AutomaticActivityDetection
 {
     /// <summary>

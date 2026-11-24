@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// external systems to perform an action, or set of actions, outside of
 /// knowledge and scope of the model.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Tool
 {
     /// <summary>

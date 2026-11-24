@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta;
 /// preprocessing (such as time clipping, frame rate, maximum frame count, or
 /// extracted content layers).
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record VideoMetadata
 {
     /// <summary>

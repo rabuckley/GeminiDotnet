@@ -7,6 +7,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace GeminiDotnet.V1Beta;
 
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed partial class GeminiV1BetaClient : IGeminiV1BetaClient
 {
     private readonly IGeminiRequester _requester;

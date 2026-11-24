@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <summary>
 /// Config for proactivity features.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ProactivityConfiguration
 {
     /// <summary>

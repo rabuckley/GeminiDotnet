@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// For details on the Scotty Diff protocol,
 /// visit http://go/scotty-diff-protocol.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record DiffUploadResponse
 {
     /// <summary>

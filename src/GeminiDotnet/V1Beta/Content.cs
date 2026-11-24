@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// and a <see cref="Parts"/> field containing multi-part data that contains the content of
 /// the message turn.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Content
 {
     /// <summary>

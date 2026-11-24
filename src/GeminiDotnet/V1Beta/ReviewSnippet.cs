@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Encapsulates a snippet of a user review that answers a question about
 /// the features of a specific place in Google Maps.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ReviewSnippet
 {
     /// <summary>

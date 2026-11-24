@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// Configuration for retrieving grounding content from a <see cref="V1Beta.Corpora.Corpus"/> or
 /// <see cref="V1Beta.FileSearchStores.Document"/> created using the Semantic Retriever API.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SemanticRetrieverConfiguration
 {
     /// <summary>

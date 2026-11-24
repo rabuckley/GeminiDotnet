@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Result of executing the <see cref="V1Beta.ExecutableCode"/>.
 /// Generated only when the <see cref="V1Beta.CodeExecution"/> tool is used.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CodeExecutionResult
 {
     /// <summary>

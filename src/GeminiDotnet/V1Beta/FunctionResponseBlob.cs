@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta;
 /// Text should not be sent as raw bytes, use the 'FunctionResponse.response'
 /// field.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FunctionResponseBlob
 {
     /// <summary>

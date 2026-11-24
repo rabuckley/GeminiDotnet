@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <c>BidiGenerateContentSetup.prefix_turns</c> will always remain at the beginning
 /// of the result.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record SlidingWindow
 {
     /// <summary>

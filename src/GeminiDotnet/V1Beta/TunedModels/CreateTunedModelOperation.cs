@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// <summary>
 /// This resource represents a long-running operation where metadata and response fields are strongly typed.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CreateTunedModelOperation : BaseOperation
 {
     /// <summary>

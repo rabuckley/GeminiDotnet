@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta.Environments;
 /// <summary>
 /// Request for <c>CreateEnvironment</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record CreateEnvironmentRequest
 {
     /// <summary>

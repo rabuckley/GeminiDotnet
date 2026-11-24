@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta;
 /// Represents a select subset of an [OpenAPI 3.0 schema
 /// object](https://spec.openapis.org/oas/v3.0.3#schema).
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Schema
 {
     /// <summary>

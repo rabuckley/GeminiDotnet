@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// or list of messages representing the alternating turns of the conversation
 /// between the user and the model.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record MessagePrompt
 {
     /// <summary>

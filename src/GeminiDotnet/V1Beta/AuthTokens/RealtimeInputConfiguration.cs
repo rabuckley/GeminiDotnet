@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <summary>
 /// Configures the realtime input behavior in <c>BidiGenerateContent</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record RealtimeInputConfiguration
 {
     /// <summary>

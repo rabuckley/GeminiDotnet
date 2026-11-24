@@ -26,5 +26,6 @@ public interface IGeminiClient
     /// <summary>
     /// Gets the client for interacting with the Gemini V1Beta API.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
     IGeminiV1BetaClient V1Beta { get; }
 }

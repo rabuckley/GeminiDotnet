@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// <remarks>
 /// Unknown API values are preserved.
 /// </remarks>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 [JsonConverter(typeof(AutomaticActivityDetectionStartOfSpeechSensitivity.Converter))]
 public readonly struct AutomaticActivityDetectionStartOfSpeechSensitivity : IEquatable<AutomaticActivityDetectionStartOfSpeechSensitivity>
 {

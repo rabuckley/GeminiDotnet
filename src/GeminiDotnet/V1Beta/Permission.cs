@@ -15,6 +15,7 @@ namespace GeminiDotnet.V1Beta;
 /// - writer has reader's permissions and additionally can edit and share
 /// - owner has writer's permissions and additionally can delete
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Permission
 {
     /// <summary>

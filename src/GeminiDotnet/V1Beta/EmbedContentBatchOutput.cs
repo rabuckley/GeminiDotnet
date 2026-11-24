@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// The output of a batch request. This is returned in the
 /// <see cref="V1Beta.AsyncBatchEmbedContentResponse"/> or the <c>EmbedContentBatch.output</c> field.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record EmbedContentBatchOutput
 {
     /// <summary>

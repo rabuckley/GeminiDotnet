@@ -1,14 +1,11 @@
 # GeminiDotnet
 
-GeminiDotnet is a lightweight yet fully-featured library for interacting with Google's Gemini API in modern .NET. GeminiDotnet is performant and Native AOT compatible, using System.Text.Json source-generation for JSON serialization, and has minimal dependencies.
+GeminiDotnet is a .NET client for Google's Gemini API. It supports Native AOT through System.Text.Json source generation.
 
-This respository contains two packages which users can choose from. The recommended entry-point is [`GeminiDotnet.Extensions.AI`](./src/GeminiDotnet.Extensions.AI) which provides implementations of the [`Microsoft.Extensions.AI.Abstractions`](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) APIs. These provide common abstractions over generative AI models, allowing users to swap out their model provider without rewriting their code. Alternatively, if you'd like a direct, lightweight mapping to the Google Gemini API, you can use [`GeminiDotnet`](./src/GeminiDotnet) directly.
+- Use [`GeminiDotnet.Extensions.AI`](./src/GeminiDotnet.Extensions.AI) with [`Microsoft.Extensions.AI`](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) if you want to swap model providers through a common API.
+- Use [`GeminiDotnet`](./src/GeminiDotnet) for direct access to the Gemini API.
 
-- [`GeminiDotnet`](./src/GeminiDotnet) for direct interaction with Gemini API
-- [`GeminiDotnet.Extensions.AI`](./src/GeminiDotnet.Extensions.AI) for use with [`Microsoft.Extensions.AI`](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) (recommended).
-
-> [!NOTE]
-> Since writing this library, Google have released [first-party support for C#](https://github.com/googleapis/dotnet-genai), which you may prefer. As of [Google.GenAI](https://www.nuget.org/packages/Google.GenAI) v0.11.0, this now includes Microsoft.Extensions.AI support too.
+Google also publishes a [C# SDK with Microsoft.Extensions.AI support](https://github.com/googleapis/dotnet-genai).
 
 ### Versions
 
@@ -16,6 +13,22 @@ This respository contains two packages which users can choose from. The recommen
 | --- | --- | --- |
 | GeminiDotnet | [![NuGet Version](https://img.shields.io/nuget/v/GeminiDotnet)](https://www.nuget.org/packages/GeminiDotnet) | [![NuGet Downloads](https://img.shields.io/nuget/dt/GeminiDotnet)](https://www.nuget.org/packages/GeminiDotnet)|
 | GeminiDotnet.Extensions.AI | [![NuGet Version](https://img.shields.io/nuget/v/GeminiDotnet.Extensions.AI)](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI) | [![NuGet Downloads](https://img.shields.io/nuget/dt/GeminiDotnet.Extensions.AI)](https://www.nuget.org/packages/GeminiDotnet.Extensions.AI)
+
+### Versioning policy
+
+Both packages follow [Semantic Versioning](https://semver.org/) with [Cargo’s 0.x convention](https://doc.rust-lang.org/cargo/reference/semver.html). In 0.x, minor releases may break the public API, and patches may add compatible features and fixes. See the [V1Beta exception](#v1beta-stability).
+
+Removing an adapter feature is a breaking change even if Google withdraws it.
+
+### V1Beta stability
+
+`GeminiDotnet.V1Beta` can break in any release, including a patch release. To opt in to the experimental API across a project, add `GEMINI001` to the project's `NoWarn` property.
+
+```xml
+<NoWarn>$(NoWarn);GEMINI001</NoWarn>
+```
+
+`GeminiDotnet.Extensions.AI` uses `GeminiDotnet.V1`. Use `GeminiClient.V1Beta` directly for beta-only features such as context caching and audio transcription.
 
 ## Examples
 

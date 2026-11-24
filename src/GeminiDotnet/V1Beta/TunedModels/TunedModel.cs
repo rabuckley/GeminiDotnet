@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.TunedModels;
 /// <summary>
 /// A fine-tuned model created using ModelService.CreateTunedModel.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record TunedModel
 {
     /// <summary>

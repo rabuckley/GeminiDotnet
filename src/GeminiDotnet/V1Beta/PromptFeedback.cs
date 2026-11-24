@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// A set of the feedback metadata the prompt specified in
 /// <c>GenerateContentRequest.content</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record PromptFeedback
 {
     /// <summary>

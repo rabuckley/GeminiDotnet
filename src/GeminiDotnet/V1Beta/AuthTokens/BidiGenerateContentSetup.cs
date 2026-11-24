@@ -9,6 +9,7 @@ namespace GeminiDotnet.V1Beta.AuthTokens;
 /// Clients should wait for a <c>BidiGenerateContentSetupComplete</c> message before
 /// sending any additional messages.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record BidiGenerateContentSetup
 {
     /// <summary>

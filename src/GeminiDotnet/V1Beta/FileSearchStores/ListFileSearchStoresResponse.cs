@@ -7,6 +7,7 @@ namespace GeminiDotnet.V1Beta.FileSearchStores;
 /// <c>FileSearchStores</c>. The results are sorted by ascending
 /// <c>file_search_store.create_time</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ListFileSearchStoresResponse
 {
     /// <summary>

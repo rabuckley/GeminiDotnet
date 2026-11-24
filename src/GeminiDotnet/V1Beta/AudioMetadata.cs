@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// when <c>inline_data</c> or <c>file_data</c> contains audio to configure static audio
 /// preprocessing.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record AudioMetadata
 {
     /// <summary>

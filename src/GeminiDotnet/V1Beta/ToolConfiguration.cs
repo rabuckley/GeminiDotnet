@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// The Tool configuration containing parameters for specifying <see cref="V1Beta.Tool"/> use
 /// in the request.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ToolConfiguration
 {
     /// <summary>

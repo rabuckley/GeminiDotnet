@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// the model. This should contain the result of a<see cref="V1Beta.FunctionCall"/> made
 /// based on model prediction.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FunctionResponse
 {
     /// <summary>

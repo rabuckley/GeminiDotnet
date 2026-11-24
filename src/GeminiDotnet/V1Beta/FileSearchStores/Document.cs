@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.FileSearchStores;
 /// <summary>
 /// A <see cref="V1Beta.FileSearchStores.Document"/> is a collection of <c>Chunk</c>s.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Document
 {
     /// <summary>

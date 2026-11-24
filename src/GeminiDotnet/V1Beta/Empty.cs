@@ -8,6 +8,7 @@ namespace GeminiDotnet.V1Beta;
 /// rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);
 /// }
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record Empty
 {
 }

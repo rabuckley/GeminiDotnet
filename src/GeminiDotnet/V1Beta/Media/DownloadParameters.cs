@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// <summary>
 /// Parameters specific to media downloads.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record DownloadParameters
 {
     /// <summary>

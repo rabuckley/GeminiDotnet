@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// GoogleSearch tool type.
 /// Tool to support Google Search in Model. Powered by Google.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record GoogleSearch
 {
     /// <summary>

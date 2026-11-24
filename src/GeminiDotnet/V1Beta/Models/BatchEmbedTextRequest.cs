@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Models;
 /// <summary>
 /// Batch request to get a text embedding from the model.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record BatchEmbedTextRequest
 {
     /// <summary>

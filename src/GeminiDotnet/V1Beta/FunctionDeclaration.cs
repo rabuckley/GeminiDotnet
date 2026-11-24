@@ -10,6 +10,7 @@ namespace GeminiDotnet.V1Beta;
 /// FunctionDeclaration is a representation of a block of code that can be used
 /// as a <see cref="V1Beta.Tool"/> by the model and executed by the client.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record FunctionDeclaration
 {
     /// <summary>

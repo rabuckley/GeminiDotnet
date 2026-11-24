@@ -6,6 +6,7 @@ namespace GeminiDotnet.V1Beta;
 /// Response from <c>ListPermissions</c> containing a paginated list of
 /// permissions.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record ListPermissionsResponse
 {
     /// <summary>

@@ -5,6 +5,7 @@ namespace GeminiDotnet.V1Beta.Media;
 /// <summary>
 /// Request for <c>UploadToFileSearchStore</c>.
 /// </summary>
+[global::System.Diagnostics.CodeAnalysis.Experimental("GEMINI001", UrlFormat = "https://github.com/rabuckley/GeminiDotnet#v1beta-stability")]
 public sealed record UploadToFileSearchStoreRequest
 {
     /// <summary>
