@@ -2,7 +2,7 @@ using GeminiDotnet.Testing;
 using Microsoft.Extensions.AI;
 using System.Net;
 using System.Text;
-using File = GeminiDotnet.V1Beta.Files.File;
+using File = GeminiDotnet.V1.Files.File;
 
 #pragma warning disable MEAI001 // Type is for evaluation purposes only
 
@@ -13,6 +13,7 @@ public sealed class GeminiHostedFileClientTests
     #region ExtractResourceId
 
     [Theory]
+    [InlineData("https://generativelanguage.googleapis.com/v1/files/abc123", "abc123")]
     [InlineData("https://generativelanguage.googleapis.com/v1beta/files/abc123", "abc123")]
     [InlineData("files/abc123", "abc123")]
     [InlineData("abc123", "abc123")]
@@ -38,7 +39,7 @@ public sealed class GeminiHostedFileClientTests
 
         var file = new File
         {
-            Uri = "https://generativelanguage.googleapis.com/v1beta/files/test-id",
+            Uri = "https://generativelanguage.googleapis.com/v1/files/test-id",
             MimeType = "text/csv",
             DisplayName = "sales-data.csv",
             SizeBytes = 4096,
@@ -89,7 +90,7 @@ public sealed class GeminiHostedFileClientTests
         Assert.True(result);
         var request = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Delete, request.Method);
-        Assert.Equal("/v1beta/files/abc123", request.RequestUri?.AbsolutePath);
+        Assert.Equal("/v1/files/abc123", request.RequestUri?.AbsolutePath);
     }
 
     [Fact]
@@ -132,7 +133,7 @@ public sealed class GeminiHostedFileClientTests
             """
             {
               "name": "files/found",
-              "uri": "https://generativelanguage.googleapis.com/v1beta/files/found",
+              "uri": "https://generativelanguage.googleapis.com/v1/files/found",
               "mimeType": "application/pdf",
               "displayName": "document.pdf"
             }
@@ -144,10 +145,10 @@ public sealed class GeminiHostedFileClientTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/files/found", result.FileId);
+        Assert.Equal("https://generativelanguage.googleapis.com/v1/files/found", result.FileId);
         Assert.Equal("application/pdf", result.MediaType);
         Assert.Equal("document.pdf", result.Name);
-        Assert.Equal("/v1beta/files/found", Assert.Single(handler.Requests).RequestUri?.AbsolutePath);
+        Assert.Equal("/v1/files/found", Assert.Single(handler.Requests).RequestUri?.AbsolutePath);
     }
 
     #endregion
@@ -237,7 +238,7 @@ public sealed class GeminiHostedFileClientTests
                 {
                   "file": {
                     "name": "files/uploaded",
-                    "uri": "https://generativelanguage.googleapis.com/v1beta/files/uploaded",
+                    "uri": "https://generativelanguage.googleapis.com/v1/files/uploaded",
                     "mimeType": "text/csv",
                     "displayName": "data.csv"
                   }
@@ -255,7 +256,7 @@ public sealed class GeminiHostedFileClientTests
             cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/files/uploaded", result.FileId);
+        Assert.Equal("https://generativelanguage.googleapis.com/v1/files/uploaded", result.FileId);
 
         var start = handler.Requests[0];
         Assert.Equal("text/csv", start.Headers["X-Goog-Upload-Header-Content-Type"]);
@@ -289,7 +290,7 @@ public sealed class GeminiHostedFileClientTests
                 """
                 {
                   "name": "files/dl-test",
-                  "uri": "https://generativelanguage.googleapis.com/v1beta/files/dl-test",
+                  "uri": "https://generativelanguage.googleapis.com/v1/files/dl-test",
                   "mimeType": "text/plain",
                   "displayName": "report.txt"
                 }
@@ -344,12 +345,12 @@ public sealed class GeminiHostedFileClientTests
 
         // Act
         await using var stream = await client.DownloadAsync(
-            "https://generativelanguage.googleapis.com/v1beta/files/uri-test",
+            "https://generativelanguage.googleapis.com/v1/files/uri-test",
             cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(
-            ["/v1beta/files/uri-test", "/v1beta/files/uri-test:download"],
+            ["/v1/files/uri-test", "/v1/files/uri-test:download"],
             handler.Requests.Select(request => request.RequestUri?.AbsolutePath).Order());
     }
 

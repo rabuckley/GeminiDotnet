@@ -1,9 +1,9 @@
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.CompilerServices;
-using File = GeminiDotnet.V1Beta.Files.File;
+using File = GeminiDotnet.V1.Files.File;
 using Type = System.Type;
 
 #pragma warning disable MEAI001 // Type is for evaluation purposes only
@@ -21,7 +21,7 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
     private readonly GeminiClient? _ownedClient;
     private readonly HostedFileClientMetadata _metadata;
 
-    private IFilesClient FilesClient => _client.V1Beta.Files;
+    private IFilesClient FilesClient => _client.V1.Files;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiHostedFileClient"/> class.
@@ -246,16 +246,11 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
         _ownedClient?.Dispose();
     }
 
-    // -- Mapping helpers --
-
     /// <summary>
-    /// Extracts the resource ID segment from a Gemini file identifier.
-    /// Accepts a full URI (e.g. <c>https://generativelanguage.googleapis.com/v1beta/files/abc123</c>),
-    /// a resource name (<c>files/abc123</c>), or a bare ID (<c>abc123</c>).
+    /// Extracts the ID from a file URI, a resource name such as <c>files/abc123</c>, or a bare ID.
     /// </summary>
     internal static string ExtractResourceId(string fileId)
     {
-        // Full URI — take everything after the last '/'.
         if (fileId.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
             fileId.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
         {
@@ -263,14 +258,12 @@ public sealed class GeminiHostedFileClient : IHostedFileClient
             return fileId[(lastSlash + 1)..];
         }
 
-        // Resource name format: "files/{id}"
         const string prefix = "files/";
         if (fileId.StartsWith(prefix, StringComparison.Ordinal))
         {
             return fileId[prefix.Length..];
         }
 
-        // Already a bare resource ID.
         return fileId;
     }
 

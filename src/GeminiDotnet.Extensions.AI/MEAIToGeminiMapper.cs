@@ -1,5 +1,5 @@
-using GeminiDotnet.V1Beta;
-using GeminiDotnet.V1Beta.Models;
+using GeminiDotnet.V1;
+using GeminiDotnet.V1.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Net.Mime;
@@ -12,6 +12,22 @@ namespace GeminiDotnet.Extensions.AI;
 internal static class MEAIToGeminiMapper
 {
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
+    public static T? CreateRawRepresentation<T>(object? value, string fromPropertyName)
+        where T : class
+    {
+        if (value is null or T)
+        {
+            return (T?)value;
+        }
+
+        GeminiMappingException.Throw(
+            fromPropertyName: fromPropertyName,
+            toPropertyName: typeof(T).FullName!,
+            reason: $"Expected a value of type {typeof(T)}, but found {value.GetType()}.");
+
+        return null;
+    }
 
     public static GenerateContentRequest CreateMappedGenerateContentRequest(
         string model,
@@ -163,7 +179,6 @@ internal static class MEAIToGeminiMapper
                 return null;
             }
 
-            // Reject mistyped options so configuration errors cannot silently change model behavior.
 #pragma warning disable CS0618 // Type or member is obsolete
             var thinkingConfiguration = ReadGenerationConfigurationValue<ThinkingConfiguration>(
                     options,
@@ -189,11 +204,6 @@ internal static class MEAIToGeminiMapper
                 GeminiAdditionalProperties.ImageConfiguration,
                 nameof(GenerationConfiguration.ImageConfiguration));
 
-            var audioTranscriptionConfiguration = ReadGenerationConfigurationValue<AudioTranscriptionConfiguration>(
-                options,
-                GeminiAdditionalProperties.AudioTranscriptionConfiguration,
-                nameof(GenerationConfiguration.AudioTranscriptionConfiguration));
-
             var configuration = new GenerationConfiguration
             {
                 StopSequences = options.StopSequences is null ? null : [.. options.StopSequences],
@@ -201,19 +211,17 @@ internal static class MEAIToGeminiMapper
                 ResponseJsonSchema = CreateMappedResponseSchema(options.ResponseFormat),
                 ResponseModalities = responseModalities,
                 ImageConfiguration = imageConfiguration,
-                AudioTranscriptionConfiguration = audioTranscriptionConfiguration,
                 CandidateCount = null,
                 MaxOutputTokens = options.MaxOutputTokens,
                 Temperature = options.Temperature,
                 TopP = options.TopP,
                 TopK = options.TopK,
-                Seed = (int?)options.Seed, // TODO: can we support long seeds?
+                Seed = (int?)options.Seed,
                 PresencePenalty = options.PresencePenalty,
                 FrequencyPenalty = options.FrequencyPenalty,
                 ResponseLogprobs = null,
                 Logprobs = null,
                 EnableEnhancedCivicAnswers = null,
-                SpeechConfiguration = null,
                 ThinkingConfiguration = thinkingConfiguration
             };
 

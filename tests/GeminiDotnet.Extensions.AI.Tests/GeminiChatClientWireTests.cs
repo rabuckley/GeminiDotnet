@@ -30,7 +30,7 @@ public sealed class GeminiChatClientWireTests
         // Assert
         var request = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Post, request.Method);
-        Assert.Equal($"https://generativelanguage.googleapis.com/v1beta/models/{Model}:generateContent", request.RequestUri?.ToString());
+        Assert.Equal($"https://generativelanguage.googleapis.com/v1/models/{Model}:generateContent", request.RequestUri?.ToString());
         Assert.Equal("application/json", request.ContentType);
         Assert.Equal(JsonText.Normalize(WeatherRequestJson), JsonText.Normalize(request.ReadBodyAsString()));
     }
@@ -52,7 +52,7 @@ public sealed class GeminiChatClientWireTests
         var request = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Post, request.Method);
         Assert.Equal(
-            $"https://generativelanguage.googleapis.com/v1beta/models/{Model}:streamGenerateContent?alt=sse",
+            $"https://generativelanguage.googleapis.com/v1/models/{Model}:streamGenerateContent?alt=sse",
             request.RequestUri?.ToString());
         Assert.Equal(JsonText.Normalize(WeatherRequestJson), JsonText.Normalize(request.ReadBodyAsString()));
     }
@@ -69,7 +69,7 @@ public sealed class GeminiChatClientWireTests
 
         // Assert
         var request = Assert.Single(handler.Requests);
-        Assert.EndsWith("/v1beta/models/gemini-default:generateContent", request.RequestUri?.AbsolutePath);
+        Assert.EndsWith("/v1/models/gemini-default:generateContent", request.RequestUri?.AbsolutePath);
         Assert.Equal("gemini-default", request.ReadBodyAsJson()?["model"]?.GetValue<string>());
     }
 
@@ -82,10 +82,10 @@ public sealed class GeminiChatClientWireTests
         var options = new ChatOptions
         {
             ModelId = Model,
-            RawRepresentationFactory = _ => new V1Beta.GenerateContentRequest
+            RawRepresentationFactory = _ => new V1.GenerateContentRequest
             {
                 Contents = [],
-                CachedContent = "cachedContents/weather",
+                ServiceTier = V1.ServiceTier.Flex,
             },
         };
 
@@ -94,7 +94,7 @@ public sealed class GeminiChatClientWireTests
 
         // Assert
         var body = Assert.Single(handler.Requests).ReadBodyAsJson();
-        Assert.Equal("cachedContents/weather", body?["cachedContent"]?.GetValue<string>());
+        Assert.Equal("flex", body?["serviceTier"]?.GetValue<string>());
         var content = Assert.Single(body?["contents"]?.AsArray() ?? []);
         Assert.Equal("What's the weather in Paris?", content?["parts"]?[0]?["text"]?.GetValue<string>());
     }
@@ -107,12 +107,11 @@ public sealed class GeminiChatClientWireTests
         var options = new ChatOptions
         {
             ModelId = Model,
-            RawRepresentationFactory = _ => new V1Beta.GenerateContentRequest
+            RawRepresentationFactory = _ => new V1.GenerateContentRequest
             {
                 Contents = [],
                 ContinuationToken = new byte[] { 1, 2, 3 },
-                Labels = new Dictionary<string, string> { ["team"] = "weather" },
-                ServiceTier = V1Beta.ServiceTier.Flex,
+                ServiceTier = V1.ServiceTier.Flex,
                 Store = true,
             },
         };
@@ -121,11 +120,28 @@ public sealed class GeminiChatClientWireTests
 
         var body = Assert.Single(handler.Requests).ReadBodyAsJson();
         Assert.Equal("AQID", body?["continuationToken"]?.GetValue<string>());
-        Assert.Equal("weather", body?["labels"]?["team"]?.GetValue<string>());
         Assert.Equal("flex", body?["serviceTier"]?.GetValue<string>());
         Assert.True(body?["store"]?.GetValue<bool>());
         var content = Assert.Single(body?["contents"]?.AsArray() ?? []);
         Assert.Equal("What's the weather in Paris?", content?["parts"]?[0]?["text"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithARawRepresentationOfAnotherType_ShouldThrowWithoutSending()
+    {
+        var handler = new ScriptedHttpMessageHandler();
+        var client = CreateClient(handler);
+        var options = new ChatOptions
+        {
+            ModelId = Model,
+            RawRepresentationFactory = _ => new V1Beta.GenerateContentRequest { Contents = [] },
+        };
+
+        Task Act() => client.GetResponseAsync("What's the weather in Paris?", options, TestContext.Current.CancellationToken);
+
+        var ex = await Assert.ThrowsAsync<GeminiMappingException>(Act);
+        Assert.Contains(typeof(V1.GenerateContentRequest).FullName!, ex.Message);
+        Assert.Empty(handler.Requests);
     }
 
     [Fact]

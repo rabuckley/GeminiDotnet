@@ -1,0 +1,31 @@
+using GeminiDotnet.V1.Media;
+using File = GeminiDotnet.V1.Files.File;
+
+namespace GeminiDotnet.V1;
+
+internal sealed partial class FilesClient
+{
+    /// <inheritdoc />
+    public async Task<File> UploadFileAsync(
+        Stream content,
+        long contentLength,
+        UploadFileOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(contentLength);
+
+        var request = new CreateFileRequest
+        {
+            File = options?.DisplayName is { } displayName ? new File { DisplayName = displayName } : null,
+        };
+
+        var media = new MediaContent(content, contentLength, options?.MimeType ?? "application/octet-stream");
+
+        // Discovery puts the upload on media.upload, so the generated method lives on MediaClient.
+        var response = await new MediaClient(_requester).UploadAsync(request, media, cancellationToken).ConfigureAwait(false);
+
+        return response.File
+            ?? throw new InvalidOperationException("The Gemini upload response did not contain valid file metadata.");
+    }
+}

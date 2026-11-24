@@ -26,7 +26,7 @@ public sealed class AdapterDisposalTests
 
         // Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => client.V1Beta.Files.GetAsync("files/file", TestContext.Current.CancellationToken));
+            () => client.V1.Files.GetAsync("files/file", TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public sealed class AdapterDisposalTests
         adapter.Dispose();
 
         // Assert
-        var file = await client.V1Beta.Files.GetAsync("files/file", TestContext.Current.CancellationToken);
+        var file = await client.V1.Files.GetAsync("files/file", TestContext.Current.CancellationToken);
         Assert.Equal("files/file", file.Name);
     }
 

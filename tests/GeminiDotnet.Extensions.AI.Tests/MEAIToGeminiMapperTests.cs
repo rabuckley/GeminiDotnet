@@ -1,5 +1,5 @@
-﻿using GeminiDotnet.V1Beta;
-using GeminiDotnet.V1Beta.Models;
+﻿using GeminiDotnet.V1;
+using GeminiDotnet.V1.Models;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
@@ -701,8 +701,6 @@ public sealed class MEAIToGeminiMapperTests
             new(ChatRole.User, "Goodbye!"),
         ];
 
-        const string rawCachedContent = "cached content name";
-
         var rawGenerationConfig = new GenerationConfiguration { MaxOutputTokens = 1000, Temperature = 0.5f, };
 
         List<Content> rawContents =
@@ -720,7 +718,6 @@ public sealed class MEAIToGeminiMapperTests
 
         var rawRepresentation = new GenerateContentRequest
         {
-            CachedContent = rawCachedContent,
             GenerationConfiguration = rawGenerationConfig,
             Contents = rawContents,
             Model = "",
@@ -738,7 +735,6 @@ public sealed class MEAIToGeminiMapperTests
             rawRepresentation);
 
         // Assert
-        Assert.Same(rawCachedContent, request.CachedContent);
         Assert.Same(rawGenerationConfig, request.GenerationConfiguration);
         Assert.Same(rawContents, request.Contents);
         Assert.Same(rawSafetySettings, request.SafetySettings);
@@ -1146,7 +1142,7 @@ public sealed class MEAIToGeminiMapperTests
     public void HostedFileContent_ShouldMapToFileDataPart()
     {
         // Arrange
-        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/abc123";
+        const string fileUri = "https://generativelanguage.googleapis.com/v1/files/abc123";
         const string mimeType = "text/csv";
 
         List<ChatMessage> messages =
@@ -1168,7 +1164,7 @@ public sealed class MEAIToGeminiMapperTests
     public void HostedCodeInterpreterTool_WithInputs_ShouldInjectFilePartsIntoLastUserContent()
     {
         // Arrange
-        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/sales-data";
+        const string fileUri = "https://generativelanguage.googleapis.com/v1/files/sales-data";
         const string mimeType = "text/csv";
         const string userPrompt = "Analyze this data and find the top sellers.";
 
@@ -1226,8 +1222,8 @@ public sealed class MEAIToGeminiMapperTests
     public void HostedCodeInterpreterTool_WithMultipleInputs_ShouldInjectAllFilePartsIntoLastUserContent()
     {
         // Arrange
-        const string csvUri = "https://generativelanguage.googleapis.com/v1beta/files/data-csv";
-        const string pdfUri = "https://generativelanguage.googleapis.com/v1beta/files/report-pdf";
+        const string csvUri = "https://generativelanguage.googleapis.com/v1/files/data-csv";
+        const string pdfUri = "https://generativelanguage.googleapis.com/v1/files/report-pdf";
 
         List<ChatMessage> messages =
         [
@@ -1262,7 +1258,7 @@ public sealed class MEAIToGeminiMapperTests
     public void HostedFileContent_WithNullMediaType_ShouldMapToFileDataWithNullMimeType()
     {
         // Arrange — HostedFileContent with no MediaType set
-        const string fileUri = "https://generativelanguage.googleapis.com/v1beta/files/unknown-type";
+        const string fileUri = "https://generativelanguage.googleapis.com/v1/files/unknown-type";
 
         List<ChatMessage> messages =
         [
@@ -1285,8 +1281,8 @@ public sealed class MEAIToGeminiMapperTests
         // Arrange — a user message already contains an inline HostedFileContent part,
         // and the tool also provides files via Inputs. The tool-input files should be
         // prepended before the inline parts.
-        const string inlineFileUri = "https://generativelanguage.googleapis.com/v1beta/files/inline-file";
-        const string toolInputFileUri = "https://generativelanguage.googleapis.com/v1beta/files/tool-input-file";
+        const string inlineFileUri = "https://generativelanguage.googleapis.com/v1/files/inline-file";
+        const string toolInputFileUri = "https://generativelanguage.googleapis.com/v1/files/tool-input-file";
         const string userPrompt = "Analyze both files.";
 
         List<ChatMessage> messages =
@@ -1328,7 +1324,7 @@ public sealed class MEAIToGeminiMapperTests
 
         var codeInterpreter = new HostedCodeInterpreterTool
         {
-            Inputs = [new HostedFileContent("https://generativelanguage.googleapis.com/v1beta/files/orphan") { MediaType = "text/csv" }],
+            Inputs = [new HostedFileContent("https://generativelanguage.googleapis.com/v1/files/orphan") { MediaType = "text/csv" }],
         };
 
         var options = new ChatOptions { Tools = [codeInterpreter] };
@@ -2817,7 +2813,7 @@ public sealed class MEAIToGeminiMapperTests
         return JsonSerializer.Deserialize<AdditionalPropertiesDictionary>(json)!;
     }
 
-    #region Thought Signature, Audio Transcription and Thought-Only Part Tests
+    #region Thought Signature and Thought-Only Part Tests
 
     [Theory]
     [InlineData(false)]
@@ -3268,87 +3264,10 @@ public sealed class MEAIToGeminiMapperTests
         Assert.Empty(request.Contents!);
     }
 
-    [Fact]
-    public void CreateMappedGenerateContentRequest_WithATranscribedResponse_ShouldNotWriteTheTranscription()
-    {
-        // Arrange
-        var response = new GenerateContentResponse
-        {
-            Candidates =
-            [
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Role = "model",
-                        Parts =
-                        [
-                            new Part
-                            {
-                                Text = "hello",
-                                AudioTranscription = new AudioTranscription
-                                {
-                                    Text = "hello",
-                                    SpeakerLabel = "spk:0",
-                                },
-                            },
-                        ],
-                    },
-                },
-            ],
-        };
-
-        var messages = GeminiToMEAIMapper.CreateMappedChatResponse(response, DateTimeOffset.UtcNow).Messages;
-
-        // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest("", messages, new ChatOptions());
-
-        // Assert
-        var part = Assert.Single(Assert.Single(request.Contents!).Parts!);
-        Assert.Equal("hello", part.Text);
-        Assert.Null(part.AudioTranscription);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void CreateMappedGenerateContentRequest_WithAnAudioTranscriptionConfiguration_ShouldMapToTheGenerationConfiguration(
-        bool roundTripThroughJson)
-    {
-        // Arrange
-        var properties = MaybeRoundTripThroughJson(
-            new AdditionalPropertiesDictionary
-            {
-                [GeminiAdditionalProperties.AudioTranscriptionConfiguration] = new AudioTranscriptionConfiguration
-                {
-                    Diarization = true,
-                    WordTimestamp = true,
-                    LanguageCodes = ["en-GB"],
-                },
-            },
-            roundTripThroughJson);
-
-        var options = new ChatOptions { AdditionalProperties = properties };
-
-        // Act
-        var request = MEAIToGeminiMapper.CreateMappedGenerateContentRequest(
-            "",
-            [new ChatMessage(ChatRole.User, "Transcribe this.")],
-            options);
-
-        // Assert
-        var configuration = request.GenerationConfiguration!.AudioTranscriptionConfiguration;
-        Assert.NotNull(configuration);
-        Assert.True(configuration.Diarization);
-        Assert.True(configuration.WordTimestamp);
-        Assert.Equal(["en-GB"], configuration.LanguageCodes);
-    }
-
     [Theory]
     [InlineData(GeminiAdditionalProperties.ThinkingConfiguration)]
     [InlineData(GeminiAdditionalProperties.ResponseModalities)]
     [InlineData(GeminiAdditionalProperties.ImageConfiguration)]
-    [InlineData(GeminiAdditionalProperties.AudioTranscriptionConfiguration)]
     public void CreateMappedGenerateContentRequest_WithAMistypedGenerationConfigurationValue_ShouldThrow(string key)
     {
         // Arrange

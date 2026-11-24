@@ -23,45 +23,16 @@ public static class GeminiAdditionalProperties
     public const string ResponseModalities = "responseModalities";
 
     /// <summary>
-    /// Key for the <see cref="V1Beta.ImageConfiguration"/> property that configures image generation settings.
-    /// Read from <see cref="ChatOptions.AdditionalProperties"/>.
+    /// Use a <see cref="V1.ImageConfiguration"/> value in <see cref="ChatOptions.AdditionalProperties"/>.
     /// </summary>
     public const string ImageConfiguration = "imageConfig";
 
     /// <summary>
-    /// Key for the <see cref="V1Beta.AudioTranscriptionConfiguration"/> read from
-    /// <see cref="ChatOptions.AdditionalProperties"/>.
+    /// Set this key in the <see cref="HostedFileSearchTool"/>'s <see cref="AITool.AdditionalProperties"/>
+    /// to filter documents and chunks. Use an <see href="https://google.aip.dev/160">AIP-160 filter</see>
+    /// as a <see cref="string"/> or JSON string <see cref="JsonElement"/>.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Accepts an <see cref="V1Beta.AudioTranscriptionConfiguration"/> or a <see cref="JsonElement"/>
-    /// that deserializes to one. An incompatible value throws a <see cref="GeminiMappingException"/>.
-    /// </para>
-    /// <para>
-    /// The configuration is sent unchanged. The API rejects
-    /// <see cref="V1Beta.AudioTranscriptionConfiguration.CustomVocabulary"/> combined with
-    /// <see cref="V1Beta.AudioTranscriptionConfiguration.Diarization"/> or
-    /// <see cref="V1Beta.AudioTranscriptionConfiguration.WordTimestamp"/>.
-    /// </para>
-    /// </remarks>
-    public const string AudioTranscriptionConfiguration = "audioTranscriptionConfig";
-
-    /// <summary>
-    /// Key for the metadata filter applied to the documents and chunks a file search retrieves, using the
-    /// filter syntax described by https://google.aip.dev/160.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This key is read from <see cref="AITool.AdditionalProperties"/> on the
-    /// <see cref="HostedFileSearchTool"/> itself, not from <see cref="ChatOptions.AdditionalProperties"/>.
-    /// </para>
-    /// <para>
-    /// The value must be a <see cref="string"/>, or a <see cref="JsonElement"/> holding one as read by
-    /// <see cref="AdditionalPropertiesDictionaryExtensions.TryGetGeminiValue{T}"/>. A value of any other
-    /// type throws a <see cref="GeminiMappingException"/>; it is not dropped, because a request that
-    /// silently loses its filter still succeeds, grounded on the documents the filter was written to exclude.
-    /// </para>
-    /// </remarks>
+    /// <remarks>A value of any other type throws <see cref="GeminiMappingException"/>.</remarks>
     /// <example>
     /// <see cref="AITool.AdditionalProperties"/> has no setter, so the dictionary must be passed to the
     /// constructor:

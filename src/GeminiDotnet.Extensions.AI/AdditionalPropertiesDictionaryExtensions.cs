@@ -96,11 +96,7 @@ public static class AdditionalPropertiesDictionaryExtensions
             return true;
         }
 
-        // A value that crossed a JSON boundary (a persisted history, or Semantic Kernel's
-        // PromptExecutionSettings.ToChatOptions()) arrives as a JsonElement. Resolving T through the
-        // library's default options, rather than JsonContext alone, means that under AOT the read side
-        // can read back whatever those documented options can write: JsonContext supplies the V1Beta
-        // types and M.E.AI's context supplies the BCL types the citation keys name.
+        // Under Native AOT, the default options resolve both V1 types and the BCL citation types.
         if (value is JsonElement jsonElement
             && GeminiJsonUtilities.DefaultOptions.TryGetTypeInfo(typeof(T), out var typeInfo)
             && typeInfo is JsonTypeInfo<T> typedInfo)
@@ -112,7 +108,6 @@ public static class AdditionalPropertiesDictionaryExtensions
             }
             catch (JsonException)
             {
-                // Falls through to the failure below: the element does not hold a T.
             }
         }
 

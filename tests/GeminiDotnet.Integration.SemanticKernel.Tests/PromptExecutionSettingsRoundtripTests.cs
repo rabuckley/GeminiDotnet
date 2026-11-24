@@ -1,5 +1,5 @@
 using GeminiDotnet.Extensions.AI;
-using GeminiDotnet.V1Beta;
+using GeminiDotnet.V1;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using System.Text.Json;
